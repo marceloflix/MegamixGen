@@ -99,11 +99,47 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-down {
+            animation: fadeInDown 0.4s ease-out;
+        }
         input:focus {
             box-shadow: 0 0 8px rgba(57,255,20,0.5);
         }
         button:hover:not(:disabled) {
             box-shadow: 0 0 10px rgba(57,255,20,0.4);
+        }
+        .track-link {
+            opacity: 0.5;
+            transition: opacity 0.2s, color 0.2s;
+            text-decoration: none;
+        }
+        .track-link:hover {
+            opacity: 1;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeInDown 0.25s ease-out;
+        }
+        .modal-box {
+            background: #111;
+            border: 1px solid #39ff14;
+            box-shadow: 0 0 30px rgba(57,255,20,0.25);
+            width: 90%;
+            max-width: 440px;
+            padding: 0;
+        }
+        .key-input-vis {
+            letter-spacing: 2px;
         }
     </style>
 </head>
@@ -117,6 +153,47 @@
             <div class="leading-none">
                 <span class="text-2xl md:text-3xl font-bold text-white tracking-tight">Megamix<span class="text-[#e0e0e0]">Gen</span></span>
                 <span class="reverb-text ml-2 italic text-2xl md:text-3xl">AI Studio</span>
+            </div>
+        </div>
+        <button onclick="openSettings()" title="Settings" class="text-[#39ff14] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#39ff14] bg-[#0a0a0a]">
+            <i class="fas fa-cog"></i>
+        </button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeSettings()">
+        <div class="modal-box">
+            <div class="panel-header text-sm"><i class="fas fa-cog mr-2 text-[#39ff14]"></i> System Configuration</div>
+            <div class="p-4 space-y-4">
+                <div>
+                    <label class="block text-[#669966] text-[10px] uppercase font-bold mb-1">Gemini API Key</label>
+                    <input type="password" id="api-key-input" placeholder="Paste your API key here..."
+                           class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#333] key-input-vis text-[12px]">
+                    <p class="text-[#555] text-[9px] mt-1">Get a key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-[#3399ff] underline">Google AI Studio</a>. Stored locally in your browser only.</p>
+                </div>
+                <div>
+                    <label class="block text-[#669966] text-[10px] uppercase font-bold mb-1">AI Model</label>
+                    <select id="model-select" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold text-[12px] cursor-pointer">
+                        <optgroup label="─── Gemini 3 Series (Latest) ───" style="color:#555">
+                            <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash-Lite — Fastest &amp; cheapest</option>
+                            <option value="gemini-3-flash-preview">Gemini 3 Flash — Frontier performance</option>
+                        </optgroup>
+                        <optgroup label="─── Gemini 2.5 Series (Stable) ───" style="color:#555">
+                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite — Budget friendly</option>
+                            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash — Best price/performance ✓</option>
+                            <option value="gemini-2.5-pro">Gemini 2.5 Pro — Highest quality</option>
+                        </optgroup>
+                    </select>
+                    <p class="text-[#555] text-[9px] mt-1">Start with Gemini 2.5 Flash for best results on free tier.</p>
+                </div>
+                <div class="flex gap-2 pt-2 border-t border-[#222]">
+                    <button onclick="saveSettings()" class="flex-1 bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all">
+                        <i class="fas fa-save mr-1"></i> Save
+                    </button>
+                    <button onclick="closeSettings()" class="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] border border-[#333] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all">
+                        Cancel
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -169,6 +246,11 @@
         </div>
 
         <!-- Feed Container -->
+        <div id="history-controls" class="hidden flex justify-end mb-2">
+            <button onclick="clearHistory()" class="text-[#ff3333] hover:text-white border border-[#ff3333] hover:bg-[#330000] px-3 py-1 text-[10px] uppercase font-bold tracking-wider transition-all">
+                <i class="fas fa-trash-alt mr-1"></i> Clear History
+            </button>
+        </div>
         <div id="mixes-container" class="space-y-4">
             <!-- Generated Mixes prepend here -->
         </div>
@@ -176,35 +258,92 @@
 
     <!-- Footer -->
     <div class="bg-black text-[#666] text-[9px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
-        <div>Megamix Gen v1.0 | AI Studio Division</div>
+        <div>Megamix Gen v2.0 | AI Studio Division</div>
         <div class="italic">made by MFlix</div>
     </div>
 </div>
 
 <script>
-    const apiKey = "";
+    // ── Settings & Storage ──
+    const STORAGE_KEYS = { apiKey: 'megamix_api_key', model: 'megamix_model', history: 'megamix_history' };
 
-    async function fetchWithRetry(url, options, retries = 5) {
-        const delays = [1000, 2000, 4000, 8000, 16000];
-        for (let i = 0; i < retries; i++) {
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return await response.json();
-            } catch (e) {
-                if (i === retries - 1) throw e;
-                await new Promise(res => setTimeout(res, delays[i]));
-            }
+    function getApiKey() { return localStorage.getItem(STORAGE_KEYS.apiKey) || ''; }
+    function getModel() {
+        const saved = localStorage.getItem(STORAGE_KEYS.model);
+        if (!saved) return 'gemini-2.5-flash';
+        // Validate saved model is still a valid option in the dropdown
+        const select = document.getElementById('model-select');
+        if (select && ![...select.options].some(o => o.value === saved)) {
+            // Stale model (e.g. old gemini-2.0-flash) — clear it and use default
+            localStorage.removeItem(STORAGE_KEYS.model);
+            return 'gemini-2.5-flash';
         }
+        return saved;
+    }
+    function getHistory() { try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.history)) || []; } catch { return []; } }
+    function saveHistory(mixes) { localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(mixes)); updateHistoryControls(); }
+
+    function openSettings() {
+        document.getElementById('api-key-input').value = getApiKey();
+        const model = getModel(); // validates & clears stale saved model
+        const select = document.getElementById('model-select');
+        // Only set if the value exists as an option, otherwise leave default selected
+        if ([...select.options].some(o => o.value === model)) select.value = model;
+        document.getElementById('settings-modal').classList.remove('hidden');
+    }
+    function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
+    function saveSettings() {
+        localStorage.setItem(STORAGE_KEYS.apiKey, document.getElementById('api-key-input').value.trim());
+        localStorage.setItem(STORAGE_KEYS.model, document.getElementById('model-select').value);
+        closeSettings();
+    }
+
+    function updateHistoryControls() {
+        const ctrl = document.getElementById('history-controls');
+        const history = getHistory();
+        if (history.length > 0) { ctrl.classList.remove('hidden'); } else { ctrl.classList.add('hidden'); }
+    }
+
+    function clearHistory() {
+        if (!confirm('Clear all saved mixes?')) return;
+        localStorage.removeItem(STORAGE_KEYS.history);
+        document.getElementById('mixes-container').innerHTML = '';
+        updateHistoryControls();
+    }
+
+    // ── API ──
+    async function fetchWithRetry(url, options, retries = 3) {
+        const delays = [2000, 4000, 8000];
+        for (let i = 0; i < retries; i++) {
+            const response = await fetch(url, options);
+            if (response.ok) return await response.json();
+            const body = await response.text();
+            if (response.status === 400 || response.status === 403) throw new Error(`API_KEY_ERROR: ${body}`);
+            if (response.status === 429 || response.status === 503) {
+                // Rate limited or server overloaded — wait and retry
+                await new Promise(r => setTimeout(r, delays[i] || 8000));
+                continue;
+            }
+            throw new Error(`HTTP ${response.status}: ${body}`);
+        }
+        throw new Error('MAX_RETRIES');
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('ai-error');
+        errorDiv.textContent = msg;
+        errorDiv.classList.remove('hidden');
     }
 
     async function generateMix() {
+        const apiKey = getApiKey();
+        if (!apiKey) { openSettings(); showError('API KEY REQUIRED. Click the ⚙ gear to configure.'); return; }
+
         const vibeInput = document.getElementById('ai-vibe');
         const vibe = vibeInput.value.trim() || "Retro 2000s Pop";
-        
         let trackCount = parseInt(document.getElementById('track-count').value, 10);
         if (isNaN(trackCount) || trackCount < 1) trackCount = 6;
-        
+
         const btn = document.getElementById('generate-btn');
         const loading = document.getElementById('ai-loading');
         const errorDiv = document.getElementById('ai-error');
@@ -224,6 +363,7 @@
             "genre": "Short genre name"
         }`;
 
+        const model = getModel();
         const payload = {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
@@ -242,7 +382,7 @@
             }
         };
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
         try {
             const data = await fetchWithRetry(endpoint, {
@@ -252,14 +392,23 @@
             });
 
             const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!responseText) throw new Error("Invalid API response");
+            if (!responseText) throw new Error("NO_CONTENT");
 
             const mixData = JSON.parse(responseText);
-            renderNewMix(mixData);
+            renderNewMix(mixData, true);
             vibeInput.value = '';
         } catch (error) {
             console.error("Gemini API Error:", error);
-            errorDiv.classList.remove('hidden');
+            const msg = error.message || '';
+            if (msg.includes('API_KEY_ERROR')) {
+                showError('INVALID API KEY. Check your key in ⚙ Settings.');
+            } else if (msg.includes('MAX_RETRIES') || msg.includes('429')) {
+                showError('RATE LIMITED. Too many requests — wait a moment and try again.');
+            } else if (msg.includes('NO_CONTENT')) {
+                showError('AI RETURNED EMPTY RESPONSE. Try a different prompt.');
+            } else {
+                showError(`CONNECTION ERROR: ${msg || 'Unknown network error'}. Check console for details.`);
+            }
         } finally {
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -267,27 +416,34 @@
         }
     }
 
-    function copyTracks(btn) {
+    // ── Clipboard ──
+    async function copyTracks(btn) {
         const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
-        const el = document.createElement('textarea');
-        el.value = tracksText;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-
+        try { await navigator.clipboard.writeText(tracksText); }
+        catch { /* fallback */ const el = document.createElement('textarea'); el.value = tracksText; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); }
         const originalHTML = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
-        setTimeout(() => {
-            btn.innerHTML = originalHTML;
-        }, 2000);
+        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
     }
 
-    function renderNewMix(data) {
+    // ── Render ──
+    function buildTrackHTML(track) {
+        const q = encodeURIComponent(track);
+        return `<li class="text-[#ccc] text-[11px] hover:text-white transition-colors flex items-center gap-1 py-[1px]">
+            <span class="text-[#3399ff] mr-1 shrink-0">></span>
+            <span class="flex-1">${track}</span>
+            <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" class="track-link text-[#ff4444] text-[10px]"><i class="fab fa-youtube"></i></a>
+            <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener" title="Search Spotify" class="track-link text-[#1db954] text-[10px]"><i class="fab fa-spotify"></i></a>
+        </li>`;
+    }
+
+    function renderNewMix(data, persist = false) {
         const container = document.getElementById('mixes-container');
-        const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
-        const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false });
-        
+        const ts = data._timestamp || new Date().toISOString();
+        const d = new Date(ts);
+        const currentDate = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+        const currentTime = d.toLocaleTimeString('en-US', { hour12: false });
+
         const mixHTML = `
             <div class="panel border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-500 transform animate-fade-in-down mb-0">
                 <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a]">
@@ -306,7 +462,7 @@
                                     <span class="text-[#3399ff]"><i class="fas fa-list-ul"></i></span>
                                 </div>
                                 <ul class="bullet-list !text-[#39ff14] mt-1 !pl-4">
-                                    ${data.tracks.map(t => `<li class="text-[#ccc] text-[11px] hover:text-white transition-colors"><span class="text-[#3399ff] mr-1">></span> ${t}</li>`).join('')}
+                                    ${data.tracks.map(t => buildTrackHTML(t)).join('')}
                                 </ul>
                                 <div class="mt-3 pt-2 border-t border-[#111] flex justify-end">
                                     <button onclick="copyTracks(this)" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}" 
@@ -333,28 +489,48 @@
                 </div>
             </div>
         `;
-        
+
         const template = document.createElement('template');
         template.innerHTML = mixHTML.trim();
         container.insertBefore(template.content.firstChild, container.firstChild);
+
+        if (persist) {
+            const history = getHistory();
+            data._timestamp = ts;
+            history.unshift(data);
+            if (history.length > 50) history.length = 50;
+            saveHistory(history);
+        }
     }
 
+    // ── Init ──
     window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            renderNewMix({
-                title: "System Initialization Mix",
-                description: "Welcome to the Megamix Gen AI Studio. This is a pre-calculated sequence to demonstrate system capabilities. Enter a prompt above to begin generating custom synthetic audio tracklists.",
-                tracks: [
-                    "Daft Punk - Technologic", 
-                    "The Chemical Brothers - Galvanize", 
-                    "Justice - D.A.N.C.E.", 
-                    "Fatboy Slim - Right Here, Right Now", 
-                    "Prodigy - Smack My Bitch Up"
-                ],
-                bpm: "125-133",
-                genre: "Electronic Boot sequence"
-            });
-        }, 500);
+        const history = getHistory();
+        if (history.length > 0) {
+            history.slice().reverse().forEach(mix => renderNewMix(mix, false));
+            updateHistoryControls();
+        } else {
+            setTimeout(() => {
+                renderNewMix({
+                    title: "System Initialization Mix",
+                    description: "Welcome to the Megamix Gen AI Studio. This is a pre-calculated sequence to demonstrate system capabilities. Enter a prompt above to begin generating custom synthetic audio tracklists.",
+                    tracks: [
+                        "Daft Punk - Technologic",
+                        "The Chemical Brothers - Galvanize",
+                        "Justice - D.A.N.C.E.",
+                        "Fatboy Slim - Right Here, Right Now",
+                        "Prodigy - Smack My Bitch Up"
+                    ],
+                    bpm: "125-133",
+                    genre: "Electronic Boot sequence"
+                });
+            }, 500);
+        }
+
+        // Allow Enter key to generate
+        document.getElementById('ai-vibe').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') generateMix();
+        });
     });
 </script>
 </body>
