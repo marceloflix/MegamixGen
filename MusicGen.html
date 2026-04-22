@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Megamix Gen - AI Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #222222;
+            color: #cccccc;
+            font-size: 11px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 10px;
+        }
+        .container-main {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #111111;
+            border: 1px solid #000;
+            box-shadow: 0 0 25px rgba(0,0,0,0.9);
+        }
+        .header-bg {
+            background-image: linear-gradient(to bottom, #151515, #080808);
+            border-bottom: 2px solid #1a7b1a;
+        }
+        .reverb-text {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+            color: #39ff14;
+            font-size: 32px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 10px rgba(57,255,20,0.5);
+        }
+        .panel {
+            background-color: #1a1a1a;
+            border: 1px solid #333333;
+            margin-bottom: 10px;
+        }
+        .panel-header {
+            background-image: linear-gradient(to bottom, #1a4a1a, #0a2a0a);
+            border: 1px solid #1a7b1a;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            box-shadow: inset 0 1px 0 rgba(100,255,100,0.3);
+        }
+        .panel-content {
+            padding: 12px;
+        }
+        .bullet-list {
+            list-style-type: square;
+            padding-left: 15px;
+            margin: 4px 0;
+            color: #aaaaaa;
+        }
+        .bullet-list li {
+            margin-bottom: 2px;
+        }
+        .details-box {
+            border: 1px solid #39ff14;
+            background-color: #050f05;
+            padding: 6px;
+            font-size: 10px;
+        }
+        .details-box-header {
+            text-align: center;
+            border-bottom: 1px solid #1a4a1a;
+            margin-bottom: 4px;
+            padding-bottom: 2px;
+            color: #39ff14;
+            font-weight: bold;
+        }
+        .logo-diamond-blend {
+            width: 16px;
+            height: 16px;
+            transform: rotate(45deg);
+            background: linear-gradient(135deg, #ff3333 0%, #3399ff 50%, #39ff14 100%);
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+            margin-right: 12px;
+            margin-bottom: 4px;
+            flex-shrink: 0;
+        }
+        .mix-title-date {
+            font-size: 9px;
+            color: #39ff14;
+            font-weight: normal;
+        }
+        .animate-spin-slow {
+            animation: spin 3s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        input:focus {
+            box-shadow: 0 0 8px rgba(57,255,20,0.5);
+        }
+        button:hover:not(:disabled) {
+            box-shadow: 0 0 10px rgba(57,255,20,0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-main">
+    <!-- Header -->
+    <div class="header-bg p-4 md:p-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-2">
+        <div class="flex items-end justify-center md:justify-start w-full">
+            <div class="logo-diamond-blend hidden md:block"></div>
+            <div class="leading-none">
+                <span class="text-2xl md:text-3xl font-bold text-white tracking-tight">Megamix<span class="text-[#e0e0e0]">Gen</span></span>
+                <span class="reverb-text ml-2 italic text-2xl md:text-3xl">AI Studio</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="p-2 md:p-4">
+        <!-- Input Panel -->
+        <div class="panel border-[#39ff14] mb-6 shadow-[0_0_15px_rgba(57,255,20,0.15)]">
+            <div class="panel-header text-sm">
+                <i class="fas fa-keyboard mr-2 text-[#39ff14]"></i> DJ Mainframe Input
+            </div>
+            <div class="panel-content text-[12px] bg-[#050505]">
+                <p class="text-[#aaa] mb-3">Enter a genre, vibe, or era to generate a custom tracklist.</p>
+                
+                <div class="flex flex-col md:flex-row gap-2">
+                    <input type="text" id="ai-vibe" placeholder="e.g., 90s Eurodance, Cyberpunk Synthwave..." 
+                           class="flex-1 bg-[#111] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#444] transition-colors w-full">
+                    
+                    <div class="flex gap-2">
+                        <select id="track-count" title="Number of tracks" class="w-16 bg-[#111] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-2 py-2 outline-none font-bold text-center transition-colors cursor-pointer text-center appearance-none text-center">
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6" selected>6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="12">12</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                        </select>
+
+                        <button onclick="generateMix()" id="generate-btn" 
+                                class="flex-1 md:flex-none bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-6 py-2 cursor-pointer font-bold uppercase tracking-wider transition-all whitespace-nowrap">
+                            Generate ✨
+                        </button>
+                    </div>
+                </div>
+
+                <div id="ai-loading" class="hidden text-center text-[#39ff14] mt-4 flex flex-col items-center">
+                    <i class="fas fa-compact-disc animate-spin-slow mb-2 text-2xl"></i>
+                    <span class="italic text-[10px] tracking-widest">CONNECTING TO DJ MAINFRAME...</span>
+                </div>
+                
+                <div id="ai-error" class="hidden text-center text-[#ff3333] mt-4 border border-[#ff3333] bg-[#330000] p-2 font-bold uppercase">
+                    Connection lost. Diagnostics failed. Try again.
+                </div>
+            </div>
+        </div>
+
+        <!-- Feed Container -->
+        <div id="mixes-container" class="space-y-4">
+            <!-- Generated Mixes prepend here -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-black text-[#666] text-[9px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
+        <div>Megamix Gen v1.0 | AI Studio Division</div>
+        <div class="italic">made by MFlix</div>
+    </div>
+</div>
+
+<script>
+    const apiKey = "";
+
+    async function fetchWithRetry(url, options, retries = 5) {
+        const delays = [1000, 2000, 4000, 8000, 16000];
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (e) {
+                if (i === retries - 1) throw e;
+                await new Promise(res => setTimeout(res, delays[i]));
+            }
+        }
+    }
+
+    async function generateMix() {
+        const vibeInput = document.getElementById('ai-vibe');
+        const vibe = vibeInput.value.trim() || "Retro 2000s Pop";
+        
+        let trackCount = parseInt(document.getElementById('track-count').value, 10);
+        if (isNaN(trackCount) || trackCount < 1) trackCount = 6;
+        
+        const btn = document.getElementById('generate-btn');
+        const loading = document.getElementById('ai-loading');
+        const errorDiv = document.getElementById('ai-error');
+
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        loading.classList.remove('hidden');
+        errorDiv.classList.add('hidden');
+
+        const prompt = `You are an AI DJ from the year 2005. Create a ${trackCount} track megamix tracklist based on this vibe or genre: "${vibe}".
+        Respond ONLY with a valid JSON object matching this schema.
+        {
+            "title": "Mix Title (e.g., The [Vibe] Megamix)",
+            "description": "A hype retro 2005-style description of the mix.",
+            "tracks": ["Artist - Song Title", "Artist - Song Title"],
+            "bpm": "e.g., 120-135",
+            "genre": "Short genre name"
+        }`;
+
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        title: { type: "STRING" },
+                        description: { type: "STRING" },
+                        tracks: { type: "ARRAY", items: { type: "STRING" } },
+                        bpm: { type: "STRING" },
+                        genre: { type: "STRING" }
+                    },
+                    required: ["title", "description", "tracks", "bpm", "genre"]
+                }
+            }
+        };
+
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        try {
+            const data = await fetchWithRetry(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!responseText) throw new Error("Invalid API response");
+
+            const mixData = JSON.parse(responseText);
+            renderNewMix(mixData);
+            vibeInput.value = '';
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            errorDiv.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            loading.classList.add('hidden');
+        }
+    }
+
+    function copyTracks(btn) {
+        const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
+        const el = document.createElement('textarea');
+        el.value = tracksText;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    }
+
+    function renderNewMix(data) {
+        const container = document.getElementById('mixes-container');
+        const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+        const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false });
+        
+        const mixHTML = `
+            <div class="panel border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-500 transform animate-fade-in-down mb-0">
+                <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a]">
+                    <div class="text-sm"><i class="fas fa-magic mr-2 text-[#39ff14]"></i> ${data.title}</div>
+                </div>
+                <div class="bg-[#050f05] text-right px-2 py-[2px] mix-title-date border-b border-[#1a4a1a] text-[#39ff14] uppercase tracking-wider">
+                    ${currentDate} @ ${currentTime}
+                </div>
+                <div class="panel-content flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 flex flex-col justify-between">
+                        <div class="text-[#b0b0b0] text-[12px]">
+                            ${data.description ? `<p class="mb-3 italic border-l-2 border-[#3399ff] pl-2 text-[#aaa]">${data.description}</p>` : ''}
+                            <div class="bg-[#050505] border border-[#1a4a1a] p-2">
+                                <div class="text-[#1a7b1a] text-[9px] uppercase font-bold border-b border-[#111] mb-2 pb-1 flex items-center justify-between">
+                                    <span>Tracklist Sequence</span>
+                                    <span class="text-[#3399ff]"><i class="fas fa-list-ul"></i></span>
+                                </div>
+                                <ul class="bullet-list !text-[#39ff14] mt-1 !pl-4">
+                                    ${data.tracks.map(t => `<li class="text-[#ccc] text-[11px] hover:text-white transition-colors"><span class="text-[#3399ff] mr-1">></span> ${t}</li>`).join('')}
+                                </ul>
+                                <div class="mt-3 pt-2 border-t border-[#111] flex justify-end">
+                                    <button onclick="copyTracks(this)" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}" 
+                                            class="bg-[#111] hover:bg-[#222] text-[#3399ff] border border-[#3399ff] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(51,153,255,0.2)]">
+                                        <i class="fas fa-copy mr-1"></i> Copy Tracks
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-[200px] shrink-0">
+                        <div class="details-box h-full flex flex-col">
+                            <div class="details-box-header !text-[#39ff14] !border-[#1a4a1a] uppercase">Diagnostics</div>
+                            <div class="grid grid-cols-[60px_1fr] gap-x-2 gap-y-2 mb-1 text-[11px] flex-1">
+                                <span class="text-right text-[#669966]">Tracks:</span> <span class="text-[#ccc] font-bold">${data.tracks.length}</span>
+                                <span class="text-right text-[#669966]">BPM:</span> <span class="text-[#ccc]">${data.bpm}</span>
+                                <span class="text-right text-[#669966]">Energy:</span> <span><i class="fas fa-bolt text-[#39ff14]"></i><i class="fas fa-bolt text-[#39ff14]"></i><i class="fas fa-bolt text-[#ff3333]"></i></span>
+                                <span class="text-right text-[#669966]">Key:</span> <span class="text-[#ccc]">Dynamic</span>
+                                <span class="text-right text-[#669966]">Est. Time:</span> <span class="text-[#ccc]">~${data.tracks.length * 4} mins</span>
+                                <span class="text-right text-[#669966]">Genre:</span> <span class="text-[#ccc] line-clamp-2" title="${data.genre}">${data.genre}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const template = document.createElement('template');
+        template.innerHTML = mixHTML.trim();
+        container.insertBefore(template.content.firstChild, container.firstChild);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            renderNewMix({
+                title: "System Initialization Mix",
+                description: "Welcome to the Megamix Gen AI Studio. This is a pre-calculated sequence to demonstrate system capabilities. Enter a prompt above to begin generating custom synthetic audio tracklists.",
+                tracks: [
+                    "Daft Punk - Technologic", 
+                    "The Chemical Brothers - Galvanize", 
+                    "Justice - D.A.N.C.E.", 
+                    "Fatboy Slim - Right Here, Right Now", 
+                    "Prodigy - Smack My Bitch Up"
+                ],
+                bpm: "125-133",
+                genre: "Electronic Boot sequence"
+            });
+        }, 500);
+    });
+</script>
+</body>
+</html>
