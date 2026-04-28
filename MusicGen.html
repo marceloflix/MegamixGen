@@ -153,6 +153,11 @@
         .key-input-vis {
             letter-spacing: 2px;
         }
+        @keyframes loadingPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .loading-pulse { animation: loadingPulse 1.5s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -181,6 +186,7 @@
                     <label class="block text-[#669966] text-[10px] uppercase font-bold mb-1">Gemini API Key</label>
                     <input type="password" id="api-key-input" placeholder="Paste your API key here..."
                            class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#333] key-input-vis text-[12px]">
+                    <div id="api-key-status" class="hidden text-[10px] mt-1 font-bold uppercase tracking-wider"></div>
                     <p class="text-[#555] text-[9px] mt-1">Get a key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-[#3399ff] underline">Google AI Studio</a>. Stored locally in your browser only.</p>
                 </div>
                 <div>
@@ -220,8 +226,9 @@
                 <p class="text-white mb-3">Enter a genre, vibe, or era to generate a custom tracklist.</p>
                 
                 <div class="flex flex-col md:flex-row gap-2">
-                    <input type="text" id="ai-vibe" placeholder="e.g., 90s Eurodance, Cyberpunk Synthwave..." 
+                    <input type="text" id="ai-vibe" list="prompt-history" placeholder="e.g., 90s Eurodance, Cyberpunk Synthwave..." 
                            class="flex-1 bg-[#111] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#444] transition-colors w-full">
+                    <datalist id="prompt-history"></datalist>
                     
                     <div class="flex gap-2 items-stretch">
                         <!-- Stage stepper -->
@@ -246,7 +253,7 @@
 
                 <div id="ai-loading" class="hidden text-center text-[#39ff14] mt-4 flex flex-col items-center">
                     <i class="fas fa-compact-disc animate-spin-slow mb-2 text-2xl"></i>
-                    <span class="italic text-[10px] tracking-widest">CONNECTING TO DJ MAINFRAME...</span>
+                    <span id="loading-msg" class="italic text-[10px] tracking-widest loading-pulse">CONNECTING TO DJ MAINFRAME...</span>
                 </div>
                 
                 <div id="ai-error" class="hidden text-center text-[#ff3333] mt-4 border border-[#ff3333] bg-[#330000] p-2 font-bold uppercase">
@@ -280,6 +287,10 @@
                     </button>
                 </div>
             </div>
+            <div class="mt-2">
+                <input type="text" id="history-search" placeholder="Search playlists..." oninput="filterHistory()"
+                       class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-1.5 outline-none text-[11px] placeholder-[#444] transition-colors">
+            </div>
         </div>
         <div id="mixes-container" class="space-y-3">
             <!-- Generated Mixes prepend here -->
@@ -288,7 +299,7 @@
 
     <!-- Footer -->
     <div class="bg-black text-[#666] text-[9px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
-        <div>Megamix Gen v2.0 | AI Studio Division</div>
+        <div>Megamix Gen v3.0 | AI Studio Division</div>
         <div class="italic">made by MFlix</div>
     </div>
 </div>
@@ -310,7 +321,34 @@
 
 <script>
     // ── Settings & Storage ──
-    const STORAGE_KEYS = { apiKey: 'megamix_api_key', model: 'megamix_model', history: 'megamix_history' };
+    const STORAGE_KEYS = { apiKey: 'megamix_api_key', model: 'megamix_model', history: 'megamix_history', prompts: 'megamix_prompts' };
+
+    // ── Prompt History ──
+    function getPromptHistory() { try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.prompts)) || []; } catch { return []; } }
+    function savePrompt(prompt) {
+        if (!prompt) return;
+        let prompts = getPromptHistory().filter(p => p !== prompt);
+        prompts.unshift(prompt);
+        if (prompts.length > 20) prompts.length = 20;
+        localStorage.setItem(STORAGE_KEYS.prompts, JSON.stringify(prompts));
+        populatePromptDatalist();
+    }
+    function populatePromptDatalist() {
+        const dl = document.getElementById('prompt-history');
+        if (!dl) return;
+        dl.innerHTML = getPromptHistory().map(p => `<option value="${p.replace(/"/g,'&quot;')}">`).join('');
+    }
+    // Filter datalist to prefix-match on input
+    function updatePromptSuggestions() {
+        const input = document.getElementById('ai-vibe');
+        const dl = document.getElementById('prompt-history');
+        if (!dl || !input) return;
+        const val = input.value.trim().toLowerCase();
+        if (!val) { populatePromptDatalist(); return; }
+        dl.innerHTML = getPromptHistory()
+            .filter(p => p.toLowerCase().startsWith(val))
+            .map(p => `<option value="${p.replace(/"/g,'&quot;')}">`).join('');
+    }
 
     function getApiKey() { return localStorage.getItem(STORAGE_KEYS.apiKey) || ''; }
     function getModel() {
@@ -330,6 +368,7 @@
 
     function openSettings() {
         document.getElementById('api-key-input').value = getApiKey();
+        document.getElementById('api-key-status').classList.add('hidden');
         const model = getModel(); // validates & clears stale saved model
         const select = document.getElementById('model-select');
         // Only set if the value exists as an option, otherwise leave default selected
@@ -338,15 +377,51 @@
     }
     function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
     function saveSettings() {
-        localStorage.setItem(STORAGE_KEYS.apiKey, document.getElementById('api-key-input').value.trim());
-        localStorage.setItem(STORAGE_KEYS.model, document.getElementById('model-select').value);
-        closeSettings();
+        const key = document.getElementById('api-key-input').value.trim();
+        const statusEl = document.getElementById('api-key-status');
+        if (key) {
+            statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ffcc00]';
+            statusEl.textContent = 'VALIDATING KEY...';
+            statusEl.classList.remove('hidden');
+            const model = document.getElementById('model-select').value;
+            fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${key}`)
+                .then(r => {
+                    if (r.ok) {
+                        statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
+                        statusEl.textContent = '✓ KEY VALID';
+                        localStorage.setItem(STORAGE_KEYS.apiKey, key);
+                        localStorage.setItem(STORAGE_KEYS.model, model);
+                        setTimeout(() => closeSettings(), 800);
+                    } else {
+                        statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff3333]';
+                        statusEl.textContent = '✗ INVALID KEY — check and try again';
+                    }
+                })
+                .catch(() => {
+                    statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff9900]';
+                    statusEl.textContent = '⚠ NETWORK ERROR — saved anyway';
+                    localStorage.setItem(STORAGE_KEYS.apiKey, key);
+                    localStorage.setItem(STORAGE_KEYS.model, model);
+                    setTimeout(() => closeSettings(), 1200);
+                });
+        } else {
+            localStorage.setItem(STORAGE_KEYS.apiKey, '');
+            localStorage.setItem(STORAGE_KEYS.model, document.getElementById('model-select').value);
+            closeSettings();
+        }
     }
 
     function updateHistoryControls() {
         const ctrl = document.getElementById('history-controls');
         const history = getHistory();
         if (history.length > 0) { ctrl.classList.remove('hidden'); } else { ctrl.classList.add('hidden'); }
+        // localStorage quota check
+        try {
+            const used = new Blob(Object.values(localStorage)).size;
+            if (used > 4 * 1024 * 1024) {
+                console.warn('MegamixGen: localStorage usage high (' + Math.round(used/1024) + 'KB). Consider clearing old mixes.');
+            }
+        } catch(e) {}
     }
 
     function clearHistory() {
@@ -402,6 +477,31 @@
 
     function getTrackCount() { return STAGES[stageIndex]; }
 
+    // ── Loading Messages ──
+    const LOADING_MSGS = [
+        'CONNECTING TO DJ MAINFRAME...',
+        'SCANNING FREQUENCY BANKS...',
+        'CALIBRATING BPM MATRIX...',
+        'SYNCING AUDIO WAVELENGTHS...',
+        'ANALYZING SONIC PATTERNS...',
+        'QUERYING TRACK DATABASE...',
+        'DECODING RHYTHM ALGORITHMS...',
+        'ASSEMBLING TRACKLIST SEQUENCE...'
+    ];
+    let loadingInterval = null;
+    function startLoadingMessages() {
+        let idx = 0;
+        const el = document.getElementById('loading-msg');
+        if (el) el.textContent = LOADING_MSGS[0];
+        loadingInterval = setInterval(() => {
+            idx = (idx + 1) % LOADING_MSGS.length;
+            if (el) el.textContent = LOADING_MSGS[idx];
+        }, 2200);
+    }
+    function stopLoadingMessages() {
+        if (loadingInterval) { clearInterval(loadingInterval); loadingInterval = null; }
+    }
+
     async function generateMix() {
         const apiKey = getApiKey();
         if (!apiKey) { openSettings(); showError('API KEY REQUIRED. Click the ⚙ gear to configure.'); return; }
@@ -417,6 +517,7 @@
         btn.disabled = true;
         btn.classList.add('opacity-50', 'cursor-not-allowed');
         loading.classList.remove('hidden');
+        startLoadingMessages();
         errorDiv.classList.add('hidden');
 
         const prompt = `You are a knowledgeable music curator. Create a ${trackCount} track playlist based on this vibe or genre: "${vibe}".
@@ -467,6 +568,7 @@
             const mixData = JSON.parse(responseText);
             mixData._prompt = vibe;
             renderNewMix(mixData, true);
+            savePrompt(vibe);
             vibeInput.value = '';
         } catch (error) {
             console.error("Gemini API Error:", error);
@@ -484,7 +586,23 @@
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             loading.classList.add('hidden');
+            stopLoadingMessages();
         }
+    }
+
+    // ── Export ──
+    function exportPlaylist(btn) {
+        const title = btn.getAttribute('data-title') || 'playlist';
+        const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
+        const blob = new Blob([`${title}\n${'='.repeat(title.length)}\n\n${tracksText}\n`], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}.txt`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check mr-1"></i> Saved!';
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
     }
 
     // ── Clipboard ──
@@ -495,6 +613,20 @@
         const originalHTML = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
         setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+    }
+
+    // ── Delete Individual Mix ──
+    function deleteMix(btn, ts) {
+        const card = btn.closest('[data-ts]');
+        if (!card) return;
+        card.style.transition = 'opacity 0.3s, transform 0.3s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(-20px)';
+        setTimeout(() => {
+            card.remove();
+            let history = getHistory().filter(m => m._timestamp !== ts);
+            saveHistory(history);
+        }, 300);
     }
 
     // ── Copy single track ──
@@ -521,6 +653,7 @@
             <div class="flex gap-1">
                 <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube"></i></a>
                 <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener" title="Search Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify"></i></a>
+                <a href="https://monochrome.samidy.com/search/${q}" target="_blank" rel="noopener" title="Search on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
             </div>
         </li>`;
     }
@@ -565,11 +698,23 @@
         container.innerHTML = '';
         let history = getHistory();
         if (currentFilter === 'favorites') history = history.filter(m => m._favorite);
+        const searchInput = document.getElementById('history-search');
+        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        if (searchTerm) {
+            history = history.filter(m => {
+                // Prefix match on title, genre, and prompt
+                return [m.title, m.genre, m._prompt].filter(Boolean).some(field => field.toLowerCase().startsWith(searchTerm));
+            });
+        }
         history.slice().reverse().forEach(mix => renderNewMix(mix, false));
         if (container.children.length === 0 && currentFilter === 'favorites') {
             container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-star mr-2"></i>No favorites yet — star a mix to save it here.</div>';
+        } else if (container.children.length === 0 && searchTerm) {
+            container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-search mr-2"></i>No playlists match that search.</div>';
         }
     }
+
+    function filterHistory() { rebuildFeed(); }
 
     function toggleFavorite(btn, ts) {
         const history = getHistory();
@@ -610,19 +755,38 @@
             <div class="mix-datebar bg-[#050f05] text-right px-2 py-[2px] mix-title-date border-b border-[#1a4a1a] text-[#39ff14] uppercase tracking-wider">
                 ${currentDate} @ ${currentTime}
             </div>
-            <div class="mix-body panel-content flex flex-col md:flex-row gap-4">
+            <div class="mix-body panel-content flex flex-col gap-4">
+                ${data.tracks.length > 20 ? `
+                <div class="details-box">
+                    <div class="flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
+                        <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
+                        <span class="flex items-center gap-3 flex-wrap">
+                            <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px]">${data.tracks.length}</span></span>
+                            <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">BPM</span><span class="text-white text-[11px]">${data.bpm}</span></span>
+                            <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
+                            <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Est.</span><span class="text-white text-[11px]">~${data.tracks.length * 4}m</span></span>
+                            <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre}</span></span>
+                        </span>
+                    </div>
+                </div>` : ''}
+                <div class="flex flex-col md:flex-row gap-4">
                 <div class="flex-1 flex flex-col justify-between">
                     <div class="text-[#b0b0b0] text-[12px]">
-                        ${data._prompt ? `<p class="mb-3 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
+                        ${data._prompt ? `<p class="mb-2 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
+                        ${data.description ? `<p class="mb-3 text-[11px] text-[#777] italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
                         <div class="bg-[#050505] border border-[#1a4a1a] p-2">
                             <div class="text-[#1a7b1a] text-[9px] uppercase font-bold border-b border-[#111] mb-2 pb-1 flex items-center justify-between">
                                 <span>Tracklist Sequence</span>
                                 <span class="text-[#3399ff]"><i class="fas fa-list-ul"></i></span>
                             </div>
-                            <ul class="mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : data.tracks.length <= 20 ? 2 : data.tracks.length <= 30 ? 3 : 4},1fr)">
+                            <ul class="mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : 2},1fr)">
                                 ${data.tracks.map((t, i) => buildTrackHTML(t, i)).join('')}
                             </ul>
-                            <div class="mt-3 pt-2 border-t border-[#111] flex justify-end">
+                            <div class="mt-3 pt-2 border-t border-[#111] flex justify-end gap-2">
+                                <button onclick="exportPlaylist(this)" data-title="${data.title.replace(/"/g,'&quot;')}" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
+                                        class="bg-[#111] hover:bg-[#222] text-[#39ff14] border border-[#1a7b1a] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(57,255,20,0.2)]">
+                                    <i class="fas fa-download mr-1"></i> Export .txt
+                                </button>
                                 <button onclick="copyTracks(this)" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
                                         class="bg-[#111] hover:bg-[#222] text-[#3399ff] border border-[#3399ff] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(51,153,255,0.2)]">
                                     <i class="fas fa-copy mr-1"></i> Copy Tracks
@@ -631,6 +795,7 @@
                         </div>
                     </div>
                 </div>
+                ${data.tracks.length <= 20 ? `
                 <div class="w-full md:w-[180px] shrink-0 self-start">
                     <div class="details-box">
                         <div class="details-box-header uppercase">Diagnostics</div>
@@ -642,21 +807,28 @@
                             <span class="text-right text-[#39ff14] font-semibold">Genre</span>  <span class="text-white" title="${data.genre}">${data.genre}</span>
                         </div>
                     </div>
+                </div>` : ''}
                 </div>
             </div>`;
 
         const mixHTML = `
-            <div class="panel border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-300 animate-fade-in-down${isCompact ? ' mix-card-compact' : ''}" data-ts="${ts}">
+            <div class="panel group/card border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-300 animate-fade-in-down${isCompact ? ' mix-card-compact' : ''}" data-ts="${ts}">
                 <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a] flex items-center justify-between${isCompact ? ' cursor-pointer' : ''}" ${isCompact ? `onclick="expandAndScrollTo('${ts}')" title="Click to expand"` : ''}>
                     <div class="text-sm flex items-center gap-2 min-w-0">
                         <i class="fas fa-magic text-[#39ff14] shrink-0"></i>
                         <span class="truncate">${data.title}</span>
                         ${isCompact ? `<span class="text-white text-[10px] shrink-0">${data.tracks.length} tracks &bull; ${currentDate}</span>` : ''}
                     </div>
-                    <button onclick="toggleFavorite(this, '${ts}')" title="${starTitle}"
-                            class="${starColor} text-[13px] transition-colors px-1 shrink-0">
-                        <i class="${starIcon}"></i>
-                    </button>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button onclick="toggleFavorite(this, '${ts}')" title="${starTitle}"
+                                class="${starColor} text-[13px] transition-colors px-1 shrink-0">
+                            <i class="${starIcon}"></i>
+                        </button>
+                        <button onclick="deleteMix(this, '${ts}')" title="Delete this mix"
+                                class="text-[#555] hover:text-[#ff3333] text-[11px] transition-all px-1 shrink-0 opacity-0 group-hover/card:opacity-100">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
                 ${bodyHTML}
             </div>
@@ -702,6 +874,16 @@
         // Allow Enter key to generate
         document.getElementById('ai-vibe').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') generateMix();
+        });
+        document.getElementById('ai-vibe').addEventListener('input', updatePromptSuggestions);
+
+        // Populate prompt suggestions
+        populatePromptDatalist();
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeSettings();
+            if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('ai-vibe').focus(); }
         });
     });
 </script>
