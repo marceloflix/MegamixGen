@@ -6,10 +6,6 @@
     <title>MegamixGen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <style>
         body {
             font-family: Tahoma, Geneva, Verdana, sans-serif;
@@ -22,7 +18,7 @@
         }
         .container-main {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1300px;
             margin: 0 auto;
             background-color: #111111;
             border: 1px solid #000;
@@ -174,10 +170,29 @@
         #audio-player-bar.active { display: flex; }
         #audio-progress { flex: 1; height: 4px; background: #222; border-radius: 2px; cursor: pointer; position: relative; }
         #audio-progress-fill { height: 100%; background: #39ff14; border-radius: 2px; width: 0; transition: width 0.2s; }
-        /* Mobile touch targets */
+        /* Mobile responsive */
         @media (max-width: 768px) {
-            .flex.gap-1 a.flex.items-center { min-width: 32px; min-height: 32px; width: 32px; height: 32px; font-size: 15px; }
-            .flex.gap-1 a.flex.items-center svg { width: 18px; height: 18px; }
+            body { padding: 4px; }
+            .container-main { max-width: 100%; }
+            /* Track service buttons: slightly bigger touch targets */
+            .flex.gap-1 a.flex.items-center,
+            .flex.gap-1 button.flex.items-center { min-width: 28px; min-height: 28px; width: 28px; height: 28px; font-size: 13px; }
+            .flex.gap-1 a.flex.items-center svg { width: 16px; height: 16px; }
+            /* Force single-column tracklist on mobile */
+            ul[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+            /* Diagnostics sidebar → stacks on top */
+            .w-full.md\:w-\[180px\] { width: 100% !important; }
+            /* Toolbar buttons wrap */
+            .flex.gap-1.ml-auto { flex-wrap: wrap; }
+            /* Action buttons in cards */
+            .flex.flex-wrap.justify-end.gap-2 button { font-size: 9px; padding: 4px 8px; }
+            /* Audio player bar */
+            #audio-player-bar { padding: 6px 8px; gap: 6px; }
+            #audio-track-title { font-size: 10px; max-width: 120px; }
+        }
+        @media (max-width: 480px) {
+            /* Extra small: hide button text labels, show icons only */
+            .flex.gap-1.ml-auto button { padding: 6px 8px; font-size: 10px; }
         }
     </style>
 </head>
@@ -362,7 +377,7 @@
 
 <!-- Scroll to top -->
 <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top"
-        style="position:fixed;bottom:24px;right:24px;width:36px;height:36px;background:#0a0a0a;border:1px solid #333;color:#39ff14;font-size:16px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 0.3s,border-color 0.3s;display:flex;align-items:center;justify-content:center;z-index:999">
+        style="position:fixed;bottom:60px;right:24px;width:36px;height:36px;background:#0a0a0a;border:1px solid #333;color:#39ff14;font-size:16px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 0.3s,border-color 0.3s;display:flex;align-items:center;justify-content:center;z-index:998">
     <i class="fas fa-chevron-up"></i>
 </button>
 <script>
@@ -1021,15 +1036,15 @@ Keep the same format. Preserve tracks not affected by the change.`;
         const trackEscaped = track.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         return `<li class="flex items-center gap-2 py-[5px] border-b border-[#0f1f0f] last:border-0 group" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06)">
             <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#2a2a2a] text-[#555] text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
-            <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight mr-1 cursor-pointer select-none flex items-center gap-1 group/track">
-                <span class="group-hover/track:text-[#ccc] transition-colors">${track}</span>
+            <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight cursor-pointer select-none flex items-center gap-1 group/track min-w-0 overflow-hidden">
+                <span class="group-hover/track:text-[#ccc] transition-colors truncate">${track}</span>
                 <i class="fas fa-clipboard text-[#333] text-[10px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0" aria-hidden="true"></i>
             </span>
-            <div class="flex gap-1">
+            <div class="flex gap-1 shrink-0 ml-auto">
+                <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${track}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#39ff14] group-hover:bg-[#0a2a0a] group-hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
                 <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" aria-label="Search ${track} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
                 <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener" title="Search Spotify" aria-label="Search ${track} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
                 <a href="https://monochrome.samidy.com/search/${q}" target="_blank" rel="noopener" title="Search on Monochrome" aria-label="Search ${track} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
-                <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${track}" class="flex items-center justify-center w-6 h-6 bg-[#0a0a00] border border-[#333300] text-[#ffcc00] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ffcc00] group-hover:bg-[#1a1a00] group-hover:shadow-[0_0_5px_rgba(255,204,0,0.4)] transition-all"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
             </div>
         </li>`;
     }
@@ -1135,7 +1150,6 @@ Keep the same format. Preserve tracks not affected by the change.`;
                 ${currentDate} @ ${currentTime}
             </div>
             <div class="mix-body panel-content flex flex-col gap-4">
-                ${data.tracks.length > 20 ? `
                 <div class="details-box">
                     <div class="flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
                         <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
@@ -1147,8 +1161,8 @@ Keep the same format. Preserve tracks not affected by the change.`;
                             <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre}</span></span>
                         </span>
                     </div>
-                </div>` : ''}
-                <div class="flex flex-col md:flex-row gap-4">
+                </div>
+                <div class="flex flex-col gap-4">
                 <div class="flex-1 flex flex-col justify-between">
                     <div class="text-[#b0b0b0] text-[12px]">
                         ${data._prompt ? `<p class="mb-2 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
@@ -1182,19 +1196,6 @@ Keep the same format. Preserve tracks not affected by the change.`;
                         </div>
                     </div>
                 </div>
-                ${data.tracks.length <= 20 ? `
-                <div class="w-full md:w-[180px] shrink-0 self-start">
-                    <div class="details-box">
-                        <div class="details-box-header uppercase">Diagnostics</div>
-                        <div class="grid grid-cols-[65px_1fr] gap-x-3 gap-y-1">
-                            <span class="text-right text-[#39ff14] font-semibold">Tracks</span> <span class="text-white font-bold">${data.tracks.length}</span>
-                            <span class="text-right text-[#39ff14] font-semibold">BPM</span>    <span class="text-white">${data.bpm}</span>
-                            <span class="text-right text-[#39ff14] font-semibold">Energy</span> <span>${energyDots}</span>
-                            <span class="text-right text-[#39ff14] font-semibold">Est.</span>   <span class="text-white">~${data.tracks.length * 4}m</span>
-                            <span class="text-right text-[#39ff14] font-semibold">Genre</span>  <span class="text-white" title="${data.genre}">${data.genre}</span>
-                        </div>
-                    </div>
-                </div>` : ''}
                 </div>
             </div>`;
 
@@ -1273,11 +1274,6 @@ Keep the same format. Preserve tracks not affected by the change.`;
             if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('ai-vibe').focus(); }
         });
     });
-
-    // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-    }
 </script>
 </body>
 </html>
