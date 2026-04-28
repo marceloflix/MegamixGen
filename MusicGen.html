@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Megamix Gen - AI Studio</title>
+    <title>MegamixGen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -158,6 +158,11 @@
             50% { opacity: 0.4; }
         }
         .loading-pulse { animation: loadingPulse 1.5s ease-in-out infinite; }
+        /* Mobile touch targets */
+        @media (max-width: 768px) {
+            .flex.gap-1 a.flex.items-center { min-width: 32px; min-height: 32px; width: 32px; height: 32px; font-size: 15px; }
+            .flex.gap-1 a.flex.items-center svg { width: 18px; height: 18px; }
+        }
     </style>
 </head>
 <body>
@@ -169,12 +174,16 @@
             <div class="logo-diamond-blend hidden md:block"></div>
             <div class="leading-none">
                 <span class="text-2xl md:text-3xl font-bold text-white tracking-tight">Megamix<span class="text-[#e0e0e0]">Gen</span></span>
-                <span class="reverb-text ml-2 italic text-2xl md:text-3xl">AI Studio</span>
             </div>
         </div>
-        <button onclick="openSettings()" title="Settings" class="text-[#39ff14] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#39ff14] bg-[#0a0a0a]">
-            <i class="fas fa-cog"></i>
-        </button>
+        <div class="flex gap-2">
+            <button onclick="openStats()" title="Stats" aria-label="View stats" class="text-[#3399ff] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#3399ff] bg-[#0a0a0a]">
+                <i class="fas fa-chart-bar"></i>
+            </button>
+            <button onclick="openSettings()" title="Settings" aria-label="Open settings" class="text-[#39ff14] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#39ff14] bg-[#0a0a0a]">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Settings Modal -->
@@ -211,6 +220,17 @@
                         Cancel
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="stats-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeStats()">
+        <div class="modal-box" style="max-width:500px">
+            <div class="panel-header text-sm"><i class="fas fa-chart-bar mr-2 text-[#3399ff]"></i> DJ Analytics</div>
+            <div id="stats-content" class="p-4"></div>
+            <div class="px-4 pb-4">
+                <button onclick="closeStats()" class="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] border border-[#333] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all">Close</button>
             </div>
         </div>
     </div>
@@ -276,6 +296,12 @@
                 </div>
                 <!-- View toggle -->
                 <div class="flex gap-1 ml-auto">
+                    <button id="btn-merge" onclick="toggleMergeMode()" title="Merge playlists" class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]">
+                        <i class="fas fa-layer-group mr-1"></i>Merge
+                    </button>
+                    <button id="merge-go" onclick="executeMerge()" class="hidden px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a2a0a] border-[#39ff14] text-[#39ff14]">
+                        <i class="fas fa-check mr-1"></i>Merge Selected
+                    </button>
                     <button id="btn-view-normal" onclick="setView('normal')" title="Normal view" class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a1a2a] border-[#3399ff] text-[#3399ff]">
                         <i class="fas fa-th-list mr-1"></i>Full
                     </button>
@@ -299,7 +325,7 @@
 
     <!-- Footer -->
     <div class="bg-black text-[#666] text-[9px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
-        <div>Megamix Gen v3.0 | AI Studio Division</div>
+        <div>Megamix Gen v3.0</div>
         <div class="italic">made by MFlix</div>
     </div>
 </div>
@@ -376,6 +402,64 @@
         document.getElementById('settings-modal').classList.remove('hidden');
     }
     function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
+
+    // ── Stats ──
+    function openStats() {
+        const history = getHistory();
+        const totalMixes = history.length;
+        const totalTracks = history.reduce((s, m) => s + (m.tracks?.length || 0), 0);
+        const totalMinutes = totalTracks * 4;
+        const favCount = history.filter(m => m._favorite).length;
+        const avgEnergy = totalMixes ? (history.reduce((s, m) => s + (parseInt(m.energy) || 3), 0) / totalMixes).toFixed(1) : '0';
+        // Genre frequency
+        const genreCounts = {};
+        history.forEach(m => { if (m.genre) genreCounts[m.genre] = (genreCounts[m.genre] || 0) + 1; });
+        const topGenre = Object.entries(genreCounts).sort((a,b) => b[1] - a[1])[0];
+        // Prompt frequency
+        const promptCounts = {};
+        history.forEach(m => { if (m._prompt) promptCounts[m._prompt] = (promptCounts[m._prompt] || 0) + 1; });
+        const topPrompt = Object.entries(promptCounts).sort((a,b) => b[1] - a[1])[0];
+
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+
+        document.getElementById('stats-content').innerHTML = `
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-[#050505] border border-[#1a4a1a] p-3 text-center">
+                    <div class="text-[#39ff14] text-2xl font-bold">${totalMixes}</div>
+                    <div class="text-[#666] text-[9px] uppercase tracking-widest">Playlists</div>
+                </div>
+                <div class="bg-[#050505] border border-[#1a4a1a] p-3 text-center">
+                    <div class="text-[#3399ff] text-2xl font-bold">${totalTracks}</div>
+                    <div class="text-[#666] text-[9px] uppercase tracking-widest">Total Tracks</div>
+                </div>
+                <div class="bg-[#050505] border border-[#1a4a1a] p-3 text-center">
+                    <div class="text-[#ffcc00] text-2xl font-bold">${favCount}</div>
+                    <div class="text-[#666] text-[9px] uppercase tracking-widest">Favorites</div>
+                </div>
+                <div class="bg-[#050505] border border-[#1a4a1a] p-3 text-center">
+                    <div class="text-[#ff9900] text-2xl font-bold">${avgEnergy}</div>
+                    <div class="text-[#666] text-[9px] uppercase tracking-widest">Avg Energy</div>
+                </div>
+            </div>
+            <div class="space-y-2 text-[11px]">
+                <div class="flex justify-between border-b border-[#222] pb-1">
+                    <span class="text-[#39ff14] font-bold uppercase">Est. Listening Time</span>
+                    <span class="text-white">${hours > 0 ? hours + 'h ' : ''}${mins}m</span>
+                </div>
+                <div class="flex justify-between border-b border-[#222] pb-1">
+                    <span class="text-[#39ff14] font-bold uppercase">Top Genre</span>
+                    <span class="text-white">${topGenre ? topGenre[0] + ' (' + topGenre[1] + 'x)' : 'N/A'}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-[#39ff14] font-bold uppercase">Top Prompt</span>
+                    <span class="text-white truncate ml-3" title="${topPrompt ? topPrompt[0] : ''}">${topPrompt ? topPrompt[0] + ' (' + topPrompt[1] + 'x)' : 'N/A'}</span>
+                </div>
+            </div>
+        `;
+        document.getElementById('stats-modal').classList.remove('hidden');
+    }
+    function closeStats() { document.getElementById('stats-modal').classList.add('hidden'); }
     function saveSettings() {
         const key = document.getElementById('api-key-input').value.trim();
         const statusEl = document.getElementById('api-key-status');
@@ -451,8 +535,28 @@
 
     function showError(msg) {
         const errorDiv = document.getElementById('ai-error');
-        errorDiv.textContent = msg;
+        errorDiv.innerHTML = msg;
         errorDiv.classList.remove('hidden');
+    }
+
+    // ── Rate Limit Countdown ──
+    function showRateLimitCountdown(seconds = 30) {
+        let remaining = seconds;
+        const errorDiv = document.getElementById('ai-error');
+        errorDiv.classList.remove('hidden');
+        const update = () => {
+            errorDiv.innerHTML = `RATE LIMITED. Retry in <span style="color:#ffcc00;font-size:14px">${remaining}s</span> — too many requests.`;
+        };
+        update();
+        const timer = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(timer);
+                errorDiv.classList.add('hidden');
+                return;
+            }
+            update();
+        }, 1000);
     }
 
     // ── Stage Stepper ──
@@ -576,7 +680,7 @@
             if (msg.includes('API_KEY_ERROR')) {
                 showError('INVALID API KEY. Check your key in ⚙ Settings.');
             } else if (msg.includes('MAX_RETRIES') || msg.includes('429')) {
-                showError('RATE LIMITED. Too many requests — wait a moment and try again.');
+                showRateLimitCountdown(30);
             } else if (msg.includes('NO_CONTENT')) {
                 showError('AI RETURNED EMPTY RESPONSE. Try a different prompt.');
             } else {
@@ -605,6 +709,20 @@
         setTimeout(() => { btn.innerHTML = orig; }, 2000);
     }
 
+    // ── Open All in Monochrome ──
+    function openAllMonochrome(btn) {
+        const tracks = decodeURIComponent(btn.getAttribute('data-tracks')).split('\n').filter(Boolean);
+        if (tracks.length > 10 && !confirm(`This will open ${tracks.length} tabs in Monochrome. Continue?`)) return;
+        tracks.forEach((track, i) => {
+            setTimeout(() => {
+                window.open(`https://monochrome.samidy.com/search/${encodeURIComponent(track)}`, '_blank');
+            }, i * 300);
+        });
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check mr-1"></i> Opening...';
+        setTimeout(() => { btn.innerHTML = orig; }, 3000);
+    }
+
     // ── Clipboard ──
     async function copyTracks(btn) {
         const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
@@ -617,6 +735,7 @@
 
     // ── Delete Individual Mix ──
     function deleteMix(btn, ts) {
+        if (!confirm('Delete this playlist?')) return;
         const card = btn.closest('[data-ts]');
         if (!card) return;
         card.style.transition = 'opacity 0.3s, transform 0.3s';
@@ -639,6 +758,156 @@
         setTimeout(() => { span.innerHTML = orig; }, 1200);
     }
 
+    // ── Refine Playlist (Multi-Turn — updates in-place) ──
+    async function refineMix(ts) {
+        const instruction = prompt('How would you like to refine this playlist?\n(e.g. "make it more chill", "replace track 3", "add 5 more tracks")');
+        if (!instruction) return;
+        const apiKey = getApiKey();
+        if (!apiKey) { openSettings(); return; }
+
+        const history = getHistory();
+        const mixIndex = history.findIndex(m => m._timestamp === ts);
+        if (mixIndex === -1) return;
+        const mix = history[mixIndex];
+
+        const btn = document.getElementById('generate-btn');
+        const loading = document.getElementById('ai-loading');
+        const errorDiv = document.getElementById('ai-error');
+        if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        loading.classList.remove('hidden');
+        startLoadingMessages();
+        errorDiv.classList.add('hidden');
+
+        const refinementPrompt = `You are a music curator. Here is an existing playlist called "${mix.title}" with genre "${mix.genre}":
+${mix.tracks.map((t, i) => `${i + 1}. ${t}`).join('\n')}
+
+The user wants to refine it: "${instruction}"
+
+Apply the change and return the COMPLETE updated playlist as JSON:
+{"title":"...","description":"...","tracks":["Artist - Song","..."],"bpm":"...","energy":N,"genre":"..."}
+Keep the same format. Preserve tracks not affected by the change.`;
+
+        const model = getModel();
+        const payload = {
+            contents: [{ parts: [{ text: refinementPrompt }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        title: { type: "STRING" }, description: { type: "STRING" },
+                        tracks: { type: "ARRAY", items: { type: "STRING" } },
+                        bpm: { type: "STRING" }, energy: { type: "INTEGER" }, genre: { type: "STRING" }
+                    },
+                    required: ["title", "description", "tracks", "bpm", "energy", "genre"]
+                }
+            }
+        };
+
+        try {
+            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!responseText) throw new Error("NO_CONTENT");
+            const newMix = JSON.parse(responseText);
+            // Overwrite in-place: keep timestamp and favorite status
+            newMix._timestamp = ts;
+            newMix._favorite = mix._favorite;
+            newMix._prompt = `${mix._prompt || mix.title} → refined: "${instruction}"`;
+            history[mixIndex] = newMix;
+            saveHistory(history);
+            rebuildFeed();
+            // Scroll to the updated card
+            requestAnimationFrame(() => {
+                const el = document.querySelector(`[data-ts="${ts}"]`);
+                if (el) {
+                    el.style.boxShadow = '0 0 20px rgba(255,204,0,0.5)';
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(() => { el.style.boxShadow = ''; }, 2000);
+                }
+            });
+        } catch (e) {
+            showError('REFINEMENT FAILED: ' + (e.message || 'Unknown error'));
+        } finally {
+            if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            loading.classList.add('hidden');
+            stopLoadingMessages();
+        }
+    }
+
+    // ── Merge Playlists ──
+    let mergeMode = false;
+    let mergeSelection = [];
+
+    function toggleMergeMode() {
+        mergeMode = !mergeMode;
+        if (!mergeMode) mergeSelection = [];
+        const mergeBtn = document.getElementById('btn-merge');
+        if (mergeMode) {
+            mergeBtn.className = 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#2a2000] border-[#ffcc00] text-[#ffcc00]';
+            mergeBtn.innerHTML = '<i class="fas fa-times mr-1"></i>Cancel';
+            document.getElementById('merge-go').classList.remove('hidden');
+        } else {
+            mergeBtn.className = 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]';
+            mergeBtn.innerHTML = '<i class="fas fa-layer-group mr-1"></i>Merge';
+            document.getElementById('merge-go').classList.add('hidden');
+        }
+        // Update card selection highlights
+        applyMergeHighlights();
+    }
+
+    function toggleMergeSelect(ts) {
+        if (mergeSelection.includes(ts)) mergeSelection = mergeSelection.filter(t => t !== ts);
+        else mergeSelection.push(ts);
+        applyMergeHighlights();
+    }
+
+    function applyMergeHighlights() {
+        document.querySelectorAll('[data-ts]').forEach(card => {
+            const ts = card.getAttribute('data-ts');
+            const isSelected = mergeSelection.includes(ts);
+            if (mergeMode) {
+                card.style.cursor = 'pointer';
+                if (isSelected) {
+                    card.style.borderColor = '#ffcc00';
+                    card.style.boxShadow = '0 0 12px rgba(255,204,0,0.3)';
+                } else {
+                    card.style.borderColor = '#39ff14';
+                    card.style.boxShadow = '0 0 10px rgba(57,255,20,0.2)';
+                }
+            } else {
+                card.style.cursor = '';
+                card.style.borderColor = '#39ff14';
+                card.style.boxShadow = '0 0 10px rgba(57,255,20,0.2)';
+            }
+        });
+    }
+
+    function executeMerge() {
+        if (mergeSelection.length < 2) { alert('Select at least 2 playlists to merge.'); return; }
+        let history = getHistory();
+        const selected = mergeSelection.map(ts => history.find(m => m._timestamp === ts)).filter(Boolean);
+        const allTracks = [];
+        const seen = new Set();
+        selected.forEach(m => m.tracks.forEach(t => { if (!seen.has(t)) { seen.add(t); allTracks.push(t); } }));
+        const merged = {
+            title: selected.map(m => m.title).join(' + '),
+            description: `Merged playlist from ${selected.length} playlists (${allTracks.length} unique tracks).`,
+            tracks: allTracks,
+            bpm: selected[0].bpm,
+            energy: Math.round(selected.reduce((s, m) => s + (parseInt(m.energy) || 3), 0) / selected.length),
+            genre: [...new Set(selected.map(m => m.genre).filter(Boolean))].join(', '),
+            _prompt: 'Merged: ' + selected.map(m => m._prompt || m.title).join(' + ')
+        };
+        // Remove source playlists from history
+        history = history.filter(m => !mergeSelection.includes(m._timestamp));
+        saveHistory(history);
+        renderNewMix(merged, true);
+        toggleMergeMode();
+    }
+
+
     // ── Render ──
     function buildTrackHTML(track, index) {
         const q = encodeURIComponent(track);
@@ -648,12 +917,12 @@
             <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#2a2a2a] text-[#555] text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
             <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight mr-1 cursor-pointer select-none flex items-center gap-1 group/track">
                 <span class="group-hover/track:text-[#ccc] transition-colors">${track}</span>
-                <i class="fas fa-clipboard text-[#333] text-[10px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0"></i>
+                <i class="fas fa-clipboard text-[#333] text-[10px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0" aria-hidden="true"></i>
             </span>
             <div class="flex gap-1">
-                <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube"></i></a>
-                <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener" title="Search Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify"></i></a>
-                <a href="https://monochrome.samidy.com/search/${q}" target="_blank" rel="noopener" title="Search on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
+                <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" aria-label="Search ${track} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+                <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener" title="Search Spotify" aria-label="Search ${track} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
+                <a href="https://monochrome.samidy.com/search/${q}" target="_blank" rel="noopener" title="Search on Monochrome" aria-label="Search ${track} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
             </div>
         </li>`;
     }
@@ -702,8 +971,9 @@
         const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
         if (searchTerm) {
             history = history.filter(m => {
-                // Prefix match on title, genre, and prompt
-                return [m.title, m.genre, m._prompt].filter(Boolean).some(field => field.toLowerCase().startsWith(searchTerm));
+                // Contains match on title, genre, prompt, and tracks
+                const haystack = [m.title, m.genre, m._prompt, ...(m.tracks || [])].filter(Boolean).join(' ').toLowerCase();
+                return haystack.includes(searchTerm);
             });
         }
         history.slice().reverse().forEach(mix => renderNewMix(mix, false));
@@ -712,6 +982,8 @@
         } else if (container.children.length === 0 && searchTerm) {
             container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-search mr-2"></i>No playlists match that search.</div>';
         }
+        // Re-apply merge highlights after rebuild
+        if (mergeMode) applyMergeHighlights();
     }
 
     function filterHistory() { rebuildFeed(); }
@@ -773,7 +1045,7 @@
                 <div class="flex-1 flex flex-col justify-between">
                     <div class="text-[#b0b0b0] text-[12px]">
                         ${data._prompt ? `<p class="mb-2 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
-                        ${data.description ? `<p class="mb-3 text-[11px] text-[#777] italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
+                        ${data.description ? `<p class="mb-3 text-[11px] text-white italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
                         <div class="bg-[#050505] border border-[#1a4a1a] p-2">
                             <div class="text-[#1a7b1a] text-[9px] uppercase font-bold border-b border-[#111] mb-2 pb-1 flex items-center justify-between">
                                 <span>Tracklist Sequence</span>
@@ -782,14 +1054,22 @@
                             <ul class="mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : 2},1fr)">
                                 ${data.tracks.map((t, i) => buildTrackHTML(t, i)).join('')}
                             </ul>
-                            <div class="mt-3 pt-2 border-t border-[#111] flex justify-end gap-2">
+                            <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2">
+                                <button onclick="openAllMonochrome(this)" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
+                                        class="bg-[#111] hover:bg-[#1a0033] text-[#bb86fc] border border-[#2a0055] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(187,134,252,0.2)]" aria-label="Open all tracks in Monochrome">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="14.75 14.75 70.5 70.5" class="inline mr-1" style="vertical-align:-1px" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg>Open All
+                                </button>
                                 <button onclick="exportPlaylist(this)" data-title="${data.title.replace(/"/g,'&quot;')}" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
                                         class="bg-[#111] hover:bg-[#222] text-[#39ff14] border border-[#1a7b1a] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(57,255,20,0.2)]">
-                                    <i class="fas fa-download mr-1"></i> Export .txt
+                                    <i class="fas fa-download mr-1" aria-hidden="true"></i> Export .txt
                                 </button>
                                 <button onclick="copyTracks(this)" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
                                         class="bg-[#111] hover:bg-[#222] text-[#3399ff] border border-[#3399ff] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(51,153,255,0.2)]">
-                                    <i class="fas fa-copy mr-1"></i> Copy Tracks
+                                    <i class="fas fa-copy mr-1" aria-hidden="true"></i> Copy Tracks
+                                </button>
+                                <button onclick="refineMix('${ts}')" title="Refine this playlist with AI"
+                                        class="bg-[#111] hover:bg-[#1a1a00] text-[#ffcc00] border border-[#554400] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(255,204,0,0.15)]">
+                                    <i class="fas fa-magic mr-1" aria-hidden="true"></i> Refine
                                 </button>
                             </div>
                         </div>
@@ -812,20 +1092,20 @@
             </div>`;
 
         const mixHTML = `
-            <div class="panel group/card border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-300 animate-fade-in-down${isCompact ? ' mix-card-compact' : ''}" data-ts="${ts}">
-                <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a] flex items-center justify-between${isCompact ? ' cursor-pointer' : ''}" ${isCompact ? `onclick="expandAndScrollTo('${ts}')" title="Click to expand"` : ''}>
+            <div class="panel group/card border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-300 animate-fade-in-down${isCompact ? ' mix-card-compact' : ''}" data-ts="${ts}" onclick="if(mergeMode){event.stopPropagation();toggleMergeSelect('${ts}')}">
+                <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a] flex items-center justify-between${isCompact ? ' cursor-pointer' : ''}" ${isCompact && !mergeMode ? `onclick="expandAndScrollTo('${ts}')" title="Click to expand"` : ''}>
                     <div class="text-sm flex items-center gap-2 min-w-0">
                         <i class="fas fa-magic text-[#39ff14] shrink-0"></i>
                         <span class="truncate">${data.title}</span>
                         ${isCompact ? `<span class="text-white text-[10px] shrink-0">${data.tracks.length} tracks &bull; ${currentDate}</span>` : ''}
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
-                        <button onclick="toggleFavorite(this, '${ts}')" title="${starTitle}"
+                        <button onclick="event.stopPropagation();toggleFavorite(this, '${ts}')" title="${starTitle}"
                                 class="${starColor} text-[13px] transition-colors px-1 shrink-0">
                             <i class="${starIcon}"></i>
                         </button>
-                        <button onclick="deleteMix(this, '${ts}')" title="Delete this mix"
-                                class="text-[#555] hover:text-[#ff3333] text-[11px] transition-all px-1 shrink-0 opacity-0 group-hover/card:opacity-100">
+                        <button onclick="event.stopPropagation();deleteMix(this, '${ts}')" title="Delete this mix"
+                                class="text-white hover:text-[#ff3333] text-[11px] transition-all px-1 shrink-0 hover:drop-shadow-[0_0_4px_rgba(255,51,51,0.5)]">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -882,7 +1162,7 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeSettings();
+            if (e.key === 'Escape') { closeSettings(); closeStats(); }
             if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('ai-vibe').focus(); }
         });
     });
