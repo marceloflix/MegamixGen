@@ -1,0 +1,16 @@
+{
+  "name": "MegamixGen",
+  "short_name": "MegamixGen",
+  "description": "AI-powered playlist generator",
+  "start_url": "./MusicGen.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><text y='65' x='50' text-anchor='middle' font-size='50' fill='%2339ff14'>M</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
