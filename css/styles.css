@@ -1,0 +1,232 @@
+/* ── Base ── */
+body {
+    font-family: Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #000000;
+    color: #cccccc;
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0;
+    padding: 10px;
+}
+
+/* ── Layout ── */
+.container-main {
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+    background-color: #111111;
+    border: 1px solid #000;
+    box-shadow: 0 0 25px rgba(0,0,0,0.9);
+}
+
+/* ── Header ── */
+.header-bg {
+    background-image: linear-gradient(to bottom, #151515, #080808);
+    border-bottom: 2px solid #1a7b1a;
+}
+
+/* ── Typography ── */
+.reverb-text {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+    color: #39ff14;
+    font-size: 32px;
+    letter-spacing: -1px;
+    text-shadow: 0 0 10px rgba(57,255,20,0.5);
+}
+
+/* ── Panels ── */
+.panel {
+    background-color: #1a1a1a;
+    border: 1px solid #333333;
+    margin-bottom: 10px;
+}
+
+.panel-header {
+    background-image: linear-gradient(to bottom, #1a4a1a, #0a2a0a);
+    border: 1px solid #1a7b1a;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    box-shadow: inset 0 1px 0 rgba(100,255,100,0.3);
+}
+
+.panel-content {
+    padding: 12px;
+}
+
+/* ── Lists ── */
+.bullet-list {
+    list-style-type: square;
+    padding-left: 15px;
+    margin: 4px 0;
+    color: #aaaaaa;
+}
+
+.bullet-list li {
+    margin-bottom: 2px;
+}
+
+/* ── Details Box ── */
+.details-box {
+    border: 1px solid #39ff14;
+    background-color: #050f05;
+    padding: 8px;
+    font-size: 13px;
+}
+
+.details-box-header {
+    text-align: center;
+    border-bottom: 1px solid #1a4a1a;
+    margin-bottom: 6px;
+    padding-bottom: 3px;
+    color: #39ff14;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+}
+
+/* ── Mix Card Compact Mode ── */
+.mix-card-compact .mix-body  { display: none; }
+.mix-card-compact .mix-datebar { display: none; }
+
+/* ── Animations ── */
+@keyframes stageUp {
+    0%   { opacity:0; transform: translateY(8px); }
+    100% { opacity:1; transform: translateY(0); }
+}
+.stage-anim { animation: stageUp 0.2s ease-out; }
+
+@keyframes diamondHue {
+    0%   { filter: hue-rotate(0deg)   drop-shadow(0 0 5px rgba(255,80,80,0.5)); }
+    100% { filter: hue-rotate(360deg) drop-shadow(0 0 5px rgba(255,80,80,0.5)); }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loadingPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+/* ── Logo Diamond ── */
+.logo-diamond-blend {
+    width: 16px;
+    height: 16px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #ff3333 0%, #3399ff 50%, #39ff14 100%);
+    margin-right: 12px;
+    flex-shrink: 0;
+    animation: diamondHue 14s linear infinite;
+}
+
+/* ── Mix Title Date ── */
+.mix-title-date {
+    font-size: 9px;
+    color: #39ff14;
+    font-weight: normal;
+}
+
+/* ── Utility Classes ── */
+.animate-spin-slow    { animation: spin 3s linear infinite; }
+.animate-fade-in-down { animation: fadeInDown 0.4s ease-out; }
+.loading-pulse        { animation: loadingPulse 1.5s ease-in-out infinite; }
+
+/* ── Form Focus Glows ── */
+input:focus {
+    box-shadow: 0 0 8px rgba(57,255,20,0.5);
+}
+button:hover:not(:disabled) {
+    box-shadow: 0 0 10px rgba(57,255,20,0.4);
+}
+
+/* ── Track Links ── */
+.track-link {
+    opacity: 0.5;
+    transition: opacity 0.2s, color 0.2s;
+    text-decoration: none;
+}
+.track-link:hover { opacity: 1; }
+
+/* ── Key Input ── */
+.key-input-vis { letter-spacing: 2px; }
+
+/* ── Modal ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeInDown 0.25s ease-out;
+}
+.modal-box {
+    background: #111;
+    border: 1px solid #39ff14;
+    box-shadow: 0 0 30px rgba(57,255,20,0.25);
+    width: 90%;
+    max-width: 440px;
+    padding: 0;
+}
+
+/* ── Audio Player Bar ── */
+#audio-player-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 999;
+    background: linear-gradient(to top, #0a0a0a, #111);
+    border-top: 1px solid #1a7b1a;
+    padding: 6px 16px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.8);
+}
+#audio-player-bar.active { display: flex; }
+#audio-progress {
+    flex: 1;
+    height: 4px;
+    background: #222;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+#audio-progress-fill {
+    height: 100%;
+    background: #39ff14;
+    border-radius: 2px;
+    width: 0;
+    transition: width 0.2s;
+}
+
+/* ── Responsive: Tablet ── */
+@media (max-width: 768px) {
+    body { padding: 4px; }
+    .container-main { max-width: 100%; }
+    .flex.gap-1 a.flex.items-center,
+    .flex.gap-1 button.flex.items-center { min-width: 28px; min-height: 28px; width: 28px; height: 28px; font-size: 13px; }
+    .flex.gap-1 a.flex.items-center svg { width: 16px; height: 16px; }
+    ul[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+    .w-full.md\:w-\[180px\] { width: 100% !important; }
+    .flex.gap-1.ml-auto { flex-wrap: wrap; }
+    .flex.flex-wrap.justify-end.gap-2 button { font-size: 9px; padding: 4px 8px; }
+    #audio-player-bar { padding: 6px 8px; gap: 6px; }
+    #audio-track-title { font-size: 10px; max-width: 120px; }
+}
+
+/* ── Responsive: Mobile ── */
+@media (max-width: 480px) {
+    .flex.gap-1.ml-auto button { padding: 6px 8px; font-size: 10px; }
+}
