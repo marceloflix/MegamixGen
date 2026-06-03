@@ -45,11 +45,11 @@ window.addEventListener('DOMContentLoaded', () => {
                 title: 'System Initialization Mix',
                 description: 'Welcome to the Megamix Gen AI Studio. This is a pre-calculated sequence to demonstrate system capabilities. Enter a prompt above to begin generating custom synthetic audio tracklists.',
                 tracks: [
-                    'Daft Punk - Technologic',
-                    'The Chemical Brothers - Galvanize',
-                    'Justice - D.A.N.C.E.',
-                    'Fatboy Slim - Right Here, Right Now',
-                    'Prodigy - Smack My Bitch Up'
+                    { title: 'Technologic', artist: 'Daft Punk', bpm: 126, key: '9A' },
+                    { title: 'Galvanize', artist: 'The Chemical Brothers', bpm: 104, key: '2A' },
+                    { title: 'D.A.N.C.E.', artist: 'Justice', bpm: 113, key: '10A' },
+                    { title: 'Right Here, Right Now', artist: 'Fatboy Slim', bpm: 125, key: '10B' },
+                    { title: 'Smack My Bitch Up', artist: 'The Prodigy', bpm: 135, key: '10A' }
                 ],
                 bpm:   '125-133',
                 genre: 'Electronic Boot Sequence'
