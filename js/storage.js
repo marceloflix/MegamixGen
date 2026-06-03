@@ -35,24 +35,45 @@ function savePrompt(prompt) {
 }
 
 function populatePromptDatalist() {
-    const dl = document.getElementById('prompt-history');
-    if (!dl) return;
-    dl.innerHTML = getPromptHistory()
-        .map(p => `<option value="${p.replace(/"/g, '&quot;')}">`)
-        .join('');
+    // kept as no-op for backward compat
+}
+
+function togglePromptHistory() {
+    const dropdown = document.getElementById('prompt-history-dropdown');
+    if (!dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+    const history = getPromptHistory();
+    if (history.length === 0) {
+        dropdown.innerHTML = '<div class="px-3 py-2 text-[#555] text-[11px] italic">No prompt history yet.</div>';
+    } else {
+        dropdown.innerHTML = history.map(p =>
+            `<div class="prompt-history-item px-3 py-2 text-[#ccc] text-[12px] cursor-pointer hover:bg-[#1a4a1a] hover:text-[#39ff14] transition-colors border-b border-[#111] last:border-0" onclick="selectPromptHistory(this)" data-prompt="${p.replace(/"/g, '&quot;')}">${p}</div>`
+        ).join('');
+    }
+    dropdown.classList.remove('hidden');
+}
+
+function selectPromptHistory(el) {
+    document.getElementById('ai-vibe').value = el.dataset.prompt;
+    document.getElementById('prompt-history-dropdown').classList.add('hidden');
+    document.getElementById('ai-vibe').focus();
 }
 
 function updatePromptSuggestions() {
-    const input = document.getElementById('ai-vibe');
-    const dl    = document.getElementById('prompt-history');
-    if (!dl || !input) return;
-    const val = input.value.trim().toLowerCase();
-    if (!val) { populatePromptDatalist(); return; }
-    dl.innerHTML = getPromptHistory()
-        .filter(p => p.toLowerCase().startsWith(val))
-        .map(p => `<option value="${p.replace(/"/g, '&quot;')}">`)
-        .join('');
+    // no-op, replaced by manual dropdown
 }
+
+// Close history dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('prompt-history-dropdown');
+    const btn = document.getElementById('prompt-history-btn');
+    if (!dropdown || !btn) return;
+    if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
 
 // ── API Key & Model ──
 function getApiKey() {

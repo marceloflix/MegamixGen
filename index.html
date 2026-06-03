@@ -142,10 +142,20 @@
                 <p class="text-white mb-3">Enter a genre, vibe, or era to generate a custom tracklist.</p>
 
                 <div class="flex flex-col md:flex-row gap-2">
-                    <input type="text" id="ai-vibe" list="prompt-history"
-                           placeholder="e.g., 90s Eurodance, Cyberpunk Synthwave..."
-                           class="flex-1 bg-[#111] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#444] transition-colors w-full">
-                    <datalist id="prompt-history"></datalist>
+                    <div class="flex-1 relative">
+                        <div class="flex">
+                            <input type="text" id="ai-vibe"
+                                   placeholder="e.g., 90s Eurodance, Cyberpunk Synthwave..."
+                                   class="flex-1 bg-[#111] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#444] transition-colors w-full">
+                            <button id="prompt-history-btn" onclick="togglePromptHistory()" type="button" title="Prompt history"
+                                    class="bg-[#111] border border-l-0 border-[#333] hover:border-[#39ff14] text-[#555] hover:text-[#39ff14] px-2 transition-colors flex items-center">
+                                <i class="fas fa-chevron-down text-[10px]"></i>
+                            </button>
+                        </div>
+                        <div id="prompt-history-dropdown" class="hidden absolute left-0 right-0 top-full z-50 bg-[#0a0a0a] border border-[#39ff14] border-t-0 max-h-48 overflow-y-auto shadow-[0_8px_20px_rgba(0,0,0,0.8)]">
+                            <!-- populated by JS -->
+                        </div>
+                    </div>
 
                     <div class="flex gap-2 items-stretch">
                         <!-- Stage stepper -->
