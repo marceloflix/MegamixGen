@@ -32,6 +32,7 @@ function initScrollToTop() {
 // ── App Initialisation ──
 window.addEventListener('DOMContentLoaded', () => {
     initScrollToTop();
+    document.body.classList.add(getTextSize());
 
     const history = getHistory();
     if (history.length > 0) {

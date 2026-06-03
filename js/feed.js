@@ -82,6 +82,7 @@ function toggleFavorite(btn, ts) {
 
 // ── Build single track row HTML ──
 function buildTrackHTML(track, index) {
+    const searchQ      = encodeURIComponent(track.replace(' - ', ' '));
     const q            = encodeURIComponent(track);
     const num          = index + 1;
     const trackEscaped = track.replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -94,8 +95,8 @@ function buildTrackHTML(track, index) {
         <div class="flex gap-1 shrink-0 ml-auto">
             <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${track}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#39ff14] group-hover:bg-[#0a2a0a] group-hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
             <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" aria-label="Search ${track} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
-            <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener" title="Search Spotify" aria-label="Search ${track} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
-            <a href="https://monochrome.samidy.com/search/${q}" target="_blank" rel="noopener" title="Search on Monochrome" aria-label="Search ${track} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
+            <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener" title="Search Spotify" aria-label="Search ${track} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
+            <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener" title="Search on Monochrome" aria-label="Search ${track} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
         </div>
     </li>`;
 }

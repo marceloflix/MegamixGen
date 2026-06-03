@@ -9,6 +9,60 @@ body {
     padding: 10px;
 }
 
+/* Text Size Small Scaling (+2) */
+body.text-size-small { font-size: 13px !important; }
+body.text-size-small .text-\[8px\] { font-size: 10px !important; }
+body.text-size-small .text-\[9px\] { font-size: 11px !important; }
+body.text-size-small .text-\[10px\] { font-size: 12px !important; }
+body.text-size-small .text-\[11px\] { font-size: 13px !important; }
+body.text-size-small .text-\[12px\] { font-size: 14px !important; }
+body.text-size-small .text-\[13px\] { font-size: 15px !important; }
+body.text-size-small .text-\[15px\] { font-size: 17px !important; }
+body.text-size-small .text-\[16px\] { font-size: 18px !important; }
+body.text-size-small .text-\[20px\] { font-size: 22px !important; }
+body.text-size-small .text-xs { font-size: 14px !important; }
+body.text-size-small .text-sm { font-size: 16px !important; }
+body.text-size-small .panel-header { font-size: 14px !important; }
+body.text-size-small .details-box { font-size: 15px !important; }
+body.text-size-small .details-box-header { font-size: 13px !important; }
+body.text-size-small .mix-title-date { font-size: 11px !important; }
+
+/* Text Size Normal Scaling (+3) */
+body.text-size-normal { font-size: 14px !important; }
+body.text-size-normal .text-\[8px\] { font-size: 11px !important; }
+body.text-size-normal .text-\[9px\] { font-size: 12px !important; }
+body.text-size-normal .text-\[10px\] { font-size: 13px !important; }
+body.text-size-normal .text-\[11px\] { font-size: 14px !important; }
+body.text-size-normal .text-\[12px\] { font-size: 15px !important; }
+body.text-size-normal .text-\[13px\] { font-size: 16px !important; }
+body.text-size-normal .text-\[15px\] { font-size: 18px !important; }
+body.text-size-normal .text-\[16px\] { font-size: 19px !important; }
+body.text-size-normal .text-\[20px\] { font-size: 23px !important; }
+body.text-size-normal .text-xs { font-size: 15px !important; }
+body.text-size-normal .text-sm { font-size: 17px !important; }
+body.text-size-normal .panel-header { font-size: 15px !important; }
+body.text-size-normal .details-box { font-size: 16px !important; }
+body.text-size-normal .details-box-header { font-size: 14px !important; }
+body.text-size-normal .mix-title-date { font-size: 12px !important; }
+
+/* Text Size Large Scaling */
+body.text-size-large { font-size: 15px !important; }
+body.text-size-large .text-\[8px\] { font-size: 12px !important; }
+body.text-size-large .text-\[9px\] { font-size: 13px !important; }
+body.text-size-large .text-\[10px\] { font-size: 14px !important; }
+body.text-size-large .text-\[11px\] { font-size: 15px !important; }
+body.text-size-large .text-\[12px\] { font-size: 16px !important; }
+body.text-size-large .text-\[13px\] { font-size: 17px !important; }
+body.text-size-large .text-\[15px\] { font-size: 19px !important; }
+body.text-size-large .text-\[16px\] { font-size: 20px !important; }
+body.text-size-large .text-\[20px\] { font-size: 24px !important; }
+body.text-size-large .text-xs { font-size: 16px !important; }
+body.text-size-large .text-sm { font-size: 18px !important; }
+body.text-size-large .panel-header { font-size: 16px !important; }
+body.text-size-large .details-box { font-size: 17px !important; }
+body.text-size-large .details-box-header { font-size: 15px !important; }
+body.text-size-large .mix-title-date { font-size: 13px !important; }
+
 /* ── Layout ── */
 .container-main {
     width: 100%;
@@ -202,6 +256,16 @@ button:hover:not(:disabled) {
     border-radius: 2px;
     cursor: pointer;
     position: relative;
+}
+#audio-progress::before {
+    content: '';
+    position: absolute;
+    top: -16px;
+    bottom: -16px;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    cursor: pointer;
 }
 #audio-progress-fill {
     height: 100%;

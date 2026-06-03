@@ -1,10 +1,26 @@
 // ── Storage Keys ──
 const STORAGE_KEYS = {
-    apiKey:  'megamix_api_key',
-    model:   'megamix_model',
-    history: 'megamix_history',
-    prompts: 'megamix_prompts'
+    apiKey:     'megamix_api_key',
+    model:      'megamix_model',
+    history:    'megamix_history',
+    prompts:    'megamix_prompts',
+    textSize:   'megamix_text_size',
+    autoScroll: 'megamix_auto_scroll',
+    systemPrompt: 'megamix_system_prompt'
 };
+
+const DEFAULT_SYSTEM_PROMPT = `You are a knowledgeable music curator. Create a {{TRACK_COUNT}} track playlist based on this vibe or genre: "{{VIBE}}".
+Choose tracks that genuinely fit the request — consider era, tempo, mood, and sonic cohesion.
+Respond ONLY with a valid JSON object matching this schema.
+{
+    "title": "A concise, descriptive playlist title",
+    "description": "2 sentences max. Describe the mood and sonic character of this playlist, what connects these tracks, and the best context to listen to it (e.g. driving, working, late night). Be informative and direct, no hype.",
+    "tracks": ["Artist - Song Title", "Artist - Song Title"],
+    "bpm": "e.g., 120-135",
+    "energy": 4,
+    "genre": "Short genre name"
+}
+For energy: use an integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).`;
 
 // ── Prompt History ──
 function getPromptHistory() {
@@ -55,6 +71,19 @@ function getModel() {
         return 'gemini-2.5-flash';
     }
     return saved;
+}
+
+function getTextSize() {
+    return localStorage.getItem(STORAGE_KEYS.textSize) || 'text-size-normal';
+}
+
+function getAutoScroll() {
+    const val = localStorage.getItem(STORAGE_KEYS.autoScroll);
+    return val !== null ? val === 'true' : true; // Default to true
+}
+
+function getSystemPrompt() {
+    return localStorage.getItem(STORAGE_KEYS.systemPrompt) || DEFAULT_SYSTEM_PROMPT;
 }
 
 // ── Mix History ──

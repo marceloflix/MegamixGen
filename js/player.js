@@ -79,3 +79,17 @@ function closeAudioPlayer() {
     document.getElementById('audio-player-bar').classList.remove('active');
     document.getElementById('audio-progress-fill').style.width = '0%';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const progressContainer = document.getElementById('audio-progress');
+    if (progressContainer) {
+        progressContainer.addEventListener('click', (e) => {
+            if (!currentAudio || !currentAudio.duration) return;
+            const rect = progressContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const pct = clickX / rect.width;
+            currentAudio.currentTime = pct * currentAudio.duration;
+            document.getElementById('audio-progress-fill').style.width = (pct * 100) + '%';
+        });
+    }
+});

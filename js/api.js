@@ -101,18 +101,10 @@ async function generateMix() {
     startLoadingMessages();
     errorDiv.classList.add('hidden');
 
-    const prompt = `You are a knowledgeable music curator. Create a ${trackCount} track playlist based on this vibe or genre: "${vibe}".
-    Choose tracks that genuinely fit the request — consider era, tempo, mood, and sonic cohesion.
-    Respond ONLY with a valid JSON object matching this schema.
-    {
-        "title": "A concise, descriptive playlist title",
-        "description": "2 sentences max. Describe the mood and sonic character of this playlist, what connects these tracks, and the best context to listen to it (e.g. driving, working, late night). Be informative and direct, no hype.",
-        "tracks": ["Artist - Song Title", "Artist - Song Title"],
-        "bpm": "e.g., 120-135",
-        "energy": 4,
-        "genre": "Short genre name"
-    }
-    For energy: use an integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).`;
+    const promptTemplate = getSystemPrompt();
+    const prompt = promptTemplate
+        .replace(/{{TRACK_COUNT}}/g, trackCount)
+        .replace(/{{VIBE}}/g, vibe);
 
     const model   = getModel();
     const payload = {
@@ -131,6 +123,9 @@ async function generateMix() {
         renderNewMix(mixData, true);
         savePrompt(vibe);
         vibeInput.value = '';
+        if (getAutoScroll()) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     } catch (error) {
         console.error('Gemini API Error:', error);
         const msg = error.message || '';
@@ -196,7 +191,9 @@ Keep the same format. Preserve tracks not affected by the change.`;
             const el = document.querySelector(`[data-ts="${ts}"]`);
             if (el) {
                 el.style.boxShadow = '0 0 20px rgba(255,204,0,0.5)';
-                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (getAutoScroll()) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
                 setTimeout(() => { el.style.boxShadow = ''; }, 2000);
             }
         });

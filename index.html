@@ -52,16 +52,37 @@
                 <div>
                     <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Model</label>
                     <select id="model-select" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-2 outline-none font-bold text-[12px] cursor-pointer">
-                        <optgroup label="Gemini 3" style="color:#555;font-style:normal">
-                            <option value="gemini-3.1-flash-lite-preview" style="color:#fff">3.1 Flash-Lite</option>
-                            <option value="gemini-3-flash-preview"        style="color:#fff">3 Flash</option>
+                        <optgroup label="Gemini 3.5" style="color:#555;font-style:normal">
+                            <option value="gemini-3.5-flash" style="color:#fff">3.5 Flash</option>
+                        </optgroup>
+                        <optgroup label="Gemini 3.1" style="color:#555;font-style:normal">
+                            <option value="gemini-3.1-flash-lite" style="color:#fff">3.1 Flash-Lite</option>
                         </optgroup>
                         <optgroup label="Gemini 2.5" style="color:#555;font-style:normal">
-                            <option value="gemini-2.5-flash-lite" style="color:#fff">2.5 Flash-Lite</option>
                             <option value="gemini-2.5-flash" selected style="color:#fff">2.5 Flash ✓</option>
-                            <option value="gemini-2.5-pro"       style="color:#fff">2.5 Pro</option>
+                            <option value="gemini-2.5-flash-lite" style="color:#fff">2.5 Flash-Lite</option>
                         </optgroup>
                     </select>
+                </div>
+                <div>
+                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Text Size</label>
+                    <select id="text-size-select" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-2 outline-none font-bold text-[12px] cursor-pointer">
+                        <option value="text-size-small" style="color:#fff">Small</option>
+                        <option value="text-size-normal" style="color:#fff">Normal ✓</option>
+                        <option value="text-size-large" style="color:#fff">Large</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="auto-scroll-toggle" class="cursor-pointer">
+                    <label for="auto-scroll-toggle" class="text-[#888] text-[10px] uppercase font-bold cursor-pointer">Auto-scroll to new playlists</label>
+                </div>
+                <div>
+                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1 flex justify-between">
+                        <span>System Prompt</span>
+                        <button onclick="document.getElementById('system-prompt-input').value = DEFAULT_SYSTEM_PROMPT" class="text-[#3399ff] hover:text-white transition-colors">Reset to Default</button>
+                    </label>
+                    <textarea id="system-prompt-input" rows="6" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#ccc] px-3 py-2 outline-none font-mono text-[10px] resize-y"></textarea>
+                    <p class="text-[#555] text-[9px] mt-1">Placeholders: <span class="text-[#39ff14]">{{TRACK_COUNT}}</span> and <span class="text-[#39ff14]">{{VIBE}}</span>.</p>
                 </div>
                 <div class="flex gap-2 pt-2 border-t border-[#222]">
                     <button onclick="saveSettings()" class="flex-1 bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all">
