@@ -86,13 +86,13 @@ function buildTrackHTML(track, index) {
     const q            = encodeURIComponent(track);
     const num          = index + 1;
     const trackEscaped = track.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    return `<li class="flex items-center gap-2 py-[5px] border-b border-[#0f1f0f] last:border-0 group" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06)">
+    return `<li class="track-row flex items-center gap-2 py-[5px] border-b border-[#0f1f0f] last:border-0 group" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06)">
         <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#2a2a2a] text-[#555] text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
-        <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight cursor-pointer select-none flex items-center gap-1 group/track min-w-0 overflow-hidden">
-            <span class="group-hover/track:text-[#ccc] transition-colors truncate">${track}</span>
+        <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight cursor-pointer select-none flex items-center gap-1 group/track min-w-0">
+            <span class="track-name group-hover/track:text-[#ccc] transition-colors">${track}</span>
             <i class="fas fa-clipboard text-[#333] text-[10px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0" aria-hidden="true"></i>
         </span>
-        <div class="flex gap-1 shrink-0 ml-auto">
+        <div class="track-actions flex gap-1 shrink-0 ml-auto">
             <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${track}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#39ff14] group-hover:bg-[#0a2a0a] group-hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
             <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" aria-label="Search ${track} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
             <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener" title="Search Spotify" aria-label="Search ${track} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
@@ -149,7 +149,7 @@ function renderNewMix(data, persist = false) {
                             <span>Tracklist Sequence</span>
                             <span class="text-[#3399ff]"><i class="fas fa-list-ul"></i></span>
                         </div>
-                        <ul class="mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : 2},1fr)">
+                        <ul class="tracklist-grid mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : 2},1fr)">
                             ${data.tracks.map((t, i) => buildTrackHTML(t, i)).join('')}
                         </ul>
                         <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2">
