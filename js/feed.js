@@ -155,7 +155,8 @@ function renderNewMix(data, persist = false) {
         const barsHTML = bpms.map((bpm, i) => {
             if (!bpm) return `<div class="flex-1"></div>`;
             const pct = Math.max(10, Math.min(100, ((bpm - minBpm) / (maxBpm - minBpm)) * 100));
-            return `<div onclick="event.stopPropagation();highlightTrack('${ts}', ${i})" class="flex-1 bg-[#39ff14] hover:bg-[#ffcc00] transition-colors cursor-pointer group/bar relative" style="height:${pct}%; box-shadow:0 0 5px rgba(57,255,20,0.3)">
+            return `<div onclick="event.stopPropagation();highlightTrack('${ts}', ${i})" class="flex-1 flex flex-col justify-end cursor-pointer group/bar relative">
+                <div class="w-full bg-[#39ff14] group-hover/bar:bg-[#ffcc00] transition-colors" style="height:${pct}%; box-shadow:0 0 5px rgba(57,255,20,0.3)"></div>
                 <span class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-bold px-1 py-[2px] border border-[#333] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">${bpm} BPM</span>
             </div>`;
         }).join('');
@@ -164,7 +165,7 @@ function renderNewMix(data, persist = false) {
                 <span>BPM Flow</span>
                 <button onclick="event.stopPropagation();sortMixByBpm('${ts}')" class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(57,255,20,0.2)] flex items-center -translate-y-[10px] scale-[1.15] origin-right" title="Sort Low to High"><i class="fas fa-sort-amount-up mr-1"></i>Sort</button>
             </div>
-            <div class="h-8 flex items-end gap-[2px] w-full">${barsHTML}</div>
+            <div class="h-8 flex items-stretch gap-[2px] w-full">${barsHTML}</div>
         </div>`;
     }
 
