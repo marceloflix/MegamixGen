@@ -13,19 +13,7 @@ function exportPlaylist(btn) {
     setTimeout(() => { btn.innerHTML = orig; }, 2000);
 }
 
-// ── Open All in Monochrome ──
-function openAllMonochrome(btn) {
-    const tracks = decodeURIComponent(btn.getAttribute('data-tracks')).split('\n').filter(Boolean);
-    if (tracks.length > 10 && !confirm(`This will open ${tracks.length} tabs in Monochrome. Continue?`)) return;
-    tracks.forEach((track, i) => {
-        setTimeout(() => {
-            window.open(`https://monochrome.samidy.com/search/${encodeURIComponent(track)}`, '_blank');
-        }, i * 300);
-    });
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Opening...';
-    setTimeout(() => { btn.innerHTML = orig; }, 3000);
-}
+
 
 // ── Copy Full Tracklist ──
 async function copyTracks(btn) {
@@ -74,4 +62,47 @@ function deleteMix(btn, ts) {
         const history = getHistory().filter(m => m._timestamp !== ts);
         saveHistory(history);
     }, 300);
+}
+
+// ── Export M3U ──
+function exportM3U(btn) {
+    const title      = btn.getAttribute('data-title') || 'playlist';
+    const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
+    const tracksArray = tracksText.split('\n').filter(Boolean);
+    
+    let m3uContent = '#EXTM3U\n';
+    tracksArray.forEach(track => {
+        m3uContent += `#EXTINF:-1,${track}\n${track}.mp3\n`;
+    });
+    
+    const blob = new Blob([m3uContent], { type: 'audio/x-mpegurl' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `${title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}.m3u`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Saved!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+}
+
+// ── Sort Mix by BPM ──
+function sortMixByBpm(ts) {
+    const history = getHistory();
+    const mix = history.find(m => m._timestamp === ts);
+    if (!mix) return;
+    
+    mix.tracks.sort((a, b) => {
+        const bpmA = (typeof a === 'object' && a.bpm) ? parseInt(a.bpm) : 9999;
+        const bpmB = (typeof b === 'object' && b.bpm) ? parseInt(b.bpm) : 9999;
+        return bpmA - bpmB;
+    });
+    
+    saveHistory(history);
+    rebuildFeed();
+    
+    setTimeout(() => {
+        const el = document.querySelector(`[data-ts="${ts}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
 }

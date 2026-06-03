@@ -74,7 +74,19 @@ const GEMINI_RESPONSE_SCHEMA = {
     properties: {
         title: { type: 'STRING' },
         description: { type: 'STRING' },
-        tracks: { type: 'ARRAY', items: { type: 'STRING' } },
+        tracks: { 
+            type: 'ARRAY', 
+            items: { 
+                type: 'OBJECT',
+                properties: {
+                    title: { type: 'STRING' },
+                    artist: { type: 'STRING' },
+                    bpm: { type: 'INTEGER' },
+                    key: { type: 'STRING' }
+                },
+                required: ['title', 'artist', 'bpm', 'key']
+            } 
+        },
         bpm: { type: 'STRING' },
         energy: { type: 'INTEGER' },
         genre: { type: 'STRING' }
@@ -117,11 +129,14 @@ async function generateMix() {
     {
         "title": "A concise, descriptive playlist title",
         "description": "2 sentences max. Describe the mood and sonic character of this playlist, what connects these tracks, and the best context to listen to it (e.g. driving, working, late night). Be informative and direct, no hype.",
-        "tracks": ["Artist - Song Title", "Artist - Song Title"],
+        "tracks": [
+            { "title": "Song Title", "artist": "Artist", "bpm": 128, "key": "8A" }
+        ],
         "bpm": "e.g., 120-135",
         "energy": 4,
         "genre": "Short genre name"
     }
+    For tracks: provide realistic BPM (integer) and harmonic Key in Camelot format (e.g. 8A, 11B).
     For energy: use an integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).`;
 
     const model = getModel();

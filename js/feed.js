@@ -80,23 +80,47 @@ function toggleFavorite(btn, ts) {
     if (currentFilter === 'favorites' && !isFav) rebuildFeed();
 }
 
+// ── Highlight Track ──
+function highlightTrack(ts, index) {
+    const el = document.getElementById(`track-${ts}-${index}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.backgroundColor = '#1a3a1a';
+    setTimeout(() => { el.style.backgroundColor = 'transparent'; }, 1500);
+}
+
+// ── Track string helper ──
+function getTrackString(t) {
+    if (!t) return '';
+    return typeof t === 'string' ? t : `${t.artist} - ${t.title}`;
+}
+
 // ── Build single track row HTML ──
-function buildTrackHTML(track, index) {
-    const searchQ      = encodeURIComponent(track.replace(' - ', ' '));
-    const q            = encodeURIComponent(track);
-    const num          = index + 1;
-    const trackEscaped = track.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    return `<li class="track-row flex items-center gap-2 py-[5px] border-b border-[#0f1f0f] last:border-0 group" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06)">
+function buildTrackHTML(track, index, ts) {
+    const isObj = typeof track === 'object' && track !== null;
+    const trackStr = getTrackString(track);
+    const searchQ = encodeURIComponent(trackStr.replace(' - ', ' '));
+    const q = encodeURIComponent(trackStr);
+    const num = index + 1;
+    const trackEscaped = trackStr.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    
+    let badgesHTML = '';
+    if (isObj && track.bpm && track.key) {
+        badgesHTML = `<span class="ml-2 flex items-center gap-1 shrink-0"><span class="bg-[#111] border border-[#222] text-[#ffcc00] text-[8px] font-bold px-1 py-[2px] rounded uppercase tracking-wider">${track.bpm}</span><span class="bg-[#111] border border-[#222] text-[#3399ff] text-[8px] font-bold px-1 py-[2px] rounded uppercase tracking-wider">${track.key}</span></span>`;
+    }
+
+    return `<li id="track-${ts}-${index}" class="track-row flex items-center gap-2 py-[5px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
         <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#2a2a2a] text-[#555] text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
-        <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight cursor-pointer select-none flex items-center gap-1 group/track min-w-0">
-            <span class="track-name group-hover/track:text-[#ccc] transition-colors">${track}</span>
+        <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight cursor-pointer select-none flex items-center flex-wrap gap-1 group/track min-w-0">
+            <span class="track-name group-hover/track:text-[#ccc] transition-colors">${trackStr}</span>
+            ${badgesHTML}
             <i class="fas fa-clipboard text-[#333] text-[10px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0" aria-hidden="true"></i>
         </span>
-        <div class="track-actions flex gap-1 shrink-0 ml-auto">
-            <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${track}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#39ff14] group-hover:bg-[#0a2a0a] group-hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
-            <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" aria-label="Search ${track} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
-            <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener" title="Search Spotify" aria-label="Search ${track} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
-            <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener" title="Search on Monochrome" aria-label="Search ${track} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
+        <div class="track-actions flex gap-1 shrink-0 ml-auto items-center">
+            <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${trackStr}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#39ff14] group-hover:bg-[#0a2a0a] group-hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
+            <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="Search YouTube" aria-label="Search ${trackStr} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#ff4444] group-hover:bg-[#330000] group-hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+            <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener" title="Search Spotify" aria-label="Search ${trackStr} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#1db954] group-hover:bg-[#003300] group-hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
+            <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener" title="Search on Monochrome" aria-label="Search ${trackStr} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
         </div>
     </li>`;
 }
@@ -122,13 +146,37 @@ function renderNewMix(data, persist = false) {
         return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:2px;vertical-align:middle"></span>`;
     }).join('');
 
+    const bpms = data.tracks.map(t => (typeof t === 'object' && t.bpm ? parseInt(t.bpm) : null));
+    const validBpms = bpms.filter(b => b);
+    let visualizerHTML = '';
+    if (validBpms.length > 0) {
+        const minBpm = Math.min(...validBpms) - 5;
+        const maxBpm = Math.max(...validBpms) + 5;
+        const barsHTML = bpms.map((bpm, i) => {
+            if (!bpm) return `<div class="flex-1"></div>`;
+            const pct = Math.max(10, Math.min(100, ((bpm - minBpm) / (maxBpm - minBpm)) * 100));
+            return `<div onclick="event.stopPropagation();highlightTrack('${ts}', ${i})" class="flex-1 bg-[#39ff14] hover:bg-[#ffcc00] transition-colors cursor-pointer group/bar relative" style="height:${pct}%; box-shadow:0 0 5px rgba(57,255,20,0.3)">
+                <span class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-bold px-1 py-[2px] border border-[#333] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">${bpm} BPM</span>
+            </div>`;
+        }).join('');
+        visualizerHTML = `<div class="bg-[#050505] border border-[#111] p-2 mt-2 flex flex-col gap-1 w-full max-w-xs ml-auto">
+            <div class="flex items-center justify-between text-[#1a7b1a] text-[8px] uppercase font-bold tracking-widest">
+                <span>BPM Flow</span>
+                <button onclick="event.stopPropagation();sortMixByBpm('${ts}')" class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(57,255,20,0.2)] flex items-center -translate-y-[3px]" title="Sort Low to High"><i class="fas fa-sort-amount-up mr-1"></i>Sort</button>
+            </div>
+            <div class="h-8 flex items-end gap-[2px] w-full">${barsHTML}</div>
+        </div>`;
+    }
+
+    const flatTracksStr = encodeURIComponent(data.tracks.map(getTrackString).join('\n'));
+
     const bodyHTML = isCompact ? '' : `
         <div class="mix-datebar bg-[#050f05] text-right px-2 py-[2px] mix-title-date border-b border-[#1a4a1a] text-[#39ff14] uppercase tracking-wider">
             ${currentDate} @ ${currentTime}
         </div>
         <div class="mix-body panel-content flex flex-col gap-4">
             <div class="details-box">
-                <div class="flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
+                <div class="flex items-start justify-between flex-wrap gap-x-4 gap-y-1">
                     <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
                     <span class="flex items-center gap-3 flex-wrap">
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px]">${data.tracks.length}</span></span>
@@ -137,6 +185,7 @@ function renderNewMix(data, persist = false) {
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Est.</span><span class="text-white text-[11px]">~${data.tracks.length * 4}m</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre}</span></span>
                     </span>
+                    ${visualizerHTML}
                 </div>
             </div>
             <div class="flex flex-col gap-4">
@@ -150,18 +199,19 @@ function renderNewMix(data, persist = false) {
                             <span class="text-[#3399ff]"><i class="fas fa-list-ul"></i></span>
                         </div>
                         <ul class="tracklist-grid mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : 2},1fr)">
-                            ${data.tracks.map((t, i) => buildTrackHTML(t, i)).join('')}
+                            ${data.tracks.map((t, i) => buildTrackHTML(t, i, ts)).join('')}
                         </ul>
                         <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2">
-                            <button onclick="openAllMonochrome(this)" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
-                                    class="bg-[#111] hover:bg-[#1a0033] text-[#bb86fc] border border-[#2a0055] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(187,134,252,0.2)]" aria-label="Open all tracks in Monochrome">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="14.75 14.75 70.5 70.5" class="inline mr-1" style="vertical-align:-1px" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg>Open All
+
+                            <button onclick="exportM3U(this)" data-title="${data.title.replace(/"/g, '&quot;')}" data-tracks="${flatTracksStr}"
+                                    class="bg-[#111] hover:bg-[#1a0033] text-[#bb86fc] border border-[#2a0055] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(187,134,252,0.2)]">
+                                <i class="fas fa-music mr-1" aria-hidden="true"></i> Export .m3u
                             </button>
-                            <button onclick="exportPlaylist(this)" data-title="${data.title.replace(/"/g, '&quot;')}" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
+                            <button onclick="exportPlaylist(this)" data-title="${data.title.replace(/"/g, '&quot;')}" data-tracks="${flatTracksStr}"
                                     class="bg-[#111] hover:bg-[#222] text-[#39ff14] border border-[#1a7b1a] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(57,255,20,0.2)]">
                                 <i class="fas fa-download mr-1" aria-hidden="true"></i> Export .txt
                             </button>
-                            <button onclick="copyTracks(this)" data-tracks="${encodeURIComponent(data.tracks.join('\n'))}"
+                            <button onclick="copyTracks(this)" data-tracks="${flatTracksStr}"
                                     class="bg-[#111] hover:bg-[#222] text-[#3399ff] border border-[#3399ff] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(51,153,255,0.2)]">
                                 <i class="fas fa-copy mr-1" aria-hidden="true"></i> Copy Tracks
                             </button>
