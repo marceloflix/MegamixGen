@@ -319,3 +319,19 @@ button:hover:not(:disabled) {
         width: 100%;
     }
 }
+
+/* ── Merge Mode Overlay & Interactions ── */
+body.merge-active [data-ts] {
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+body.merge-active [data-ts] * {
+    pointer-events: none;
+}
+body.merge-active [data-ts]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4) !important;
+    border-color: #ffcc00 !important;
+}
+body.merge-active [data-ts]:active {
+    transform: translateY(0);
+}

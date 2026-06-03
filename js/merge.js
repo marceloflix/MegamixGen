@@ -10,10 +10,12 @@ function toggleMergeMode() {
         mergeBtn.className = 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#2a2000] border-[#ffcc00] text-[#ffcc00]';
         mergeBtn.innerHTML = '<i class="fas fa-times mr-1"></i>Cancel';
         document.getElementById('merge-go').classList.remove('hidden');
+        document.body.classList.add('merge-active');
     } else {
         mergeBtn.className = 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]';
         mergeBtn.innerHTML = '<i class="fas fa-layer-group mr-1"></i>Merge';
         document.getElementById('merge-go').classList.add('hidden');
+        document.body.classList.remove('merge-active');
     }
     applyMergeHighlights();
 }

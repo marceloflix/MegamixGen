@@ -21,7 +21,14 @@ const DEFAULT_PROMPT = {
 
 // ── Prompt History ──
 function getPromptHistory() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.prompts)) || []; }
+    try {
+        let prompts = JSON.parse(localStorage.getItem(STORAGE_KEYS.prompts)) || [];
+        if (prompts.length > 10) {
+            prompts = prompts.slice(0, 10);
+            localStorage.setItem(STORAGE_KEYS.prompts, JSON.stringify(prompts));
+        }
+        return prompts;
+    }
     catch { return []; }
 }
 
@@ -29,7 +36,7 @@ function savePrompt(prompt) {
     if (!prompt) return;
     let prompts = getPromptHistory().filter(p => p !== prompt);
     prompts.unshift(prompt);
-    if (prompts.length > 20) prompts.length = 20;
+    if (prompts.length > 10) prompts.length = 10;
     localStorage.setItem(STORAGE_KEYS.prompts, JSON.stringify(prompts));
     populatePromptDatalist();
 }
