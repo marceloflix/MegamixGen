@@ -162,7 +162,7 @@ function renderNewMix(data, persist = false) {
         visualizerHTML = `<div class="bg-[#050505] border border-[#111] p-2 mt-2 flex flex-col gap-1 w-full max-w-xs ml-auto">
             <div class="flex items-center justify-between text-[#1a7b1a] text-[8px] uppercase font-bold tracking-widest">
                 <span>BPM Flow</span>
-                <button onclick="event.stopPropagation();sortMixByBpm('${ts}')" class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(57,255,20,0.2)] flex items-center -translate-y-[3px]" title="Sort Low to High"><i class="fas fa-sort-amount-up mr-1"></i>Sort</button>
+                <button onclick="event.stopPropagation();sortMixByBpm('${ts}')" class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(57,255,20,0.2)] flex items-center -translate-y-[10px] scale-[1.15] origin-right" title="Sort Low to High"><i class="fas fa-sort-amount-up mr-1"></i>Sort</button>
             </div>
             <div class="h-8 flex items-end gap-[2px] w-full">${barsHTML}</div>
         </div>`;
