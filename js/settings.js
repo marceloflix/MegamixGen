@@ -8,9 +8,19 @@ function openSettings() {
     
     document.getElementById('text-size-select').value = getTextSize();
     document.getElementById('auto-scroll-toggle').checked = getAutoScroll();
-    document.getElementById('system-prompt-input').value = getSystemPrompt();
+    document.getElementById('prompt-persona-input').value = getPromptPersona();
+    document.getElementById('prompt-constraints-input').value = getPromptConstraints();
+    document.getElementById('prompt-explicit-input').value = getPromptExplicit();
+    document.getElementById('prompt-popularity-input').value = getPromptPopularity();
     
     document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function resetStructuredPrompt() {
+    document.getElementById('prompt-persona-input').value = DEFAULT_PROMPT.persona;
+    document.getElementById('prompt-constraints-input').value = DEFAULT_PROMPT.constraints;
+    document.getElementById('prompt-explicit-input').value = DEFAULT_PROMPT.explicit;
+    document.getElementById('prompt-popularity-input').value = DEFAULT_PROMPT.popularity;
 }
 
 function applyTextSize(sizeClass) {
@@ -34,7 +44,10 @@ function saveSettings() {
         const model = document.getElementById('model-select').value;
         const textSize = document.getElementById('text-size-select').value;
         const autoScroll = document.getElementById('auto-scroll-toggle').checked;
-        const systemPrompt = document.getElementById('system-prompt-input').value;
+        const persona = document.getElementById('prompt-persona-input').value;
+        const constraints = document.getElementById('prompt-constraints-input').value;
+        const explicit = document.getElementById('prompt-explicit-input').value;
+        const popularity = document.getElementById('prompt-popularity-input').value;
         
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${key}`)
             .then(r => {
@@ -45,7 +58,10 @@ function saveSettings() {
                     localStorage.setItem(STORAGE_KEYS.model, model);
                     localStorage.setItem(STORAGE_KEYS.textSize, textSize);
                     localStorage.setItem(STORAGE_KEYS.autoScroll, autoScroll);
-                    localStorage.setItem(STORAGE_KEYS.systemPrompt, systemPrompt);
+                    localStorage.setItem(STORAGE_KEYS.promptPersona, persona);
+                    localStorage.setItem(STORAGE_KEYS.promptConstraints, constraints);
+                    localStorage.setItem(STORAGE_KEYS.promptExplicit, explicit);
+                    localStorage.setItem(STORAGE_KEYS.promptPopularity, popularity);
                     applyTextSize(textSize);
                     setTimeout(() => closeSettings(), 800);
                 } else {
@@ -60,7 +76,10 @@ function saveSettings() {
                 localStorage.setItem(STORAGE_KEYS.model, model);
                 localStorage.setItem(STORAGE_KEYS.textSize, textSize);
                 localStorage.setItem(STORAGE_KEYS.autoScroll, autoScroll);
-                localStorage.setItem(STORAGE_KEYS.systemPrompt, systemPrompt);
+                localStorage.setItem(STORAGE_KEYS.promptPersona, persona);
+                localStorage.setItem(STORAGE_KEYS.promptConstraints, constraints);
+                localStorage.setItem(STORAGE_KEYS.promptExplicit, explicit);
+                localStorage.setItem(STORAGE_KEYS.promptPopularity, popularity);
                 applyTextSize(textSize);
                 setTimeout(() => closeSettings(), 1200);
             });
@@ -69,7 +88,10 @@ function saveSettings() {
         localStorage.setItem(STORAGE_KEYS.model, document.getElementById('model-select').value);
         localStorage.setItem(STORAGE_KEYS.textSize, document.getElementById('text-size-select').value);
         localStorage.setItem(STORAGE_KEYS.autoScroll, document.getElementById('auto-scroll-toggle').checked);
-        localStorage.setItem(STORAGE_KEYS.systemPrompt, document.getElementById('system-prompt-input').value);
+        localStorage.setItem(STORAGE_KEYS.promptPersona, document.getElementById('prompt-persona-input').value);
+        localStorage.setItem(STORAGE_KEYS.promptConstraints, document.getElementById('prompt-constraints-input').value);
+        localStorage.setItem(STORAGE_KEYS.promptExplicit, document.getElementById('prompt-explicit-input').value);
+        localStorage.setItem(STORAGE_KEYS.promptPopularity, document.getElementById('prompt-popularity-input').value);
         applyTextSize(document.getElementById('text-size-select').value);
         closeSettings();
     }

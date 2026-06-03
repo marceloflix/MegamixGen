@@ -76,13 +76,36 @@
                     <input type="checkbox" id="auto-scroll-toggle" class="cursor-pointer">
                     <label for="auto-scroll-toggle" class="text-[#888] text-[10px] uppercase font-bold cursor-pointer">Auto-scroll to new playlists</label>
                 </div>
-                <div>
-                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1 flex justify-between">
-                        <span>System Prompt</span>
-                        <button onclick="document.getElementById('system-prompt-input').value = DEFAULT_SYSTEM_PROMPT" class="text-[#3399ff] hover:text-white transition-colors">Reset to Default</button>
+                <div class="border-t border-[#222] pt-3 mt-1">
+                    <label class="block text-[#39ff14] text-[11px] uppercase font-bold mb-3 flex justify-between items-center border-b border-[#111] pb-1">
+                        <span>Advanced Prompt Configuration</span>
+                        <button onclick="resetStructuredPrompt()" class="text-[#3399ff] hover:text-white transition-colors text-[9px] uppercase">Reset to Default</button>
                     </label>
-                    <textarea id="system-prompt-input" rows="6" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#ccc] px-3 py-2 outline-none font-mono text-[10px] resize-y"></textarea>
-                    <p class="text-[#555] text-[9px] mt-1">Placeholders: <span class="text-[#39ff14]">{{TRACK_COUNT}}</span> and <span class="text-[#39ff14]">{{VIBE}}</span>.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">AI Persona (Role)</label>
+                            <input type="text" id="prompt-persona-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-2 outline-none text-[11px]">
+                        </div>
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">Additional Selection Rules / Constraints</label>
+                            <textarea id="prompt-constraints-input" rows="2" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-2 outline-none text-[11px] resize-y"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">Explicit Content</label>
+                            <select id="prompt-explicit-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-2 outline-none text-[11px] cursor-pointer">
+                                <option value="allow" style="color:#fff">Allow Explicit Tracks</option>
+                                <option value="clean" style="color:#fff">Clean Tracks Only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">Track Popularity Focus</label>
+                            <select id="prompt-popularity-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-2 outline-none text-[11px] cursor-pointer">
+                                <option value="any" style="color:#fff">Any (Balanced)</option>
+                                <option value="mainstream" style="color:#fff">Mainstream Hits & Popular</option>
+                                <option value="obscure" style="color:#fff">Underground & Obscure</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex gap-2 pt-2 border-t border-[#222]">
                     <button onclick="saveSettings()" class="flex-1 bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all">

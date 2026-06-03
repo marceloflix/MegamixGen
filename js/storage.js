@@ -6,21 +6,18 @@ const STORAGE_KEYS = {
     prompts:    'megamix_prompts',
     textSize:   'megamix_text_size',
     autoScroll: 'megamix_auto_scroll',
-    systemPrompt: 'megamix_system_prompt'
+    promptPersona: 'megamix_prompt_persona',
+    promptConstraints: 'megamix_prompt_constraints',
+    promptExplicit: 'megamix_prompt_explicit',
+    promptPopularity: 'megamix_prompt_popularity'
 };
 
-const DEFAULT_SYSTEM_PROMPT = `You are a knowledgeable music curator. Create a {{TRACK_COUNT}} track playlist based on this vibe or genre: "{{VIBE}}".
-Choose tracks that genuinely fit the request — consider era, tempo, mood, and sonic cohesion.
-Respond ONLY with a valid JSON object matching this schema.
-{
-    "title": "A concise, descriptive playlist title",
-    "description": "2 sentences max. Describe the mood and sonic character of this playlist, what connects these tracks, and the best context to listen to it (e.g. driving, working, late night). Be informative and direct, no hype.",
-    "tracks": ["Artist - Song Title", "Artist - Song Title"],
-    "bpm": "e.g., 120-135",
-    "energy": 4,
-    "genre": "Short genre name"
-}
-For energy: use an integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).`;
+const DEFAULT_PROMPT = {
+    persona: "a knowledgeable music curator",
+    constraints: "Choose tracks that genuinely fit the request — consider era, tempo, mood, and sonic cohesion.",
+    explicit: "allow", // 'allow' or 'clean'
+    popularity: "any" // 'any', 'mainstream', 'obscure'
+};
 
 // ── Prompt History ──
 function getPromptHistory() {
@@ -82,8 +79,17 @@ function getAutoScroll() {
     return val !== null ? val === 'true' : true; // Default to true
 }
 
-function getSystemPrompt() {
-    return localStorage.getItem(STORAGE_KEYS.systemPrompt) || DEFAULT_SYSTEM_PROMPT;
+function getPromptPersona() {
+    return localStorage.getItem(STORAGE_KEYS.promptPersona) || DEFAULT_PROMPT.persona;
+}
+function getPromptConstraints() {
+    return localStorage.getItem(STORAGE_KEYS.promptConstraints) || DEFAULT_PROMPT.constraints;
+}
+function getPromptExplicit() {
+    return localStorage.getItem(STORAGE_KEYS.promptExplicit) || DEFAULT_PROMPT.explicit;
+}
+function getPromptPopularity() {
+    return localStorage.getItem(STORAGE_KEYS.promptPopularity) || DEFAULT_PROMPT.popularity;
 }
 
 // ── Mix History ──

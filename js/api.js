@@ -72,12 +72,12 @@ function stopLoadingMessages() {
 const GEMINI_RESPONSE_SCHEMA = {
     type: 'OBJECT',
     properties: {
-        title:       { type: 'STRING' },
+        title: { type: 'STRING' },
         description: { type: 'STRING' },
-        tracks:      { type: 'ARRAY', items: { type: 'STRING' } },
-        bpm:         { type: 'STRING' },
-        energy:      { type: 'INTEGER' },
-        genre:       { type: 'STRING' }
+        tracks: { type: 'ARRAY', items: { type: 'STRING' } },
+        bpm: { type: 'STRING' },
+        energy: { type: 'INTEGER' },
+        genre: { type: 'STRING' }
     },
     required: ['title', 'description', 'tracks', 'bpm', 'energy', 'genre']
 };
@@ -87,12 +87,12 @@ async function generateMix() {
     const apiKey = getApiKey();
     if (!apiKey) { openSettings(); showError('API KEY REQUIRED. Click the ⚙ gear to configure.'); return; }
 
-    const vibeInput  = document.getElementById('ai-vibe');
-    const vibe       = vibeInput.value.trim() || 'Retro 2000s Pop';
+    const vibeInput = document.getElementById('ai-vibe');
+    const vibe = vibeInput.value.trim() || 'Retro 2000s Pop';
     const trackCount = getTrackCount();
 
-    const btn      = document.getElementById('generate-btn');
-    const loading  = document.getElementById('ai-loading');
+    const btn = document.getElementById('generate-btn');
+    const loading = document.getElementById('ai-loading');
     const errorDiv = document.getElementById('ai-error');
 
     btn.disabled = true;
@@ -101,12 +101,30 @@ async function generateMix() {
     startLoadingMessages();
     errorDiv.classList.add('hidden');
 
-    const promptTemplate = getSystemPrompt();
-    const prompt = promptTemplate
-        .replace(/{{TRACK_COUNT}}/g, trackCount)
-        .replace(/{{VIBE}}/g, vibe);
+    const persona = getPromptPersona();
+    const constraints = getPromptConstraints();
+    const explicit = getPromptExplicit() === 'clean' ? 'Only choose CLEAN, non-explicit tracks.' : 'Explicit tracks are allowed.';
+    const popularity = getPromptPopularity();
+    let popString = '';
+    if (popularity === 'mainstream') popString = 'Prioritize mainstream, well-known, and popular tracks.';
+    if (popularity === 'obscure') popString = 'Prioritize underground, obscure, and lesser-known tracks.';
 
-    const model   = getModel();
+    const prompt = `You are ${persona}. Create a ${trackCount} track playlist based on this vibe or genre: "${vibe}".
+    ${constraints}
+    ${popString}
+    ${explicit}
+    Respond ONLY with a valid JSON object matching this schema.
+    {
+        "title": "A concise, descriptive playlist title",
+        "description": "2 sentences max. Describe the mood and sonic character of this playlist, what connects these tracks, and the best context to listen to it (e.g. driving, working, late night). Be informative and direct, no hype.",
+        "tracks": ["Artist - Song Title", "Artist - Song Title"],
+        "bpm": "e.g., 120-135",
+        "energy": 4,
+        "genre": "Short genre name"
+    }
+    For energy: use an integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).`;
+
+    const model = getModel();
     const payload = {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: 'application/json', responseSchema: GEMINI_RESPONSE_SCHEMA }
@@ -114,12 +132,12 @@ async function generateMix() {
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     try {
-        const data         = await fetchWithRetry(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await fetchWithRetry(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!responseText) throw new Error('NO_CONTENT');
 
-        const mixData    = JSON.parse(responseText);
-        mixData._prompt  = vibe;
+        const mixData = JSON.parse(responseText);
+        mixData._prompt = vibe;
         renderNewMix(mixData, true);
         savePrompt(vibe);
         vibeInput.value = '';
@@ -129,7 +147,7 @@ async function generateMix() {
     } catch (error) {
         console.error('Gemini API Error:', error);
         const msg = error.message || '';
-        if (msg.includes('API_KEY_ERROR'))  showError('INVALID API KEY. Check your key in ⚙ Settings.');
+        if (msg.includes('API_KEY_ERROR')) showError('INVALID API KEY. Check your key in ⚙ Settings.');
         else if (msg.includes('MAX_RETRIES') || msg.includes('429')) showRateLimitCountdown(30);
         else if (msg.includes('NO_CONTENT')) showError('AI RETURNED EMPTY RESPONSE. Try a different prompt.');
         else showError(`CONNECTION ERROR: ${msg || 'Unknown network error'}. Check console for details.`);
@@ -148,13 +166,13 @@ async function refineMix(ts) {
     const apiKey = getApiKey();
     if (!apiKey) { openSettings(); return; }
 
-    const history  = getHistory();
+    const history = getHistory();
     const mixIndex = history.findIndex(m => m._timestamp === ts);
     if (mixIndex === -1) return;
     const mix = history[mixIndex];
 
-    const btn      = document.getElementById('generate-btn');
-    const loading  = document.getElementById('ai-loading');
+    const btn = document.getElementById('generate-btn');
+    const loading = document.getElementById('ai-loading');
     const errorDiv = document.getElementById('ai-error');
     if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
     loading.classList.remove('hidden');
@@ -170,21 +188,21 @@ Apply the change and return the COMPLETE updated playlist as JSON:
 {"title":"...","description":"...","tracks":["Artist - Song","..."],"bpm":"...","energy":N,"genre":"..."}
 Keep the same format. Preserve tracks not affected by the change.`;
 
-    const model   = getModel();
+    const model = getModel();
     const payload = {
         contents: [{ parts: [{ text: refinementPrompt }] }],
         generationConfig: { responseMimeType: 'application/json', responseSchema: GEMINI_RESPONSE_SCHEMA }
     };
 
     try {
-        const data         = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!responseText) throw new Error('NO_CONTENT');
-        const newMix       = JSON.parse(responseText);
-        newMix._timestamp  = ts;
-        newMix._favorite   = mix._favorite;
-        newMix._prompt     = `${mix._prompt || mix.title} → refined: "${instruction}"`;
-        history[mixIndex]  = newMix;
+        const newMix = JSON.parse(responseText);
+        newMix._timestamp = ts;
+        newMix._favorite = mix._favorite;
+        newMix._prompt = `${mix._prompt || mix.title} → refined: "${instruction}"`;
+        history[mixIndex] = newMix;
         saveHistory(history);
         rebuildFeed();
         requestAnimationFrame(() => {
