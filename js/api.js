@@ -1,14 +1,17 @@
-// ── Gemini API helpers ──
-async function fetchWithRetry(url, options, retries = 3) {
-    const delays = [2000, 4000, 8000];
+// ── Gemini API Configuration & Engine ──
+async function fetchWithRetry(url, options, retries = 2) {
+    const delays = [1200, 2500];
     for (let i = 0; i < retries; i++) {
         const response = await fetch(url, options);
         if (response.ok) return await response.json();
         const body = await response.text();
         if (response.status === 400 || response.status === 403) throw new Error(`API_KEY_ERROR: ${body}`);
         if (response.status === 429 || response.status === 503) {
-            await new Promise(r => setTimeout(r, delays[i] || 8000));
-            continue;
+            if (i < retries - 1) {
+                await new Promise(r => setTimeout(r, delays[i]));
+                continue;
+            }
+            throw new Error(`RATE_LIMIT: ${body}`);
         }
         throw new Error(`HTTP ${response.status}: ${body}`);
     }
@@ -21,13 +24,32 @@ function showError(msg) {
     errorDiv.classList.remove('hidden');
 }
 
+function showNotice(msg, autoDismissMs = 8000) {
+    const noticeDiv = document.getElementById('ai-notice');
+    if (!noticeDiv) return;
+    noticeDiv.innerHTML = msg;
+    noticeDiv.classList.remove('hidden');
+    if (autoDismissMs > 0) {
+        setTimeout(() => {
+            if (noticeDiv.innerHTML === msg) {
+                noticeDiv.classList.add('hidden');
+            }
+        }, autoDismissMs);
+    }
+}
+
+function hideNotice() {
+    const noticeDiv = document.getElementById('ai-notice');
+    if (noticeDiv) noticeDiv.classList.add('hidden');
+}
+
 // ── Rate-Limit Countdown ──
-function showRateLimitCountdown(seconds = 30) {
+function showRateLimitCountdown(seconds = 20) {
     let remaining = seconds;
     const errorDiv = document.getElementById('ai-error');
     errorDiv.classList.remove('hidden');
     const update = () => {
-        errorDiv.innerHTML = `RATE LIMITED. Retry in <span style="color:#ffcc00;font-size:14px">${remaining}s</span> — too many requests.`;
+        errorDiv.innerHTML = `RATE LIMITED. Retry in <span style="color:#ffcc00;font-size:14px">${remaining}s</span> — temporary request limit reached. Please wait a moment.`;
     };
     update();
     const timer = setInterval(() => {
@@ -61,7 +83,7 @@ function startLoadingMessages() {
     loadingInterval = setInterval(() => {
         idx = (idx + 1) % LOADING_MSGS.length;
         if (el) el.textContent = LOADING_MSGS[idx];
-    }, 2200);
+    }, 1800);
 }
 
 function stopLoadingMessages() {
@@ -94,6 +116,47 @@ const GEMINI_RESPONSE_SCHEMA = {
     required: ['title', 'description', 'tracks', 'bpm', 'energy', 'genre']
 };
 
+// ── Core API Generator with Minimal Thinking for Maximum Speed ──
+async function executeGeminiGenerate(apiKey, prompt) {
+    const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: GEMINI_RESPONSE_SCHEMA,
+            maxOutputTokens: 2500,
+            thinkingConfig: {
+                thinkingLevel: 'MINIMAL'
+            }
+        }
+    };
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    
+    try {
+        const data = await fetchWithRetry(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!responseText) throw new Error('NO_CONTENT');
+        return JSON.parse(responseText);
+    } catch (err) {
+        // If thinkingConfig is rejected for any reason, safely retry once without it
+        if (err.message && (err.message.includes('thinkingConfig') || err.message.includes('thinkingLevel') || err.message.includes('thinking_config') || err.message.includes('INVALID_ARGUMENT'))) {
+            delete payload.generationConfig.thinkingConfig;
+            const retryData = await fetchWithRetry(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const fallbackText = retryData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!fallbackText) throw new Error('NO_CONTENT');
+            return JSON.parse(fallbackText);
+        }
+        throw err;
+    }
+}
+
 // ── Generate Mix ──
 async function generateMix() {
     const apiKey = getApiKey();
@@ -112,6 +175,7 @@ async function generateMix() {
     loading.classList.remove('hidden');
     startLoadingMessages();
     errorDiv.classList.add('hidden');
+    hideNotice();
 
     const persona = getPromptPersona();
     const constraints = getPromptConstraints();
@@ -121,51 +185,37 @@ async function generateMix() {
     if (popularity === 'mainstream') popString = 'Prioritize mainstream, well-known, and popular tracks.';
     if (popularity === 'obscure') popString = 'Prioritize underground, obscure, and lesser-known tracks.';
 
-    const prompt = `You are ${persona}. Create a ${trackCount} track playlist based on this vibe or genre: "${vibe}".
-    ${constraints}
-    ${popString}
-    ${explicit}
-    Respond ONLY with a valid JSON object matching this schema.
-    {
-        "title": "A concise, descriptive playlist title",
-        "description": "2 sentences max. Describe the mood and sonic character of this playlist, what connects these tracks, and the best context to listen to it (e.g. driving, working, late night). Be informative and direct, no hype.",
-        "tracks": [
-            { "title": "Song Title", "artist": "Artist", "bpm": 128, "key": "8A" }
-        ],
-        "bpm": "e.g., 120-135",
-        "energy": 4,
-        "genre": "Short genre name"
-    }
-    For tracks: provide realistic BPM (integer) and harmonic Key in Camelot format (e.g. 8A, 11B).
-    For energy: use an integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).`;
-
-    const model = getModel();
-    const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: GEMINI_RESPONSE_SCHEMA }
-    };
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const prompt = `You are ${persona}. Create a cohesive, high-quality ${trackCount}-track playlist for vibe or genre: "${vibe}".
+${constraints}
+${popString}
+${explicit}
+Output specifications:
+- Realistic BPM (tempo as integer) and harmonic Key in Camelot format (e.g. 8A, 11B) for each track.
+- Energy: integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).
+- Description: 2 sentences max. Informative and direct on mood, sonic character, and ideal context.`;
 
     try {
-        const data = await fetchWithRetry(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!responseText) throw new Error('NO_CONTENT');
-
-        const mixData = JSON.parse(responseText);
+        const mixData = await executeGeminiGenerate(apiKey, prompt);
         mixData._prompt = vibe;
         renderNewMix(mixData, true);
         savePrompt(vibe);
         vibeInput.value = '';
+
         if (getAutoScroll()) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     } catch (error) {
         console.error('Gemini API Error:', error);
         const msg = error.message || '';
-        if (msg.includes('API_KEY_ERROR')) showError('INVALID API KEY. Check your key in ⚙ Settings.');
-        else if (msg.includes('MAX_RETRIES') || msg.includes('429')) showRateLimitCountdown(30);
-        else if (msg.includes('NO_CONTENT')) showError('AI RETURNED EMPTY RESPONSE. Try a different prompt.');
-        else showError(`CONNECTION ERROR: ${msg || 'Unknown network error'}. Check console for details.`);
+        if (msg.includes('API_KEY_ERROR')) {
+            showError('INVALID API KEY. Check your key in ⚙ Settings.');
+        } else if (msg.includes('RATE_LIMIT') || msg.includes('QUOTA_EXHAUSTED') || msg.includes('MAX_RETRIES') || msg.includes('429')) {
+            showRateLimitCountdown(20);
+        } else if (msg.includes('NO_CONTENT')) {
+            showError('AI RETURNED EMPTY RESPONSE. Try a different prompt.');
+        } else {
+            showError(`CONNECTION ERROR: ${msg || 'Unknown network error'}. Check console for details.`);
+        }
     } finally {
         btn.disabled = false;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -193,33 +243,24 @@ async function refineMix(ts) {
     loading.classList.remove('hidden');
     startLoadingMessages();
     errorDiv.classList.add('hidden');
+    hideNotice();
 
-    const refinementPrompt = `You are a music curator. Here is an existing playlist called "${mix.title}" with genre "${mix.genre}":
-${mix.tracks.map((t, i) => `${i + 1}. ${t}`).join('\n')}
+    const trackSummary = mix.tracks.map((t, i) => `${i + 1}. ${getTrackString(t)}`).join('\n');
+    const refinementPrompt = `You are a music curator. Refine this playlist titled "${mix.title}" (${mix.genre}):
+${trackSummary}
 
-The user wants to refine it: "${instruction}"
-
-Apply the change and return the COMPLETE updated playlist as JSON:
-{"title":"...","description":"...","tracks":["Artist - Song","..."],"bpm":"...","energy":N,"genre":"..."}
-Keep the same format. Preserve tracks not affected by the change.`;
-
-    const model = getModel();
-    const payload = {
-        contents: [{ parts: [{ text: refinementPrompt }] }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: GEMINI_RESPONSE_SCHEMA }
-    };
+User requested change: "${instruction}"
+Apply the change and return the complete updated playlist with realistic BPM, harmonic Camelot Key, energy (1-5), and updated description. Preserve tracks not affected by the change.`;
 
     try {
-        const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!responseText) throw new Error('NO_CONTENT');
-        const newMix = JSON.parse(responseText);
+        const newMix = await executeGeminiGenerate(apiKey, refinementPrompt);
         newMix._timestamp = ts;
         newMix._favorite = mix._favorite;
         newMix._prompt = `${mix._prompt || mix.title} → refined: "${instruction}"`;
         history[mixIndex] = newMix;
         saveHistory(history);
         rebuildFeed();
+
         requestAnimationFrame(() => {
             const el = document.querySelector(`[data-ts="${ts}"]`);
             if (el) {

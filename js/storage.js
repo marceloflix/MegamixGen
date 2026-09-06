@@ -1,3 +1,6 @@
+// ── Dedicated AI Engine ──
+const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+
 // ── Storage Keys ──
 const STORAGE_KEYS = {
     apiKey:     'megamix_api_key',
@@ -88,14 +91,7 @@ function getApiKey() {
 }
 
 function getModel() {
-    const saved  = localStorage.getItem(STORAGE_KEYS.model);
-    if (!saved) return 'gemini-2.5-flash';
-    const select = document.getElementById('model-select');
-    if (select && ![...select.options].some(o => o.value === saved)) {
-        localStorage.removeItem(STORAGE_KEYS.model);
-        return 'gemini-2.5-flash';
-    }
-    return saved;
+    return GEMINI_MODEL;
 }
 
 function getTextSize() {
@@ -146,9 +142,31 @@ function updateHistoryControls() {
     } catch (e) {}
 }
 
-function clearHistory() {
-    if (!confirm('Clear all saved mixes?')) return;
+function clearHistory(btn) {
+    if (btn && !btn.dataset.confirming) {
+        btn.dataset.confirming = 'true';
+        const originalHTML = btn.innerHTML;
+        const originalTitle = btn.title;
+        btn.innerHTML = '<span class="text-[10px] text-[#ff3333] font-bold uppercase px-1">Clear all?</span>';
+        btn.title = 'Click again to confirm clearing all mixes';
+        btn._resetTimer = setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.title = originalTitle;
+            delete btn.dataset.confirming;
+        }, 3500);
+        return;
+    }
+    if (btn && btn._resetTimer) clearTimeout(btn._resetTimer);
+    if (btn) delete btn.dataset.confirming;
+
+    if (!btn && typeof confirm === 'function') {
+        if (!confirm('Clear all saved mixes?')) return;
+    }
+
     localStorage.removeItem(STORAGE_KEYS.history);
-    document.getElementById('mixes-container').innerHTML = '';
+    const container = document.getElementById('mixes-container');
+    if (container) {
+        container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-compact-disc mr-2"></i>No playlists yet — enter a prompt above to generate one.</div>';
+    }
     updateHistoryControls();
 }

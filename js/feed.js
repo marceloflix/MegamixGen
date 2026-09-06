@@ -241,7 +241,7 @@ function renderNewMix(data, persist = false) {
                         <i class="${starIcon}"></i>
                     </button>
                     <button onclick="event.stopPropagation();deleteMix(this, '${ts}')" title="Delete this mix"
-                            class="text-white hover:text-[#ff3333] text-[11px] transition-all px-1 shrink-0 hover:drop-shadow-[0_0_4px_rgba(255,51,51,0.5)]">
+                            class="text-white hover:text-[#ff3333] text-[11px] transition-all px-1.5 py-0.5 shrink-0 hover:drop-shadow-[0_0_4px_rgba(255,51,51,0.5)] cursor-pointer">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>

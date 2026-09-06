@@ -51,17 +51,45 @@ async function copyTrackName(span) {
 
 // ── Delete Individual Mix ──
 function deleteMix(btn, ts) {
-    if (!confirm('Delete this playlist?')) return;
-    const card = btn.closest('[data-ts]');
+    // If called with a button element, use inline confirmation to prevent popup-blocker issues
+    if (btn && !btn.dataset.confirming) {
+        btn.dataset.confirming = 'true';
+        const originalHTML = btn.innerHTML;
+        const originalTitle = btn.title;
+        btn.innerHTML = '<span class="text-[9px] font-extrabold uppercase text-[#ff3333] bg-[#220000] border border-[#ff3333] px-1.5 py-[2px] rounded shadow-[0_0_6px_rgba(255,51,51,0.6)] cursor-pointer select-none pointer-events-none">Delete?</span>';
+        btn.title = 'Click again to confirm delete';
+
+        btn._resetTimer = setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.title = originalTitle;
+            delete btn.dataset.confirming;
+        }, 4000);
+        return;
+    }
+
+    if (btn && btn._resetTimer) clearTimeout(btn._resetTimer);
+    if (btn) delete btn.dataset.confirming;
+
+    const card = (btn && btn.closest('[data-ts]')) || document.querySelector(`[data-ts="${ts}"]`);
     if (!card) return;
-    card.style.transition = 'opacity 0.3s, transform 0.3s';
-    card.style.opacity    = '0';
-    card.style.transform  = 'translateX(-20px)';
+
+    card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.95)';
+
     setTimeout(() => {
         card.remove();
-        const history = getHistory().filter(m => m._timestamp !== ts);
-        saveHistory(history);
-    }, 300);
+        if (ts) {
+            const history = getHistory().filter(m => m._timestamp !== ts);
+            saveHistory(history);
+        }
+        updateHistoryControls();
+
+        const container = document.getElementById('mixes-container');
+        if (container && (!container.children || container.children.length === 0)) {
+            container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-compact-disc mr-2"></i>No playlists yet — enter a prompt above to generate one.</div>';
+        }
+    }, 200);
 }
 
 // ── Export M3U ──
