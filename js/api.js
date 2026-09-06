@@ -185,14 +185,21 @@ async function generateMix() {
     if (popularity === 'mainstream') popString = 'Prioritize mainstream, well-known, and popular tracks.';
     if (popularity === 'obscure') popString = 'Prioritize underground, obscure, and lesser-known tracks.';
 
-    const prompt = `You are ${persona}. Create a cohesive, high-quality ${trackCount}-track playlist for vibe or genre: "${vibe}".
+    const prompt = `You are ${persona}. Create a cohesive, highly authentic, high-quality ${trackCount}-track playlist for vibe or genre: "${vibe}".
 ${constraints}
 ${popString}
 ${explicit}
+
+ERA & RELEASE DATE ACCURACY (CRITICAL):
+- If the vibe/prompt mentions or implies a specific decade, era, or year range (e.g., "80s", "90s", "70s", "2000s", "80's 90's", etc.):
+  * EVERY selected track MUST have been genuinely originally released or recorded during that exact era.
+  * NEVER include modern retro-revival songs or tracks released outside that timeframe. (For example, if the prompt says "80's 90's synthwave" or "80s synth music", pick authentic 1980s and 1990s synth-pop, new wave, and electronic music like Depeche Mode, New Order, Giorgio Moroder, Gary Numan, Kraftwerk, Jan Hammer, Pet Shop Boys, A-ha, Tears for Fears, etc. Do NOT include 2010s/2020s songs like The Weeknd, Kavinsky, or The Midnight).
+- Only select real, existing songs by actual artists that strictly honor the era and sonic vibe.
+
 Output specifications:
 - Realistic BPM (tempo as integer) and harmonic Key in Camelot format (e.g. 8A, 11B) for each track.
 - Energy: integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).
-- Description: 2 sentences max. Informative and direct on mood, sonic character, and ideal context.`;
+- Description: 2 sentences max. Informative and direct on mood, sonic character, era authenticity, and ideal context.`;
 
     try {
         const mixData = await executeGeminiGenerate(apiKey, prompt);
@@ -226,10 +233,15 @@ Output specifications:
 
 // ── Refine Playlist ──
 async function refineMix(ts) {
-    const instruction = prompt('How would you like to refine this playlist?\n(e.g. "make it more chill", "replace track 3", "add 5 more tracks")');
-    if (!instruction) return;
     const apiKey = getApiKey();
-    if (!apiKey) { openSettings(); return; }
+    if (!apiKey) {
+        showNotice('ENTER API KEY IN ⚙ SETTINGS TO USE AI REFINEMENT.');
+        openSettings();
+        return;
+    }
+
+    const instruction = prompt('How would you like to refine this playlist?\n(e.g., "Add more 80s synth bass", "Replace pop tracks with darker electronic", "Make it faster tempo")');
+    if (!instruction || !instruction.trim()) return;
 
     const history = getHistory();
     const mixIndex = history.findIndex(m => m._timestamp === ts);
@@ -250,7 +262,9 @@ async function refineMix(ts) {
 ${trackSummary}
 
 User requested change: "${instruction}"
-Apply the change and return the complete updated playlist with realistic BPM, harmonic Camelot Key, energy (1-5), and updated description. Preserve tracks not affected by the change.`;
+Strict rules:
+- Strictly adhere to any era, decade, or release timeframe requested. If an era is specified (e.g., 80s, 90s), only include songs genuinely released in that era.
+- Return the complete updated playlist with realistic BPM, harmonic Camelot Key, energy (1-5), and updated description. Preserve tracks not affected by the change.`;
 
     try {
         const newMix = await executeGeminiGenerate(apiKey, refinementPrompt);

@@ -17,7 +17,7 @@ const STORAGE_KEYS = {
 
 const DEFAULT_PROMPT = {
     persona: "a knowledgeable music curator",
-    constraints: "Choose tracks that genuinely fit the request — consider era, tempo, mood, and sonic cohesion.",
+    constraints: "Strictly adhere to any specified era, decade, or release timeframe. Choose tracks that genuinely fit the request — matching era, tempo, mood, and sonic character.",
     explicit: "allow", // 'allow' or 'clean'
     popularity: "any" // 'any', 'mainstream', 'obscure'
 };
