@@ -77,6 +77,7 @@ ${trackListText}`;
         generationConfig: {
             responseMimeType: 'application/json',
             responseSchema: schema,
+            temperature: 0.0,
             maxOutputTokens: 2500
         }
     };
