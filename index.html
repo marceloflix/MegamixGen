@@ -49,6 +49,12 @@
                     <div id="api-key-status" class="hidden text-[10px] mt-1 font-bold uppercase tracking-wider"></div>
                     <p class="text-[#555] text-[9px] mt-1">Get a key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-[#3399ff] underline">Google AI Studio</a>. Stored locally in your browser only.</p>
                 </div>
+                <div>
+                    <label class="block text-[#3399ff] text-[10px] uppercase font-bold mb-1">Music Data API Key (Optional — MusicBrainz / GetSongBPM)</label>
+                    <input type="password" id="music-api-key-input" placeholder="Optional GetSongBPM key..."
+                           class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#3399ff] text-[#3399ff] px-3 py-2 outline-none font-bold placeholder-[#333] key-input-vis text-[12px]">
+                    <p class="text-[#555] text-[9px] mt-1">Optional <a href="https://getsongbpm.com/api" target="_blank" class="text-[#3399ff] underline">GetSongBPM</a> API key for direct database lookup. Leave empty to verify via Google AI Mode.</p>
+                </div>
                 <div class="border border-[#1a3a1a] bg-[#051105] p-2.5">
                     <div class="text-[#39ff14] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fas fa-bolt text-[#ffcc00]"></i> AI Engine: Gemini 3.5 Flash-Lite
@@ -249,6 +255,7 @@
         <i class="fas fa-play"></i>
     </button>
     <span id="audio-track-title" class="text-white text-[11px] truncate min-w-0 flex-shrink">—</span>
+    <span id="audio-track-badges" class="flex items-center gap-1 shrink-0"></span>
     <div id="audio-progress">
         <div id="audio-progress-fill"></div>
     </div>
@@ -265,15 +272,17 @@
 </button>
 
 <!-- ── JavaScript Modules (load order matters) ── -->
-<script src="js/storage.js"></script>
-<script src="js/settings.js"></script>
-<script src="js/stats.js"></script>
-<script src="js/player.js"></script>
-<script src="js/playlist.js"></script>
-<script src="js/merge.js"></script>
-<script src="js/feed.js"></script>
-<script src="js/api.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/storage.js?v=3.3.5"></script>
+<script src="js/settings.js?v=3.3.5"></script>
+<script src="js/stats.js?v=3.3.5"></script>
+<script src="js/harmonic.js?v=3.3.5"></script>
+<script src="js/analyzer.js?v=3.3.5"></script>
+<script src="js/player.js?v=3.3.5"></script>
+<script src="js/playlist.js?v=3.3.5"></script>
+<script src="js/merge.js?v=3.3.5"></script>
+<script src="js/feed.js?v=3.3.5"></script>
+<script src="js/api.js?v=3.3.5"></script>
+<script src="js/ui.js?v=3.3.5"></script>
 
 </body>
 </html>

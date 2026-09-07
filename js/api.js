@@ -197,13 +197,24 @@ ERA & RELEASE DATE ACCURACY (CRITICAL):
 - Only select real, existing songs by actual artists that strictly honor the era and sonic vibe.
 
 Output specifications:
-- Realistic BPM (tempo as integer) and harmonic Key in Camelot format (e.g. 8A, 11B) for each track.
+- ACCURATE STUDIO TEMPO (BPM) & HARMONIC KEY: Provide the exact real-world original studio recording tempo (BPM as integer, e.g. Gary Numan - Cars is 128 BPM, 10B; New Order - Blue Monday is 130 BPM, 7A) and true Camelot Wheel key (e.g. 10B, 7A, 8B, 11A) for each track.
 - Energy: integer 1-5 (1=chill/ambient, 2=relaxed, 3=moderate, 4=energetic, 5=intense/peak).
 - Description: 2 sentences max. Informative and direct on mood, sonic character, era authenticity, and ideal context.`;
 
     try {
         const mixData = await executeGeminiGenerate(apiKey, prompt);
         mixData._prompt = vibe;
+        if (Array.isArray(mixData.tracks) && typeof parseHarmonicKey === 'function') {
+            mixData.tracks.forEach(track => {
+                if (typeof track === 'object' && track !== null) {
+                    const parsed = parseHarmonicKey(track.key);
+                    if (parsed) {
+                        track.key = parsed.camelot;
+                        track.musicalKey = parsed.name;
+                    }
+                }
+            });
+        }
         renderNewMix(mixData, true);
         savePrompt(vibe);
         vibeInput.value = '';
@@ -268,6 +279,17 @@ Strict rules:
 
     try {
         const newMix = await executeGeminiGenerate(apiKey, refinementPrompt);
+        if (Array.isArray(newMix.tracks) && typeof parseHarmonicKey === 'function') {
+            newMix.tracks.forEach(track => {
+                if (typeof track === 'object' && track !== null) {
+                    const parsed = parseHarmonicKey(track.key);
+                    if (parsed) {
+                        track.key = parsed.camelot;
+                        track.musicalKey = parsed.name;
+                    }
+                }
+            });
+        }
         newMix._timestamp = ts;
         newMix._favorite = mix._favorite;
         newMix._prompt = `${mix._prompt || mix.title} → refined: "${instruction}"`;

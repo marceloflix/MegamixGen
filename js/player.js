@@ -89,6 +89,13 @@ async function previewTrack(trackName, btn) {
         titleEl.textContent   = `${preview.artistName} - ${preview.trackName}`;
         playPauseEl.innerHTML = '<i class="fas fa-pause"></i>';
 
+        const badgesContainer = document.getElementById('audio-track-badges');
+        if (badgesContainer) {
+            const trackRow = btn ? btn.closest('.track-row') : null;
+            const trackBadges = trackRow ? trackRow.querySelector('.track-badges') : null;
+            badgesContainer.innerHTML = trackBadges ? trackBadges.innerHTML : '';
+        }
+
         currentAudio.addEventListener('timeupdate', () => {
             if (!currentAudio || !currentAudio.duration) return;
             const pct = (currentAudio.currentTime / currentAudio.duration) * 100;
@@ -132,6 +139,8 @@ function closeAudioPlayer() {
     currentPreviewBtn = null;
     document.getElementById('audio-player-bar').classList.remove('active');
     document.getElementById('audio-progress-fill').style.width = '0%';
+    const badgesContainer = document.getElementById('audio-track-badges');
+    if (badgesContainer) badgesContainer.innerHTML = '';
 }
 
 document.addEventListener('DOMContentLoaded', () => {

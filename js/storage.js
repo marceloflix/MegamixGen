@@ -12,7 +12,8 @@ const STORAGE_KEYS = {
     promptPersona: 'megamix_prompt_persona',
     promptConstraints: 'megamix_prompt_constraints',
     promptExplicit: 'megamix_prompt_explicit',
-    promptPopularity: 'megamix_prompt_popularity'
+    promptPopularity: 'megamix_prompt_popularity',
+    musicApiKey: 'megamix_music_api_key'
 };
 
 const DEFAULT_PROMPT = {
@@ -88,6 +89,10 @@ document.addEventListener('click', (e) => {
 // ── API Key & Model ──
 function getApiKey() {
     return localStorage.getItem(STORAGE_KEYS.apiKey) || '';
+}
+
+function getMusicApiKey() {
+    return localStorage.getItem(STORAGE_KEYS.musicApiKey) || '';
 }
 
 function getModel() {

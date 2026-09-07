@@ -44,9 +44,16 @@ async function copyTrackName(span) {
         document.execCommand('copy');
         document.body.removeChild(el);
     }
-    const orig = span.innerHTML;
-    span.innerHTML = '<i class="fas fa-check text-[#39ff14] mr-1"></i><span class="text-[#39ff14]">Copied!</span>';
-    setTimeout(() => { span.innerHTML = orig; }, 1200);
+    const nameEl = span.querySelector ? span.querySelector('.track-name') : null;
+    if (nameEl) {
+        const orig = nameEl.innerHTML;
+        nameEl.innerHTML = '<i class="fas fa-check text-[#39ff14] mr-1"></i><span class="text-[#39ff14]">Copied!</span>';
+        setTimeout(() => { nameEl.innerHTML = orig; }, 1200);
+    } else {
+        const orig = span.innerHTML;
+        span.innerHTML = '<i class="fas fa-check text-[#39ff14] mr-1"></i><span class="text-[#39ff14]">Copied!</span>';
+        setTimeout(() => { span.innerHTML = orig; }, 1200);
+    }
 }
 
 // ── Delete Individual Mix ──
@@ -126,6 +133,7 @@ function sortMixByBpm(ts) {
         return bpmA - bpmB;
     });
     
+    mix._flowType = 'bpm';
     saveHistory(history);
     rebuildFeed();
     
@@ -134,3 +142,81 @@ function sortMixByBpm(ts) {
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
 }
+
+// ── Sort Mix by Camelot Wheel (Harmonic Progression) ──
+function sortMixByCamelot(ts) {
+    const history = getHistory();
+    const mix = history.find(m => m._timestamp === ts);
+    if (!mix || !Array.isArray(mix.tracks)) return;
+
+    if (typeof sortTracksByCamelotOrder === 'function') {
+        mix.tracks = sortTracksByCamelotOrder(mix.tracks);
+    }
+
+    mix._flowType = 'camelot';
+    saveHistory(history);
+    rebuildFeed();
+
+    setTimeout(() => {
+        const el = document.querySelector(`[data-ts="${ts}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+}
+
+// ── Manually Re-verify / Harmonic Sync Mix Tracks ──
+async function reverifyMixTracks(ts, btn) {
+    const history = getHistory();
+    const mix = history.find(m => m._timestamp === ts);
+    if (!mix || !Array.isArray(mix.tracks)) return;
+
+    // Reset verified flags to force fresh hybrid verification
+    mix.tracks.forEach((t, i) => {
+        if (typeof t === 'object' && t !== null) {
+            t.verified = false;
+            if (typeof clearTrackCache === 'function') {
+                clearTrackCache(t.artist, t.title);
+            }
+            if (typeof updateTrackVerificationUI === 'function') {
+                updateTrackVerificationUI(ts, i, t);
+            }
+        }
+    });
+
+    // Temporarily lock sort buttons while re-verifying
+    const card = document.querySelector(`[data-ts="${ts}"]`);
+    if (card) {
+        const sortBpmBtn = document.getElementById(`sort-bpm-btn-${ts}`) || card.querySelector('.sort-bpm-btn');
+        const sortCamelotBtn = document.getElementById(`sort-camelot-btn-${ts}`) || card.querySelector('.sort-camelot-btn');
+        if (sortBpmBtn) {
+            sortBpmBtn.disabled = true;
+            sortBpmBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            sortBpmBtn.title = 'Sorting unlocks after verification completes';
+        }
+        if (sortCamelotBtn) {
+            sortCamelotBtn.disabled = true;
+            sortCamelotBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            sortCamelotBtn.title = 'Sorting unlocks after verification completes';
+        }
+    }
+
+    if (btn) {
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[8px] text-[#ffcc00] mr-1"></i><span class="text-[#ffcc00]">RE-VERIFYING (0/${mix.tracks.length})</span>`;
+        btn.disabled = true;
+    }
+
+    if (typeof verifyPlaylistTracks === 'function') {
+        await verifyPlaylistTracks(mix, (current, total) => {
+            if (btn) btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[8px] text-[#ffcc00] mr-1"></i><span class="text-[#ffcc00]">RE-VERIFYING (${current + 1}/${total})</span>`;
+        });
+    }
+
+    saveHistory(history);
+
+    if (btn) {
+        btn.disabled = false;
+        if (typeof updateMixDiagnosticsUI === 'function') {
+            updateMixDiagnosticsUI(ts, mix, true);
+        }
+    }
+}
+

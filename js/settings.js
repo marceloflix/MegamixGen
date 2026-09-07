@@ -2,6 +2,8 @@
 function openSettings() {
     document.getElementById('api-key-input').value = getApiKey();
     document.getElementById('api-key-status').classList.add('hidden');
+    const musicKeyInput = document.getElementById('music-api-key-input');
+    if (musicKeyInput) musicKeyInput.value = getMusicApiKey();
     
     document.getElementById('text-size-select').value = getTextSize();
     document.getElementById('auto-scroll-toggle').checked = getAutoScroll();
@@ -44,6 +46,8 @@ function saveSettings() {
         const constraints = document.getElementById('prompt-constraints-input').value;
         const explicit = document.getElementById('prompt-explicit-input').value;
         const popularity = document.getElementById('prompt-popularity-input').value;
+        const musicKeyInput = document.getElementById('music-api-key-input');
+        const musicKey = musicKeyInput ? musicKeyInput.value.trim() : '';
         
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}?key=${key}`)
             .then(r => {
@@ -58,6 +62,7 @@ function saveSettings() {
                     localStorage.setItem(STORAGE_KEYS.promptConstraints, constraints);
                     localStorage.setItem(STORAGE_KEYS.promptExplicit, explicit);
                     localStorage.setItem(STORAGE_KEYS.promptPopularity, popularity);
+                    localStorage.setItem(STORAGE_KEYS.musicApiKey, musicKey);
                     applyTextSize(textSize);
                     setTimeout(() => closeSettings(), 800);
                 } else {
@@ -76,10 +81,13 @@ function saveSettings() {
                 localStorage.setItem(STORAGE_KEYS.promptConstraints, constraints);
                 localStorage.setItem(STORAGE_KEYS.promptExplicit, explicit);
                 localStorage.setItem(STORAGE_KEYS.promptPopularity, popularity);
+                localStorage.setItem(STORAGE_KEYS.musicApiKey, musicKey);
                 applyTextSize(textSize);
                 setTimeout(() => closeSettings(), 1200);
             });
     } else {
+        const musicKeyInput = document.getElementById('music-api-key-input');
+        const musicKey = musicKeyInput ? musicKeyInput.value.trim() : '';
         localStorage.setItem(STORAGE_KEYS.apiKey, '');
         localStorage.setItem(STORAGE_KEYS.model, GEMINI_MODEL);
         localStorage.setItem(STORAGE_KEYS.textSize, document.getElementById('text-size-select').value);
@@ -88,6 +96,7 @@ function saveSettings() {
         localStorage.setItem(STORAGE_KEYS.promptConstraints, document.getElementById('prompt-constraints-input').value);
         localStorage.setItem(STORAGE_KEYS.promptExplicit, document.getElementById('prompt-explicit-input').value);
         localStorage.setItem(STORAGE_KEYS.promptPopularity, document.getElementById('prompt-popularity-input').value);
+        localStorage.setItem(STORAGE_KEYS.musicApiKey, musicKey);
         applyTextSize(document.getElementById('text-size-select').value);
         closeSettings();
     }

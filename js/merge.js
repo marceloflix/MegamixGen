@@ -53,12 +53,28 @@ function executeMerge() {
     const selected = mergeSelection.map(ts => history.find(m => m._timestamp === ts)).filter(Boolean);
     const allTracks = [];
     const seen     = new Set();
-    selected.forEach(m => m.tracks.forEach(t => { if (!seen.has(t)) { seen.add(t); allTracks.push(t); } }));
+    selected.forEach(m => (m.tracks || []).forEach(t => {
+        const key = (typeof t === 'string' ? t : `${t.artist} - ${t.title}`).toLowerCase().trim();
+        if (!seen.has(key)) {
+            seen.add(key);
+            allTracks.push(t);
+        }
+    }));
+
+    // Harmonically sequence merged tracks by Camelot Wheel
+    let sortedTracks = allTracks;
+    if (typeof sortTracksByCamelotOrder === 'function') {
+        sortedTracks = sortTracksByCamelotOrder(allTracks);
+    }
+
+    const bpms = allTracks.map(t => (typeof t === 'object' && t.bpm) ? parseInt(t.bpm) : null).filter(Boolean);
+    const bpmRange = bpms.length > 0 ? `${Math.min(...bpms)}-${Math.max(...bpms)}` : (selected[0].bpm || '120');
+
     const merged = {
         title:       selected.map(m => m.title).join(' + '),
-        description: `Merged playlist from ${selected.length} playlists (${allTracks.length} unique tracks).`,
-        tracks:      allTracks,
-        bpm:         selected[0].bpm,
+        description: `Merged playlist from ${selected.length} playlists (${allTracks.length} unique tracks, harmonically sequenced).`,
+        tracks:      sortedTracks,
+        bpm:         bpmRange,
         energy:      Math.round(selected.reduce((s, m) => s + (parseInt(m.energy) || 3), 0) / selected.length),
         genre:       [...new Set(selected.map(m => m.genre).filter(Boolean))].join(', '),
         _prompt:     'Merged: ' + selected.map(m => m._prompt || m.title).join(' + ')
@@ -69,3 +85,4 @@ function executeMerge() {
     renderNewMix(merged, true);
     toggleMergeMode();
 }
+

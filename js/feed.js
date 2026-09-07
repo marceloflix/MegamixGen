@@ -89,6 +89,25 @@ function highlightTrack(ts, index) {
     setTimeout(() => { el.style.backgroundColor = 'transparent'; }, 1500);
 }
 
+// ── Open Source in New Tab (Google Search / Serato-Style Camelot Harmonic Key) ──
+function openBpmSource(artist, title, e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    const cleanA = (artist || '').trim();
+    const cleanT = (title || '').trim();
+    const q = cleanA && cleanT ? `"${cleanA}" "${cleanT}" bpm tempo` : `${cleanA} ${cleanT} bpm tempo`.trim();
+    const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function openKeySource(artist, title, e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    const cleanA = (artist || '').trim();
+    const cleanT = (title || '').trim();
+    const q = cleanA && cleanT ? `"${cleanA}" "${cleanT}" camelot harmonic key` : `${cleanA} ${cleanT} camelot harmonic key`.trim();
+    const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 // ── Track string helper ──
 function getTrackString(t) {
     if (!t) return '';
@@ -96,20 +115,39 @@ function getTrackString(t) {
 }
 
 // ── Build single track row HTML ──
-function buildTrackHTML(track, index, ts) {
+function buildTrackHTML(track, index, ts, allTracks = []) {
     const isObj = typeof track === 'object' && track !== null;
     const trackStr = getTrackString(track);
     const searchQ = encodeURIComponent(trackStr.replace(' - ', ' '));
     const q = encodeURIComponent(trackStr);
     const num = index + 1;
     const trackEscaped = trackStr.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    
+    const artistEscaped = (isObj && track.artist ? track.artist : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const titleEscaped = (isObj && track.title ? track.title : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
     let badgesHTML = '';
-    if (isObj && track.bpm && track.key) {
-        badgesHTML = `<span class="ml-2 flex items-center gap-1 shrink-0"><span class="bg-[#111] border border-[#222] text-[#ffcc00] text-[8px] font-bold px-1 py-[2px] rounded uppercase tracking-wider">${track.bpm}</span><span class="bg-[#111] border border-[#222] text-[#3399ff] text-[8px] font-bold px-1 py-[2px] rounded uppercase tracking-wider">${track.key}</span></span>`;
+    if (isObj && track.verified) {
+        const bpm = track.bpm || '—';
+        const key = track.key || '—';
+        const sourceLabel = track.source === 'database'
+            ? `Verified via ${track.databaseName || 'Google AI Mode'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
+            : (track.source === 'audio'
+                ? `Verified via Audio Analyzer (${track.musicalKey || track.key}, ${track.bpm} BPM)`
+                : `Verified Ground Truth (${track.bpm} BPM, ${track.key})`);
+
+        const checkIcon = '<i class="fas fa-check text-[7px] text-[#39ff14] ml-0.5"></i>';
+        const keyCheckIcon = '<i class="fas fa-check text-[7px] text-[#3399ff] ml-0.5"></i>';
+
+        const verifiedBpmClass = 'bg-[#051a05] border border-[#1a7b1a] text-[#39ff14] shadow-[0_0_6px_rgba(57,255,20,0.3)] hover:border-[#39ff14] hover:bg-[#0a2a0a] cursor-pointer';
+        const verifiedKeyClass = 'bg-[#001428] border border-[#0055aa] text-[#3399ff] shadow-[0_0_6px_rgba(51,153,255,0.3)] hover:border-[#3399ff] hover:bg-[#002244] cursor-pointer';
+
+        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify BPM on Google Search">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to verify Serato Camelot Key on Google Search">${key}${keyCheckIcon}</span></span>`;
+    } else if (isObj) {
+        // Do NOT show unverified AI hallucinations — show progressive analyzing state!
+        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span></span>`;
     }
 
-    return `<li id="track-${ts}-${index}" class="track-row flex items-center gap-2 py-[5px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
+    return `<li id="track-${ts}-${index}" class="track-row flex items-center gap-2 py-[3px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
         <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#2a2a2a] text-[#555] text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
         <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight cursor-pointer select-none flex items-center flex-wrap gap-1 group/track min-w-0">
             <span class="track-name group-hover/track:text-[#ccc] transition-colors">${trackStr}</span>
@@ -128,6 +166,7 @@ function buildTrackHTML(track, index, ts) {
 // ── Render a Mix Card ──
 function renderNewMix(data, persist = false) {
     const container  = document.getElementById('mixes-container');
+    if (!container) return;
     const ts         = data._timestamp || new Date().toISOString();
     const d          = new Date(ts);
     const currentDate = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
@@ -146,6 +185,9 @@ function renderNewMix(data, persist = false) {
         return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:2px;vertical-align:middle"></span>`;
     }).join('');
 
+    const verifiedCount = data.tracks.filter(t => t && t.verified).length;
+    const isAllVerified = verifiedCount === data.tracks.length && data.tracks.length > 0;
+
     const bpms = data.tracks.map(t => (typeof t === 'object' && t.bpm ? parseInt(t.bpm) : null));
     const validBpms = bpms.filter(b => b);
     let visualizerHTML = '';
@@ -163,13 +205,27 @@ function renderNewMix(data, persist = false) {
         visualizerHTML = `<div class="bg-[#050505] border border-[#111] p-2 mt-2 flex flex-col gap-1 w-full max-w-xs ml-auto">
             <div class="flex items-center justify-between text-[#1a7b1a] text-[8px] uppercase font-bold tracking-widest">
                 <span>BPM Flow</span>
-                <button onclick="event.stopPropagation();sortMixByBpm('${ts}')" class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(57,255,20,0.2)] flex items-center -translate-y-[10px] scale-[1.15] origin-right" title="Sort Low to High"><i class="fas fa-sort-amount-up mr-1"></i>Sort</button>
+                <div class="flex items-center gap-1">
+                    <button id="sort-bpm-btn-${ts}" onclick="event.stopPropagation();sortMixByBpm('${ts}')" class="sort-bpm-btn bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(57,255,20,0.2)] flex items-center -translate-y-[10px] scale-[1.15] origin-right ${isAllVerified ? '' : 'opacity-40 cursor-not-allowed'}" ${isAllVerified ? '' : 'disabled'} title="${isAllVerified ? 'Sort BPM (Low to High)' : 'Sorting unlocks after verification completes'}"><i class="fas fa-sort-amount-up mr-1"></i>BPM</button>
+                    <button id="sort-camelot-btn-${ts}" onclick="event.stopPropagation();sortMixByCamelot('${ts}')" class="sort-camelot-btn bg-[#001a33] hover:bg-[#002b4d] text-[#3399ff] border border-[#0055aa] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(51,153,255,0.2)] flex items-center -translate-y-[10px] scale-[1.15] origin-right ml-1 ${isAllVerified ? '' : 'opacity-40 cursor-not-allowed'}" ${isAllVerified ? '' : 'disabled'} title="${isAllVerified ? 'Sort Harmonic Progression (Camelot Wheel)' : 'Sorting unlocks after verification completes'}"><i class="fas fa-circle-nodes mr-1"></i>Camelot</button>
+                </div>
             </div>
             <div class="h-8 flex items-stretch gap-[2px] w-full">${barsHTML}</div>
         </div>`;
     }
 
-    const flatTracksStr = encodeURIComponent(data.tracks.map(getTrackString).join('\n'));
+    const flatTracksStr = encodeURIComponent(data.tracks.map(t => {
+        const base = getTrackString(t);
+        if (typeof t === 'object' && t !== null && t.bpm && t.key) {
+            return `${base} [${t.bpm} BPM, ${t.key}]`;
+        }
+        return base;
+    }).join('\n'));
+
+    const flowType = data._flowType || 'camelot';
+    const flowIcon = flowType === 'bpm' ? 'fa-sort-amount-up' : 'fa-circle-nodes';
+    const flowColor = flowType === 'bpm' ? 'text-[#39ff14]' : 'text-[#3399ff]';
+    const flowText = flowType === 'bpm' ? 'BPM Flow' : 'Camelot Flow';
 
     const bodyHTML = isCompact ? '' : `
         <div class="mix-datebar bg-[#050f05] text-right px-2 py-[2px] mix-title-date border-b border-[#1a4a1a] text-[#39ff14] uppercase tracking-wider">
@@ -178,10 +234,13 @@ function renderNewMix(data, persist = false) {
         <div class="mix-body panel-content flex flex-col gap-4">
             <div class="details-box">
                 <div class="flex items-start justify-between flex-wrap gap-x-4 gap-y-1">
-                    <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
+                        <span class="diag-verified-status">${isAllVerified ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with Google AI mode"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (${verifiedCount}/${data.tracks.length})</span>`}</span>
+                    </div>
                     <span class="flex items-center gap-3 flex-wrap">
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px]">${data.tracks.length}</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">BPM</span><span class="text-white text-[11px]">${data.bpm}</span></span>
+                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">BPM</span><span class="text-white text-[11px] diag-bpm-val">${isAllVerified ? data.bpm : 'Verifying...'}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Est.</span><span class="text-white text-[11px]">~${data.tracks.length * 4}m</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre}</span></span>
@@ -196,14 +255,13 @@ function renderNewMix(data, persist = false) {
                     ${data.description ? `<p class="mb-3 text-[11px] text-white italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
                     <div class="bg-[#050505] border border-[#1a4a1a] p-2">
                         <div class="text-[#1a7b1a] text-[9px] uppercase font-bold border-b border-[#111] mb-2 pb-1 flex items-center justify-between">
-                            <span>Tracklist Sequence</span>
-                            <span class="text-[#3399ff]"><i class="fas fa-list-ul"></i></span>
+                            <span>Tracklist Sequence & Harmonic Transitions</span>
+                            <span id="flow-indicator-${ts}" class="${flowColor} flex items-center gap-1 font-bold"><i class="fas ${flowIcon}"></i> ${flowText}</span>
                         </div>
                         <ul class="tracklist-grid mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : 2},1fr)">
-                            ${data.tracks.map((t, i) => buildTrackHTML(t, i, ts)).join('')}
+                            ${data.tracks.map((t, i) => buildTrackHTML(t, i, ts, data.tracks)).join('')}
                         </ul>
                         <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2">
-
                             <button onclick="exportM3U(this)" data-title="${data.title.replace(/"/g, '&quot;')}" data-tracks="${flatTracksStr}"
                                     class="bg-[#111] hover:bg-[#1a0033] text-[#bb86fc] border border-[#2a0055] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(187,134,252,0.2)]">
                                 <i class="fas fa-music mr-1" aria-hidden="true"></i> Export .m3u
@@ -260,5 +318,12 @@ function renderNewMix(data, persist = false) {
         history.unshift(data);
         if (history.length > 50) history.length = 50;
         saveHistory(history);
+    }
+
+    // Trigger non-blocking async verification
+    if (typeof verifyPlaylistTracks === 'function' && Array.isArray(data.tracks)) {
+        setTimeout(() => {
+            verifyPlaylistTracks(data);
+        }, 200);
     }
 }

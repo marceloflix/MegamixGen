@@ -335,3 +335,27 @@ body.merge-active [data-ts]:hover {
 body.merge-active [data-ts]:active {
     transform: translateY(0);
 }
+
+/* ── Verified Badges & Harmonic Connectors ── */
+.verified-badge {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.verified-badge:hover {
+    transform: scale(1.06);
+    filter: brightness(1.2);
+}
+
+.harmonic-connector {
+    transition: opacity 0.2s ease, max-height 0.2s ease;
+}
+
+@keyframes verificationPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); filter: brightness(1.4); }
+    100% { transform: scale(1); }
+}
+
+.pulse-verified {
+    animation: verificationPulse 0.4s ease-out;
+}
+

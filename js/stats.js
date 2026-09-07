@@ -19,6 +19,28 @@ function openStats() {
     history.forEach(m => { if (m._prompt) promptCounts[m._prompt] = (promptCounts[m._prompt] || 0) + 1; });
     const topPrompt = Object.entries(promptCounts).sort((a, b) => b[1] - a[1])[0];
 
+    // BPM & Camelot Key Analysis
+    let allBpms = [];
+    let keyCounts = {};
+    let verifiedCount = 0;
+
+    history.forEach(m => {
+        (m.tracks || []).forEach(t => {
+            if (typeof t === 'object' && t !== null) {
+                if (t.bpm && parseInt(t.bpm)) allBpms.push(parseInt(t.bpm));
+                if (t.key) {
+                    const k = t.key.toUpperCase();
+                    keyCounts[k] = (keyCounts[k] || 0) + 1;
+                }
+                if (t.verified) verifiedCount++;
+            }
+        });
+    });
+
+    const avgBpm = allBpms.length ? Math.round(allBpms.reduce((a, b) => a + b, 0) / allBpms.length) : '—';
+    const topKey = Object.entries(keyCounts).sort((a, b) => b[1] - a[1])[0];
+    const verifPct = totalTracks > 0 ? Math.round((verifiedCount / totalTracks) * 100) : 0;
+
     const hours = Math.floor(totalMinutes / 60);
     const mins  = totalMinutes % 60;
 
@@ -42,6 +64,18 @@ function openStats() {
             </div>
         </div>
         <div class="space-y-2 text-[11px]">
+            <div class="flex justify-between border-b border-[#222] pb-1">
+                <span class="text-[#39ff14] font-bold uppercase">Avg Track Tempo</span>
+                <span class="text-white font-bold">${avgBpm} BPM</span>
+            </div>
+            <div class="flex justify-between border-b border-[#222] pb-1">
+                <span class="text-[#3399ff] font-bold uppercase">Top Harmonic Key</span>
+                <span class="text-white font-bold">${topKey ? topKey[0] + ' (' + topKey[1] + ' tracks)' : 'N/A'}</span>
+            </div>
+            <div class="flex justify-between border-b border-[#222] pb-1">
+                <span class="text-[#39ff14] font-bold uppercase">Hybrid Verified Rate</span>
+                <span class="text-[#39ff14] font-bold">${verifPct}% <span class="text-[#888] font-normal">(${verifiedCount}/${totalTracks})</span></span>
+            </div>
             <div class="flex justify-between border-b border-[#222] pb-1">
                 <span class="text-[#39ff14] font-bold uppercase">Est. Listening Time</span>
                 <span class="text-white">${hours > 0 ? hours + 'h ' : ''}${mins}m</span>
