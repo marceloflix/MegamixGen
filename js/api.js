@@ -204,13 +204,26 @@ Output specifications:
     try {
         const mixData = await executeGeminiGenerate(apiKey, prompt);
         mixData._prompt = vibe;
-        if (Array.isArray(mixData.tracks) && typeof parseHarmonicKey === 'function') {
+        if (Array.isArray(mixData.tracks)) {
             mixData.tracks.forEach(track => {
                 if (typeof track === 'object' && track !== null) {
-                    const parsed = parseHarmonicKey(track.key);
-                    if (parsed) {
-                        track.key = parsed.camelot;
-                        track.musicalKey = parsed.name;
+                    if (typeof lookupVerifiedCatalog === 'function') {
+                        const verified = lookupVerifiedCatalog(track.artist, track.title);
+                        if (verified) {
+                            track.bpm = verified.bpm;
+                            track.key = verified.key;
+                            track.musicalKey = verified.musicalKey;
+                            track.verified = true;
+                            track.source = verified.source;
+                            track.databaseName = verified.databaseName;
+                        }
+                    }
+                    if (!track.verified && typeof parseHarmonicKey === 'function') {
+                        const parsed = parseHarmonicKey(track.key);
+                        if (parsed) {
+                            track.key = parsed.camelot;
+                            track.musicalKey = parsed.name;
+                        }
                     }
                 }
             });
@@ -279,13 +292,26 @@ Strict rules:
 
     try {
         const newMix = await executeGeminiGenerate(apiKey, refinementPrompt);
-        if (Array.isArray(newMix.tracks) && typeof parseHarmonicKey === 'function') {
+        if (Array.isArray(newMix.tracks)) {
             newMix.tracks.forEach(track => {
                 if (typeof track === 'object' && track !== null) {
-                    const parsed = parseHarmonicKey(track.key);
-                    if (parsed) {
-                        track.key = parsed.camelot;
-                        track.musicalKey = parsed.name;
+                    if (typeof lookupVerifiedCatalog === 'function') {
+                        const verified = lookupVerifiedCatalog(track.artist, track.title);
+                        if (verified) {
+                            track.bpm = verified.bpm;
+                            track.key = verified.key;
+                            track.musicalKey = verified.musicalKey;
+                            track.verified = true;
+                            track.source = verified.source;
+                            track.databaseName = verified.databaseName;
+                        }
+                    }
+                    if (!track.verified && typeof parseHarmonicKey === 'function') {
+                        const parsed = parseHarmonicKey(track.key);
+                        if (parsed) {
+                            track.key = parsed.camelot;
+                            track.musicalKey = parsed.name;
+                        }
                     }
                 }
             });

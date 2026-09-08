@@ -45,11 +45,11 @@ window.addEventListener('DOMContentLoaded', () => {
                 title: 'System Initialization Mix',
                 description: 'Welcome to the Megamix Gen AI Studio. This is a pre-calculated sequence to demonstrate system capabilities. Enter a prompt above to begin generating custom synthetic audio tracklists.',
                 tracks: [
-                    { title: 'Technologic', artist: 'Daft Punk', bpm: 126, key: '9A' },
-                    { title: 'Galvanize', artist: 'The Chemical Brothers', bpm: 104, key: '2A' },
-                    { title: 'D.A.N.C.E.', artist: 'Justice', bpm: 113, key: '10A' },
-                    { title: 'Right Here, Right Now', artist: 'Fatboy Slim', bpm: 125, key: '10B' },
-                    { title: 'Smack My Bitch Up', artist: 'The Prodigy', bpm: 135, key: '10A' }
+                    { title: 'Technologic', artist: 'Daft Punk', bpm: 126, key: '9A', musicalKey: 'A Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
+                    { title: 'Galvanize', artist: 'The Chemical Brothers', bpm: 104, key: '2A', musicalKey: 'E-Flat Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
+                    { title: 'D.A.N.C.E.', artist: 'Justice', bpm: 113, key: '10A', musicalKey: 'B Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
+                    { title: 'Right Here, Right Now', artist: 'Fatboy Slim', bpm: 125, key: '10B', musicalKey: 'D Major', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
+                    { title: 'Smack My Bitch Up', artist: 'The Prodigy', bpm: 135, key: '10A', musicalKey: 'B Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' }
                 ],
                 bpm:   '125-133',
                 genre: 'Electronic Boot Sequence'

@@ -89,12 +89,12 @@ function highlightTrack(ts, index) {
     setTimeout(() => { el.style.backgroundColor = 'transparent'; }, 1500);
 }
 
-// ── Open Source in New Tab (Google Search / Serato-Style Camelot Harmonic Key) ──
+// ── Open Source in New Tab (Google Search / Tunebat Serato-Style Camelot Harmonic Key) ──
 function openBpmSource(artist, title, e) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const cleanA = (artist || '').trim();
     const cleanT = (title || '').trim();
-    const q = cleanA && cleanT ? `"${cleanA}" "${cleanT}" bpm tempo` : `${cleanA} ${cleanT} bpm tempo`.trim();
+    const q = cleanA && cleanT ? `${cleanA} ${cleanT} bpm tunebat` : `${cleanA} ${cleanT} bpm`.trim();
     const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
 }
@@ -103,7 +103,7 @@ function openKeySource(artist, title, e) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const cleanA = (artist || '').trim();
     const cleanT = (title || '').trim();
-    const q = cleanA && cleanT ? `"${cleanA}" "${cleanT}" camelot harmonic key` : `${cleanA} ${cleanT} camelot harmonic key`.trim();
+    const q = cleanA && cleanT ? `${cleanA} ${cleanT} key camelot tunebat` : `${cleanA} ${cleanT} camelot key`.trim();
     const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
 }
@@ -129,11 +129,13 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
     if (isObj && track.verified) {
         const bpm = track.bpm || '—';
         const key = track.key || '—';
-        const sourceLabel = track.source === 'database'
-            ? `Verified via ${track.databaseName || 'Google AI Mode'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
-            : (track.source === 'audio'
-                ? `Verified via Audio Analyzer (${track.musicalKey || track.key}, ${track.bpm} BPM)`
-                : `Verified Ground Truth (${track.bpm} BPM, ${track.key})`);
+        const sourceLabel = track.source === 'scraped'
+            ? `Verified via ${track.databaseName || 'Live Web Scraper'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
+            : (track.source === 'database'
+                ? `Verified via ${track.databaseName || 'Local Song Database'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
+                : (track.source === 'audio'
+                    ? `Verified via Audio Analyzer (${track.musicalKey || track.key}, ${track.bpm} BPM)`
+                    : `Verified (${track.bpm} BPM, ${track.key})`));
 
         const checkIcon = '<i class="fas fa-check text-[7px] text-[#39ff14] ml-0.5"></i>';
         const keyCheckIcon = '<i class="fas fa-check text-[7px] text-[#3399ff] ml-0.5"></i>';
@@ -141,7 +143,7 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
         const verifiedBpmClass = 'bg-[#051a05] border border-[#1a7b1a] text-[#39ff14] shadow-[0_0_6px_rgba(57,255,20,0.3)] hover:border-[#39ff14] hover:bg-[#0a2a0a] cursor-pointer';
         const verifiedKeyClass = 'bg-[#001428] border border-[#0055aa] text-[#3399ff] shadow-[0_0_6px_rgba(51,153,255,0.3)] hover:border-[#3399ff] hover:bg-[#002244] cursor-pointer';
 
-        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify BPM on Google Search">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to verify Serato Camelot Key on Google Search">${key}${keyCheckIcon}</span></span>`;
+        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify on Tunebat">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to verify on Tunebat">${key}${keyCheckIcon}</span></span>`;
     } else if (isObj) {
         // Do NOT show unverified AI hallucinations — show progressive analyzing state!
         badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span></span>`;
@@ -168,6 +170,25 @@ function renderNewMix(data, persist = false) {
     const container  = document.getElementById('mixes-container');
     if (!container) return;
     const ts         = data._timestamp || new Date().toISOString();
+    data._timestamp  = ts;
+
+    // Check tracks against Tunebat catalog immediately
+    if (Array.isArray(data.tracks) && typeof lookupVerifiedCatalog === 'function') {
+        data.tracks.forEach(track => {
+            if (typeof track === 'object' && track !== null && !track.verified) {
+                const match = lookupVerifiedCatalog(track.artist, track.title);
+                if (match) {
+                    track.bpm = match.bpm;
+                    track.key = match.key;
+                    track.musicalKey = match.musicalKey;
+                    track.verified = true;
+                    track.source = match.source;
+                    track.databaseName = match.databaseName;
+                }
+            }
+        });
+    }
+
     const d          = new Date(ts);
     const currentDate = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
     const currentTime = d.toLocaleTimeString('en-US', { hour12: false });
@@ -236,7 +257,7 @@ function renderNewMix(data, persist = false) {
                 <div class="flex items-start justify-between flex-wrap gap-x-4 gap-y-1">
                     <div class="flex items-center gap-2">
                         <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
-                        <span class="diag-verified-status">${isAllVerified ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with Google AI mode"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (${verifiedCount}/${data.tracks.length})</span>`}</span>
+                        <span class="diag-verified-status">${isAllVerified ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with Tunebat Database"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (${verifiedCount}/${data.tracks.length})</span>`}</span>
                     </div>
                     <span class="flex items-center gap-3 flex-wrap">
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px]">${data.tracks.length}</span></span>

@@ -13,7 +13,8 @@ const STORAGE_KEYS = {
     promptConstraints: 'megamix_prompt_constraints',
     promptExplicit: 'megamix_prompt_explicit',
     promptPopularity: 'megamix_prompt_popularity',
-    musicApiKey: 'megamix_music_api_key'
+    songDatabase: 'megamix_song_ground_truth',
+    musicApiKey:  'megamix_music_api_key'
 };
 
 const DEFAULT_PROMPT = {
@@ -95,12 +96,66 @@ function getMusicApiKey() {
     return localStorage.getItem(STORAGE_KEYS.musicApiKey) || '';
 }
 
+function saveMusicApiKey(key) {
+    if (key) localStorage.setItem(STORAGE_KEYS.musicApiKey, key.trim());
+    else localStorage.removeItem(STORAGE_KEYS.musicApiKey);
+}
+
+// ── Local Song Database (Zero API Saturation) ──
+function normalizeSongKey(artist, title) {
+    if (!artist || !title) return '';
+    const cleanStr = (s) => (s || '')
+        .toLowerCase()
+        .replace(/\b(the|a|an)\b/gi, '')
+        .replace(/[\(\[\{].*?[\)\]\}]/g, '') // strip (feat. ...), [remastered], etc.
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+    return `${cleanStr(artist)}:::${cleanStr(title)}`;
+}
+
+function getSongDatabase() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.songDatabase);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function lookupSongInDatabase(artist, title) {
+    const key = normalizeSongKey(artist, title);
+    if (!key) return null;
+    const db = getSongDatabase();
+    return db[key] || null;
+}
+
+function saveSongToDatabase(artist, title, data) {
+    if (!artist || !title || !data || !data.bpm || !data.key) return;
+    const key = normalizeSongKey(artist, title);
+    if (!key) return;
+    try {
+        const db = getSongDatabase();
+        db[key] = {
+            bpm: parseInt(data.bpm, 10),
+            key: data.key,
+            musicalKey: data.musicalKey || 'Standard Scale',
+            source: data.source || 'scraped',
+            databaseName: data.databaseName || 'Live Web Scraper',
+            verified: true,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEYS.songDatabase, JSON.stringify(db));
+    } catch (e) {
+        console.warn('Failed to save track to local database:', e);
+    }
+}
+
 function getModel() {
     return GEMINI_MODEL;
 }
 
 function getTextSize() {
-    return localStorage.getItem(STORAGE_KEYS.textSize) || 'text-size-small';
+    return localStorage.getItem(STORAGE_KEYS.textSize) || 'text-size-normal';
 }
 
 function getAutoScroll() {

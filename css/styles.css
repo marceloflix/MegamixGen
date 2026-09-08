@@ -9,7 +9,7 @@ body {
     padding: 10px;
 }
 
-/* Text Size Small Scaling (+2) */
+/* Text Size Small Scaling (+2 from base, Version 3.0) */
 body.text-size-small { font-size: 13px !important; }
 body.text-size-small .text-\[8px\] { font-size: 10px !important; }
 body.text-size-small .text-\[9px\] { font-size: 11px !important; }
@@ -27,7 +27,7 @@ body.text-size-small .details-box { font-size: 15px !important; }
 body.text-size-small .details-box-header { font-size: 13px !important; }
 body.text-size-small .mix-title-date { font-size: 11px !important; }
 
-/* Text Size Normal Scaling (+3) */
+/* Text Size Normal Scaling (+3 from base, Version 3.0 Default) */
 body.text-size-normal { font-size: 14px !important; }
 body.text-size-normal .text-\[8px\] { font-size: 11px !important; }
 body.text-size-normal .text-\[9px\] { font-size: 12px !important; }
@@ -45,8 +45,8 @@ body.text-size-normal .details-box { font-size: 16px !important; }
 body.text-size-normal .details-box-header { font-size: 14px !important; }
 body.text-size-normal .mix-title-date { font-size: 12px !important; }
 
-/* Text Size Large Scaling */
-body.text-size-large { font-size: 15px !important; }
+/* Text Size Large Scaling (+5 from base, Version 3.0 Enhanced) */
+body.text-size-large { font-size: 16px !important; }
 body.text-size-large .text-\[8px\] { font-size: 12px !important; }
 body.text-size-large .text-\[9px\] { font-size: 13px !important; }
 body.text-size-large .text-\[10px\] { font-size: 14px !important; }
@@ -216,24 +216,82 @@ button:hover:not(:disabled) {
 /* ── Key Input ── */
 .key-input-vis { letter-spacing: 2px; }
 
-/* ── Modal ── */
+/* ── Modal Overlay & Box ── */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: fadeInDown 0.25s ease-out;
+    padding: 16px;
+    overflow-y: auto;
+    animation: fadeInDown 0.2s ease-out;
 }
+
 .modal-box {
-    background: #111;
+    background: #111111;
     border: 1px solid #39ff14;
-    box-shadow: 0 0 30px rgba(57,255,20,0.25);
-    width: 90%;
-    max-width: 650px;
-    padding: 0;
+    box-shadow: 0 0 35px rgba(57, 255, 20, 0.25);
+    width: 100%;
+    max-width: 540px;
+    max-height: min(90vh, 760px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: auto;
+    border-radius: 4px;
+}
+
+.modal-header {
+    background-image: linear-gradient(to bottom, #1a4a1a, #0a2a0a);
+    border-bottom: 1px solid #1a7b1a;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    font-size: 12px;
+    box-shadow: inset 0 1px 0 rgba(100, 255, 100, 0.3);
+}
+
+.modal-body-scrollable {
+    padding: 14px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.modal-footer {
+    background: #0d0d0d;
+    border-top: 1px solid #222222;
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Custom dark scrollbar for modal and lists */
+.custom-scrollbar::-webkit-scrollbar,
+.modal-body-scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track,
+.modal-body-scrollable::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.modal-body-scrollable::-webkit-scrollbar-thumb {
+    background: #1a4a1a;
+    border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.modal-body-scrollable::-webkit-scrollbar-thumb:hover {
+    background: #39ff14;
 }
 
 /* ── Audio Player Bar ── */

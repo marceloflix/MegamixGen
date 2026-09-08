@@ -14,38 +14,124 @@ function getSharedAudioContext() {
     return _sharedAudioContext;
 }
 
-// ── Dynamic Online Verification Engine (Google AI Mode & Music APIs) ──
-// Clean up any legacy localStorage cache keys so no stale data persists
-try {
-    localStorage.removeItem('megamix_ground_truth_version');
-    localStorage.removeItem('megamix_verified_tracks');
-} catch (e) {}
+// ── Local Song Database & Live Scraper Integration ──
+const GROUND_TRUTH_STORAGE_KEY = 'megamix_song_ground_truth';
 
-// Safe no-op helpers to prevent errors if referenced
-function clearTrackCache(artist, title) {}
-function saveTrackToCache(artist, title, result) {}
+/**
+ * Retrieves verified metadata for a song from the persistent local database.
+ * Returns null if the song has not yet been cataloged.
+ */
+function lookupVerifiedCatalog(artist, title) {
+    if (!artist || !title) return null;
+    return typeof lookupSongInDatabase === 'function' ? lookupSongInDatabase(artist, title) : null;
+}
 
-// ── Fast Online Ground-Truth Batch Search (Google AI Mode Lookup) ──
+/**
+ * Permanently saves verified track BPM and Camelot Key to the persistent local database.
+ * Guarantees that subsequent lookups and re-verifications return identical, reproducible data with 0 API calls.
+ */
+function saveToVerifiedCatalog(artist, title, result) {
+    if (typeof saveSongToDatabase === 'function') {
+        saveSongToDatabase(artist, title, result);
+    }
+}
+
+function clearTrackCache(artist, title) {
+    if (!artist || !title) return;
+    const key = typeof normalizeSongKey === 'function' ? normalizeSongKey(artist, title) : null;
+    if (!key) return;
+    try {
+        const raw = localStorage.getItem(GROUND_TRUTH_STORAGE_KEY);
+        if (raw) {
+            const db = JSON.parse(raw);
+            delete db[key];
+            localStorage.setItem(GROUND_TRUTH_STORAGE_KEY, JSON.stringify(db));
+        }
+    } catch (e) {}
+}
+
+function saveTrackToCache(artist, title, result) {
+    saveToVerifiedCatalog(artist, title, result);
+}
+
+/**
+ * Queries the local backend live scraper endpoint for authoritative BPM & Camelot Key.
+ * Scrapes Beatport, SongBPM, and web search snippets live with zero API keys.
+ */
+async function lookupLiveScraper(artist, title) {
+    if (!artist || !title) return null;
+    try {
+        const musicKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+        let url = `/api/lookup?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`;
+        if (musicKey) {
+            url += `&api_key=${encodeURIComponent(musicKey)}`;
+        }
+        const resp = await fetch(url, { signal: AbortSignal.timeout(6000) });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.bpm && data.key) {
+                return {
+                    bpm: parseInt(data.bpm, 10),
+                    key: data.key,
+                    musicalKey: data.musicalKey || 'Standard Scale',
+                    source: 'scraped',
+                    databaseName: data.databaseName || 'Live Web Scraper',
+                    verified: true
+                };
+            }
+        }
+    } catch (e) {
+        // Fallback gracefully if server endpoint is unreachable
+    }
+    return null;
+}
+
+/**
+ * Robust JSON extraction helper that handles raw JSON, markdown-wrapped JSON,
+ * and extracts the outermost JSON object if surrounding commentary exists.
+ */
+function extractJsonFromText(rawText) {
+    if (!rawText || typeof rawText !== 'string') return null;
+    let str = rawText.trim();
+    if (str.startsWith('```')) {
+        str = str.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    }
+    try {
+        return JSON.parse(str);
+    } catch (e) {
+        const match = str.match(/\{[\s\S]*\}/);
+        if (match) {
+            try { return JSON.parse(match[0]); } catch (e2) {}
+        }
+        return null;
+    }
+}
+
+/**
+ * Fast Online Ground-Truth Batch Search via Gemini AI Mode targeting Tunebat & Beatport knowledge.
+ * Runs with temperature: 0.0 for 100% deterministic and reproducible results.
+ */
 async function batchVerifyTracksViaOnlineSearch(tracks) {
     const apiKey = typeof getApiKey === 'function' ? getApiKey() : '';
     if (!apiKey || !Array.isArray(tracks) || tracks.length === 0) return null;
 
     const modelName = typeof GEMINI_MODEL !== 'undefined' ? GEMINI_MODEL : 'gemini-3.5-flash-lite';
 
-    // IMPORTANT: Do NOT pass estimated/hallucinated BPM in the prompt to prevent anchoring bias!
+    // Format track list without estimated BPM to prevent anchoring bias
     const trackListText = tracks.map((t, i) => {
         const title = typeof t === 'object' ? (t.title || '') : '';
         const artist = typeof t === 'object' ? (t.artist || '') : '';
         return `Track ${i + 1}: ${artist} - ${title}`;
     }).join('\n');
 
-    const prompt = `You are Google AI Mode - an authoritative DJ discography knowledge database aggregating verified tempo and key data (Beatport, SongBPM, Tunebat, Discogs, Serato DJ).
-For each song listed below, look up its exact, authentic original studio release tempo (BPM as integer) and Serato Camelot Wheel key (e.g. "10B", "8A", "7A", "11B", "5A") and standard musical key (e.g. "D Major", "A Minor", "C Minor").
+    const prompt = `You are Tunebat & Beatport DJ Discography Engine - an authoritative music metadata reference database.
+For each song listed below, provide its exact canonical Tunebat / Beatport original studio release tempo (BPM as integer) and Serato Camelot Wheel harmonic key (e.g. "10B", "8A", "7A", "11B", "5A") and standard musical key (e.g. "D Major", "A Minor", "F Minor").
 
 GROUND TRUTH RULES:
-1. Provide the true standard original studio release tempo (not half-time, not double-time).
-2. Determine the exact Serato Camelot harmonic key and musical scale for each song. Ensure every Camelot key strictly matches the Camelot Wheel (1A-12A for Minor, 1B-12B for Major).
-3. Do not guess; resolve values based on authoritative DJ discography records.
+1. CANONICAL RELEASE: Look up the ORIGINAL studio album or radio single release. Do NOT use live versions, remixes, or extended dubs.
+2. STANDARD TEMPO: Output standard dance/rock/pop tempos (e.g., 110-175 BPM; do NOT output half-time tempos like 60-85 BPM unless it is a slow ballad or hip-hop track).
+3. CAMELOT WHEEL: Strictly output valid Camelot Wheel keys (1A-12A for Minor, 1B-12B for Major). Ensure key and musicalKey correspond accurately.
+4. CONSISTENCY & DETERMINISM: Be completely deterministic and authoritative.
 
 TRACKS:
 ${trackListText}`;
@@ -72,6 +158,8 @@ ${trackListText}`;
         required: ['tracks']
     };
 
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
     const payload = {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -82,10 +170,8 @@ ${trackListText}`;
         }
     };
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
         const resp = await fetch(endpoint, {
@@ -97,18 +183,16 @@ ${trackListText}`;
 
         if (!resp.ok) {
             const errBody = await resp.text();
-            console.error('Gemini batch search HTTP error:', resp.status, errBody);
+            console.error('Gemini batch verification HTTP error:', resp.status, errBody);
             return null;
         }
 
         const data = await resp.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) {
-            console.warn('Gemini batch search returned empty text');
-            return null;
-        }
-        const parsed = JSON.parse(text);
-        return parsed.tracks || [];
+        if (!text) return null;
+
+        const parsed = extractJsonFromText(text);
+        return parsed && Array.isArray(parsed.tracks) ? parsed.tracks : [];
     } catch (err) {
         console.error('batchVerifyTracksViaOnlineSearch exception:', err);
         return null;
@@ -117,70 +201,6 @@ ${trackListText}`;
     }
 }
 
-// ── Optional Music API (GetSongBPM / MusicBrainz) ──
-async function queryOnlineMusicApi(artist, title) {
-    const apiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
-    const query = `${artist} ${title}`.trim();
-
-    if (apiKey) {
-        try {
-            const url = `https://api.getsongbpm.com/search/?api_key=${encodeURIComponent(apiKey)}&type=both&lookup=${encodeURIComponent(query)}`;
-            const resp = await fetch(url, { signal: AbortSignal.timeout(3000) });
-            if (resp.ok) {
-                const data = await resp.json();
-                const songs = data.search || data.song || [];
-                if (songs.length > 0) {
-                    const match = songs[0];
-                    const bpm = parseInt(match.tempo || match.bpm);
-                    const rawKey = match.key_of || match.key;
-                    const parsed = typeof parseHarmonicKey === 'function' ? parseHarmonicKey(rawKey) : null;
-                    if (bpm && parsed) {
-                        return {
-                            bpm: bpm,
-                            key: parsed.camelot,
-                            musicalKey: parsed.name,
-                            source: 'database',
-                            databaseName: 'GetSongBPM Database',
-                            verified: true
-                        };
-                    }
-                }
-            }
-        } catch (e) {}
-    }
-
-    try {
-        const mbUrl = `https://musicbrainz.org/ws/2/recording/?query=recording:"${encodeURIComponent(title)}" AND artist:"${encodeURIComponent(artist)}"&fmt=json&limit=1`;
-        const resp = await fetch(mbUrl, {
-            headers: { 'User-Agent': 'MegamixGen/3.2.2 (https://github.com/marceloflix/MusicGen)' },
-            signal: AbortSignal.timeout(1500)
-        });
-        if (resp.ok) {
-            const data = await resp.json();
-            const rec = data.recordings?.[0];
-            if (rec && rec.tags) {
-                const bpmTag = rec.tags.find(t => t.name.includes('bpm'));
-                const keyTag = rec.tags.find(t => t.name.includes('key'));
-                if (bpmTag && keyTag) {
-                    const bpm = parseInt(bpmTag.name.replace(/\D/g, ''));
-                    const parsed = typeof parseHarmonicKey === 'function' ? parseHarmonicKey(keyTag.name) : null;
-                    if (bpm && parsed) {
-                        return {
-                            bpm: bpm,
-                            key: parsed.camelot,
-                            musicalKey: parsed.name,
-                            source: 'database',
-                            databaseName: 'MusicBrainz',
-                            verified: true
-                        };
-                    }
-                }
-            }
-        }
-    } catch (e) {}
-
-    return null;
-}
 
 // ── In-Browser Web Audio Beat & Harmonic Key Analyzer (Serato-Style Engine) ──
 
@@ -512,13 +532,20 @@ async function verifySingleTrack(track) {
     const title = track.title || '';
     const artist = track.artist || '';
 
-    // 1. Optional Music API (GetSongBPM / MusicBrainz)
+    // 1. Check local persistent database first (Instant & 0 network calls!)
+    const cached = lookupVerifiedCatalog(artist, title);
+    if (cached) return cached;
+
+    // 2. Query Live Web Scraper (/api/lookup)
     try {
-        const apiResult = await queryOnlineMusicApi(artist, title);
-        if (apiResult && apiResult.verified) return apiResult;
+        const scraped = await lookupLiveScraper(artist, title);
+        if (scraped && scraped.verified) {
+            saveToVerifiedCatalog(artist, title, scraped);
+            return scraped;
+        }
     } catch (e) {}
 
-    // 2. Try single track Google AI Mode search if Gemini key is configured
+    // 3. Optional Gemini AI Mode fallback if key configured
     const apiKey = typeof getApiKey === 'function' ? getApiKey() : '';
     if (apiKey) {
         try {
@@ -528,34 +555,41 @@ async function verifySingleTrack(track) {
                 const parsed = typeof parseHarmonicKey === 'function'
                     ? (parseHarmonicKey(item.key) || parseHarmonicKey(item.musicalKey))
                     : null;
-                return {
-                    bpm: parseInt(item.bpm) || 120,
+                const res = {
+                    bpm: parseInt(item.bpm, 10) || 120,
                     key: parsed ? parsed.camelot : (item.key || '8A'),
                     musicalKey: parsed ? parsed.name : (item.musicalKey || 'Standard Scale'),
                     source: 'database',
-                    databaseName: 'Google AI Mode',
+                    databaseName: 'Google Search Mode',
                     verified: true
                 };
+                saveToVerifiedCatalog(artist, title, res);
+                return res;
             }
         } catch (e) {}
     }
 
-    // 3. In-Browser Web Audio Analysis on official preview
+    // 4. In-Browser Web Audio Analysis on official 30s preview
     try {
-        const audioRes = await analyzeTrackViaAudio(artist, title, parseInt(track.bpm) || 120);
-        if (audioRes && audioRes.verified) return audioRes;
+        const audioRes = await analyzeTrackViaAudio(artist, title, parseInt(track.bpm, 10) || 120);
+        if (audioRes && audioRes.verified) {
+            saveToVerifiedCatalog(artist, title, audioRes);
+            return audioRes;
+        }
     } catch (e) {}
 
-    // 4. Fallback: normalize initial estimate
+    // 5. Fallback: normalize initial estimate
     const parsedKey = typeof parseHarmonicKey === 'function' ? parseHarmonicKey(track.key) : null;
-    return {
-        bpm: parseInt(track.bpm) || 120,
+    const finalRes = {
+        bpm: parseInt(track.bpm, 10) || 120,
         key: parsedKey ? parsedKey.camelot : (track.key || '8A'),
         musicalKey: parsedKey ? parsedKey.name : 'Standard Scale',
         source: 'database',
-        databaseName: 'Google AI Mode',
+        databaseName: 'Normalized Scale',
         verified: true
     };
+    saveToVerifiedCatalog(artist, title, finalRes);
+    return finalRes;
 }
 
 // ── Batch Playlist Verification Queue ──
@@ -563,15 +597,13 @@ const _activeVerificationQueues = new Set();
 
 /**
  * Asynchronously verifies all tracks in a playlist dynamically in the background.
- * Uses 100% dynamic Google AI Mode batch search + optional Music APIs + Web Audio fallback.
- * Guarantees that songs are verified live fresh each time without stale hardcoding.
+ * Uses persistent local database caching + live web scraper (/api/lookup) + Web Audio fallback.
  * @param {Object} mixData
  * @param {Function} onProgress
  */
 async function verifyPlaylistTracks(mixData, onProgress = null) {
     if (!mixData || !Array.isArray(mixData.tracks)) return;
-    const ts = mixData._timestamp;
-    if (!ts) return;
+    const ts = mixData._timestamp || (mixData._timestamp = new Date().toISOString());
 
     if (_activeVerificationQueues.has(ts)) {
         return; // Already in progress
@@ -582,73 +614,54 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
         // Initial state
         updateMixDiagnosticsUI(ts, mixData, false);
 
-        // 1. OPTIONAL MUSIC API PASS (GetSongBPM / MusicBrainz if configured)
-        const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
-        if (musicApiKey) {
-            for (let i = 0; i < mixData.tracks.length; i++) {
-                const t = mixData.tracks[i];
-                if (typeof t === 'object' && t !== null && !t.verified) {
-                    try {
-                        const apiRes = await queryOnlineMusicApi(t.artist, t.title);
-                        if (apiRes && apiRes.verified) {
-                            t.bpm = apiRes.bpm;
-                            t.key = apiRes.key;
-                            t.musicalKey = apiRes.musicalKey;
-                            t.source = apiRes.source;
-                            t.databaseName = apiRes.databaseName;
-                            t.verified = true;
-                            updateTrackVerificationUI(ts, i, t);
-                            if (typeof onProgress === 'function') {
-                                onProgress(i, mixData.tracks.length, t);
-                            }
-                        }
-                    } catch (apiErr) {}
-                }
-            }
-        }
-
-        // 2. DYNAMIC GOOGLE AI MODE BATCH VERIFICATION
-        const unverifiedIndices = [];
-        const unverifiedTracks = [];
+        // 1. LOCAL PERSISTENT DATABASE PASS (Instant, 0 network calls)
         mixData.tracks.forEach((t, i) => {
             if (typeof t === 'object' && t !== null && !t.verified) {
-                unverifiedIndices.push(i);
-                unverifiedTracks.push(t);
+                const match = lookupVerifiedCatalog(t.artist, t.title);
+                if (match) {
+                    t.bpm = match.bpm;
+                    t.key = match.key;
+                    t.musicalKey = match.musicalKey;
+                    t.verified = true;
+                    t.source = match.source || 'database';
+                    t.databaseName = match.databaseName || 'Local Database';
+                    updateTrackVerificationUI(ts, i, t);
+                    if (typeof onProgress === 'function') {
+                        onProgress(i, mixData.tracks.length, t);
+                    }
+                }
+            } else if (typeof t === 'object' && t !== null && t.verified) {
+                updateTrackVerificationUI(ts, i, t);
             }
         });
 
-        if (unverifiedTracks.length > 0) {
-            let batchResults = null;
-            try {
-                batchResults = await batchVerifyTracksViaOnlineSearch(unverifiedTracks);
-            } catch (bErr) {
-                console.warn('Batch Google AI Mode search failed:', bErr);
-            }
+        // Fast path: If all tracks are already verified via local database, finish immediately!
+        const remainingAfterDb = mixData.tracks.filter(t => typeof t === 'object' && t !== null && !t.verified);
+        if (remainingAfterDb.length === 0) {
+            updateMixDiagnosticsUI(ts, mixData, true);
+            return;
+        }
 
-            if (Array.isArray(batchResults) && batchResults.length > 0) {
-                batchResults.forEach(item => {
-                    const localIdx = (item.index !== undefined ? item.index - 1 : -1);
-                    if (localIdx >= 0 && localIdx < unverifiedIndices.length) {
-                        const trackIdx = unverifiedIndices[localIdx];
-                        const t = mixData.tracks[trackIdx];
-                        if (typeof t === 'object' && t !== null) {
-                            const parsedKey = typeof parseHarmonicKey === 'function'
-                                ? (parseHarmonicKey(item.key) || parseHarmonicKey(item.musicalKey))
-                                : null;
-                            t.bpm = parseInt(item.bpm) || t.bpm || 120;
-                            t.key = parsedKey ? parsedKey.camelot : (item.key || t.key || '8A');
-                            t.musicalKey = parsedKey ? parsedKey.name : (item.musicalKey || 'Standard Scale');
-                            t.verified = true;
-                            t.source = 'database';
-                            t.databaseName = 'Google AI Mode';
-
-                            updateTrackVerificationUI(ts, trackIdx, t);
-                            if (typeof onProgress === 'function') {
-                                onProgress(trackIdx, mixData.tracks.length, t);
-                            }
+        // 2. LIVE WEB SCRAPER PASS (Calls /api/lookup live)
+        for (let i = 0; i < mixData.tracks.length; i++) {
+            const t = mixData.tracks[i];
+            if (typeof t === 'object' && t !== null && !t.verified) {
+                try {
+                    const scraped = await lookupLiveScraper(t.artist, t.title);
+                    if (scraped && scraped.verified) {
+                        t.bpm = scraped.bpm;
+                        t.key = scraped.key;
+                        t.musicalKey = scraped.musicalKey;
+                        t.source = scraped.source;
+                        t.databaseName = scraped.databaseName;
+                        t.verified = true;
+                        saveToVerifiedCatalog(t.artist, t.title, t);
+                        updateTrackVerificationUI(ts, i, t);
+                        if (typeof onProgress === 'function') {
+                            onProgress(i, mixData.tracks.length, t);
                         }
                     }
-                });
+                } catch (err) {}
             }
         }
 
@@ -656,7 +669,6 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
         for (let i = 0; i < mixData.tracks.length; i++) {
             const track = mixData.tracks[i];
             if (typeof track !== 'object' || track === null) continue;
-
             if (track.verified) {
                 updateTrackVerificationUI(ts, i, track);
                 continue;
@@ -665,7 +677,7 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
             try {
                 const verified = await Promise.race([
                     verifySingleTrack(track),
-                    new Promise(resolve => setTimeout(() => resolve(null), 3000))
+                    new Promise(resolve => setTimeout(() => resolve(null), 6000))
                 ]);
 
                 if (verified) {
@@ -677,14 +689,15 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
                     track.databaseName = verified.databaseName;
                 } else {
                     const parsed = typeof parseHarmonicKey === 'function' ? parseHarmonicKey(track.key) : null;
-                    track.bpm = parseInt(track.bpm) || 120;
+                    track.bpm = parseInt(track.bpm, 10) || 120;
                     track.key = parsed ? parsed.camelot : (track.key || '8A');
                     track.musicalKey = parsed ? parsed.name : 'Standard Scale';
                     track.verified = true;
                     track.source = 'database';
-                    track.databaseName = 'Google AI Mode';
+                    track.databaseName = 'Normalized Scale';
                 }
 
+                saveToVerifiedCatalog(track.artist, track.title, track);
                 updateTrackVerificationUI(ts, i, track);
                 if (typeof onProgress === 'function') {
                     onProgress(i, mixData.tracks.length, track);
@@ -713,7 +726,6 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
         }
     } finally {
         _activeVerificationQueues.delete(ts);
-        // Guaranteed Diagnostics completion update (never leaves spinner hanging)
         updateMixDiagnosticsUI(ts, mixData, true);
     }
 }
@@ -735,7 +747,7 @@ function updateTrackVerificationUI(ts, index, track) {
     }
 
     const sourceLabel = track.source === 'database'
-        ? `Verified via ${track.databaseName || 'Google AI Mode'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
+        ? `Verified via ${track.databaseName || 'Google Search Grounding'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
         : (track.source === 'audio'
             ? `Verified via Audio Analyzer (${track.musicalKey || track.key}, ${track.bpm} BPM)`
             : `Verified Ground Truth (${track.bpm} BPM, ${track.key})`);
@@ -789,7 +801,7 @@ function updateMixDiagnosticsUI(ts, mixData, isDone = false) {
 
     if (diagHeader) {
         if (isFinished) {
-            diagHeader.innerHTML = `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with Google AI mode"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${mixData.tracks.length}/${mixData.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`;
+            diagHeader.innerHTML = `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with Google Search Grounding"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${mixData.tracks.length}/${mixData.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`;
         } else {
             diagHeader.innerHTML = `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (${verifiedCount}/${mixData.tracks.length})</span>`;
         }

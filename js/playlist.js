@@ -166,16 +166,32 @@ function sortMixByCamelot(ts) {
 // ── Manually Re-verify / Harmonic Sync Mix Tracks ──
 async function reverifyMixTracks(ts, btn) {
     const history = getHistory();
-    const mix = history.find(m => m._timestamp === ts);
+    let mix = history.find(m => m._timestamp === ts);
+    if (!mix) {
+        // Support demo mix or DOM cards not yet in history
+        const card = document.querySelector(`[data-ts="${ts}"]`);
+        if (card) {
+            const trackRows = card.querySelectorAll('.track-row');
+            if (trackRows.length > 0) {
+                const tracks = [];
+                trackRows.forEach(row => {
+                    const textEl = row.querySelector('.track-name');
+                    const text = textEl ? textEl.textContent.trim() : '';
+                    const parts = text.split(' - ');
+                    const artist = (parts[0] || '').trim();
+                    const title = (parts.slice(1).join(' - ') || parts[0] || '').trim();
+                    tracks.push({ artist, title, bpm: 120, key: '8A' });
+                });
+                mix = { _timestamp: ts, title: 'System Initialization Mix', tracks };
+            }
+        }
+    }
     if (!mix || !Array.isArray(mix.tracks)) return;
 
-    // Reset verified flags to force fresh hybrid verification
+    // Reset verified flags to re-run verification pass (instant from persistent DB, zero API saturation)
     mix.tracks.forEach((t, i) => {
         if (typeof t === 'object' && t !== null) {
             t.verified = false;
-            if (typeof clearTrackCache === 'function') {
-                clearTrackCache(t.artist, t.title);
-            }
             if (typeof updateTrackVerificationUI === 'function') {
                 updateTrackVerificationUI(ts, i, t);
             }
