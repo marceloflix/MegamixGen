@@ -28,7 +28,7 @@ Building setlists and planning megamixes often requires bouncing between streami
 ## Getting Started
 
 ### Running Locally
-1. **Clone the repository**:
+1. **Clone or download the repository**:
    ```bash
    git clone https://github.com/marceloflix/MegamixGen.git
    cd MegamixGen
@@ -42,9 +42,30 @@ Building setlists and planning megamixes often requires bouncing between streami
 3. **Open the application**:
    Open `http://localhost:8080` in your web browser.
 
-4. **Configure your API keys** *(Settings icon in the top-right corner)*:
-   - **Gemini API Key**: Used for playlist curation and prompt suggestions.
-   - **GetSongBPM API Key**: Used for live BPM and Camelot key verification.
+---
+
+### Obtaining Free API Keys
+
+MegamixGen uses two free APIs. You can easily get your own keys with zero cost:
+
+#### 1. Gemini API Key (Curation & Track Suggestions)
+1. Head to [Google AI Studio](https://aistudio.google.com/apikey).
+2. Sign in with your Google account and click **Create API key**.
+3. Paste the key in MegamixGen under **Settings** → **Gemini API Key**.
+
+#### 2. GetSongBPM API Key (Authoritative BPM & Camelot Keys)
+1. Open the [GetSongBPM API Registration Page](https://getsongbpm.com/api).
+2. Fill out the request form using this public repository URL for verification:
+   - **Website URL or App ID/Package Name**: `https://github.com/marceloflix/MegamixGen`
+   - **Backlink URL**: `https://github.com/marceloflix/MegamixGen`
+   - **Email**: Enter your real personal or developer email address.
+3. Submit the form. GetSongBPM's automated verification will scan this repository, confirm the attribution backlink, and email you a free API key.
+4. Paste the key in MegamixGen under **Settings** → **GetSongBPM API Key** and click **Save**.
+
+> [!TIP]
+> Both keys are stored locally in your browser (`localStorage`). They are never shared, uploaded, or transmitted to any external third party.
+
+---
 
 > [!NOTE]
 > **Desktop App Roadmap**: A standalone, double-click desktop executable is planned for upcoming releases to make launching MegamixGen effortless without requiring terminal commands.
