@@ -141,18 +141,18 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
         const verifiedBpmClass = 'bg-[#051a05] border border-[#1a7b1a] text-[#39ff14] shadow-[0_0_6px_rgba(57,255,20,0.3)] hover:border-[#39ff14] hover:bg-[#0a2a0a] cursor-pointer';
         const verifiedKeyClass = 'bg-[#001428] border border-[#0055aa] text-[#3399ff] shadow-[0_0_6px_rgba(51,153,255,0.3)] hover:border-[#3399ff] hover:bg-[#002244] cursor-pointer';
 
-        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to view on Google Search">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to view on Google Search">${key}${keyCheckIcon}</span></span>`;
+        badgesHTML = `<span class="track-badges ml-1.5 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to view on Google Search">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to view on Google Search">${key}${keyCheckIcon}</span></span>`;
     } else if (isObj && !track.notFound) {
         // Show progressive analyzing state while querying GetSongBPM API
-        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span></span>`;
+        badgesHTML = `<span class="track-badges ml-1.5 flex items-center gap-1 shrink-0"><span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span></span>`;
     }
 
-    return `<li id="track-${ts}-${index}" class="track-row flex items-center gap-2 py-[3px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
+    return `<li id="track-${ts}-${index}" class="track-row flex items-center gap-1.5 py-[3px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500 overflow-hidden" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
         <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#2a2a2a] text-[#555] text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
-        <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy" class="text-white text-[15px] leading-tight cursor-pointer select-none flex items-center flex-wrap gap-1 group/track min-w-0">
-            <span class="track-name group-hover/track:text-[#ccc] transition-colors">${trackStr}</span>
+        <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy: ${trackEscaped}" class="track-title-wrapper text-white text-[15px] leading-tight cursor-pointer select-none flex items-center min-w-0 flex-1 overflow-hidden mr-1">
+            <span class="track-name truncate group-hover/track:text-[#ccc] transition-colors">${trackStr}</span>
             ${badgesHTML}
-            <i class="fas fa-clipboard text-[#333] text-[10px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0" aria-hidden="true"></i>
+            <i class="fas fa-clipboard text-[#333] text-[9px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0 ml-1" aria-hidden="true"></i>
         </span>
         <div class="track-actions flex gap-1 shrink-0 ml-auto items-center">
             <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${trackStr}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-30 group-hover:opacity-100 group-hover:border-[#39ff14] group-hover:bg-[#0a2a0a] group-hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
@@ -161,6 +161,39 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
             <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener" title="Search on Monochrome" aria-label="Search ${trackStr} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-30 group-hover:opacity-100 group-hover:border-[#bb86fc] group-hover:bg-[#1a0033] group-hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
         </div>
     </li>`;
+}
+
+// ── Render Tracklist in 10-Track Columns / Blocks ──
+function renderTracklistBlocks(tracks, ts) {
+    if (!Array.isArray(tracks) || tracks.length === 0) return '';
+
+    const blockSize = 20;
+    const blocks = [];
+
+    for (let b = 0; b < tracks.length; b += blockSize) {
+        const chunk = tracks.slice(b, b + blockSize);
+        // For 10 or fewer tracks, split evenly (e.g. 5 on left, 5 on right)
+        // For more than 10 tracks, first 10 go to left column, remaining up to 10 go to right column
+        const half = chunk.length <= 10 ? Math.ceil(chunk.length / 2) : 10;
+        const leftTracks = chunk.slice(0, half);
+        const rightTracks = chunk.slice(half);
+
+        blocks.push({
+            left: leftTracks.map((t, i) => ({ track: t, index: b + i })),
+            right: rightTracks.map((t, i) => ({ track: t, index: b + half + i }))
+        });
+    }
+
+    return blocks.map((block, bIdx) => `
+        <div class="tracklist-block grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0 ${bIdx > 0 ? 'mt-2 pt-2 border-t border-[#111]' : ''}">
+            <ul class="tracklist-col flex flex-col list-none p-0 m-0">
+                ${block.left.map(item => buildTrackHTML(item.track, item.index, ts, tracks)).join('')}
+            </ul>
+            <ul class="tracklist-col flex flex-col list-none p-0 m-0">
+                ${block.right.map(item => buildTrackHTML(item.track, item.index, ts, tracks)).join('')}
+            </ul>
+        </div>
+    `).join('');
 }
 
 // ── Render a Mix Card ──
@@ -274,13 +307,10 @@ function renderNewMix(data, persist = false) {
                     ${data._prompt ? `<p class="mb-2 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
                     ${data.description ? `<p class="mb-3 text-[11px] text-white italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
                     <div class="bg-[#050505] border border-[#1a4a1a] p-2">
-                        <div class="text-[#1a7b1a] text-[9px] uppercase font-bold border-b border-[#111] mb-2 pb-1 flex items-center justify-between">
-                            <span>Tracklist Sequence & Harmonic Transitions</span>
+                        <div class="text-[#1a7b1a] text-[9px] uppercase font-bold border-b border-[#111] mb-2 pb-1 flex items-center justify-end">
                             <span id="flow-indicator-${ts}" class="${flowColor} flex items-center gap-1 font-bold"><i class="fas ${flowIcon}"></i> ${flowText}</span>
                         </div>
-                        <ul class="tracklist-grid mt-1 list-none !pl-0 gap-x-2" style="display:grid;grid-template-columns:repeat(${data.tracks.length <= 10 ? 1 : 2},1fr)">
-                            ${data.tracks.map((t, i) => buildTrackHTML(t, i, ts, data.tracks)).join('')}
-                        </ul>
+                        ${renderTracklistBlocks(data.tracks, ts)}
                         <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2">
                             <button onclick="exportM3U(this)" data-title="${data.title.replace(/"/g, '&quot;')}" data-tracks="${flatTracksStr}"
                                     class="bg-[#111] hover:bg-[#1a0033] text-[#bb86fc] border border-[#2a0055] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(187,134,252,0.2)]">

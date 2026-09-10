@@ -155,7 +155,7 @@ function getModel() {
 }
 
 function getTextSize() {
-    return localStorage.getItem(STORAGE_KEYS.textSize) || 'text-size-normal';
+    return localStorage.getItem(STORAGE_KEYS.textSize) || 'text-size-small';
 }
 
 function getAutoScroll() {

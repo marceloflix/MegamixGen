@@ -22,7 +22,24 @@ function openSettings() {
     document.getElementById('settings-modal').classList.remove('hidden');
 }
 
-function resetStructuredPrompt() {
+function resetStructuredPrompt(btn) {
+    if (btn && !btn.dataset.confirming) {
+        btn.dataset.confirming = 'true';
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<span class="text-[9px] font-extrabold uppercase text-[#ff3333] bg-[#220000] border border-[#ff3333] px-1.5 py-[2px] rounded shadow-[0_0_6px_rgba(255,51,51,0.6)] cursor-pointer select-none">Reset?</span>';
+        btn._resetTimer = setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            delete btn.dataset.confirming;
+        }, 4000);
+        return;
+    }
+
+    if (btn && btn._resetTimer) clearTimeout(btn._resetTimer);
+    if (btn) {
+        delete btn.dataset.confirming;
+        btn.innerHTML = 'Reset to Default';
+    }
+
     document.getElementById('prompt-persona-input').value = DEFAULT_PROMPT.persona;
     document.getElementById('prompt-constraints-input').value = DEFAULT_PROMPT.constraints;
     document.getElementById('prompt-explicit-input').value = DEFAULT_PROMPT.explicit;

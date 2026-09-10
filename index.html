@@ -70,8 +70,8 @@
                 <div>
                     <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Text & UI Size</label>
                     <select id="text-size-select" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none font-bold text-[11px] cursor-pointer">
-                        <option value="text-size-small" style="color:#fff">Small</option>
-                        <option value="text-size-normal" style="color:#fff" selected>Normal ✓</option>
+                        <option value="text-size-small" style="color:#fff" selected>Small ✓</option>
+                        <option value="text-size-normal" style="color:#fff">Normal</option>
                         <option value="text-size-large" style="color:#fff">Large</option>
                     </select>
                 </div>
@@ -82,7 +82,7 @@
                 <div class="border-t border-[#222] pt-2.5 mt-1">
                     <label class="block text-[#39ff14] text-[10.5px] uppercase font-bold mb-2 flex justify-between items-center border-b border-[#111] pb-1">
                         <span>Advanced Prompt Configuration</span>
-                        <button type="button" onclick="resetStructuredPrompt()" class="text-[#3399ff] hover:text-white transition-colors text-[9px] uppercase cursor-pointer">Reset to Default</button>
+                        <button type="button" onclick="resetStructuredPrompt(this)" class="text-[#3399ff] hover:text-white transition-colors text-[9px] uppercase cursor-pointer">Reset to Default</button>
                     </label>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                         <div class="col-span-1 md:col-span-2">
