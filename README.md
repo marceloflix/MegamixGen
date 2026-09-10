@@ -1,8 +1,22 @@
-# MegamixGen
+# MegamixGen `v0.1-beta`
 
 > **Browser-based DJ setlist curation, harmonic transition planning, and BPM progression sorting.**
 
 MegamixGen helps DJs design cohesive track sequences based on eras, genres, or moods, then analyzes and organizes them for seamless mixing using standard **Camelot Wheel** notation and tempo progressions.
+
+> [!IMPORTANT]
+> **Work in Progress (v0.1 Beta Preview)**  
+> MegamixGen is currently in active development. While core playlist curation, Camelot conversion, and API verification are fully functional, please note that **BPM and musical key data** queried from third-party catalogs and AI curation are community-sourced or algorithmic estimates. Values may occasionally differ from vinyl/master recordings, pitch-adjusted tracks, or remixes and are not guaranteed to be 100% accurate. Always verify with your ears and DJ software beatgrid analysis when performing live!
+
+---
+
+## Interface Preview
+
+### Main Curation & Setlist View
+![MegamixGen Main Interface](assets/screenshots/main_view.png)
+
+### Settings & API Configuration
+![MegamixGen Settings Modal](assets/screenshots/settings_view.png)
 
 ---
 

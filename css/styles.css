@@ -308,6 +308,7 @@ button:hover:not(:disabled) {
     box-shadow: 0 -4px 20px rgba(0,0,0,0.8);
 }
 #audio-player-bar.active { display: flex; }
+body:has(#audio-player-bar.active) { padding-bottom: 50px; }
 #audio-progress {
     flex: 1;
     height: 4px;

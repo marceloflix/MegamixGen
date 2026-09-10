@@ -89,21 +89,27 @@ function highlightTrack(ts, index) {
     setTimeout(() => { el.style.backgroundColor = 'transparent'; }, 1500);
 }
 
-// ── Open Source in New Tab (Google Search / Tunebat Serato-Style Camelot Harmonic Key) ──
-function openBpmSource(artist, title, e) {
+// ── Open Source in New Tab (Direct GetSongBPM Verification) ──
+function openBpmSource(artist, title, e, directUrl) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-    const cleanA = (artist || '').trim();
-    const cleanT = (title || '').trim();
-    const q = cleanA && cleanT ? `${cleanA} ${cleanT} bpm tunebat` : `${cleanA} ${cleanT} bpm`.trim();
-    const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    openGetSongBpmLink(artist, title, directUrl);
 }
 
-function openKeySource(artist, title, e) {
+function openKeySource(artist, title, e, directUrl) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    openGetSongBpmLink(artist, title, directUrl);
+}
+
+function openGetSongBpmLink(artist, title, directUrl) {
+    // 1. Direct song page if known from API response
+    if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('https://getsongbpm.com/song/')) {
+        window.open(directUrl, '_blank', 'noopener,noreferrer');
+        return;
+    }
+    // 2. Guaranteed site search fallback (avoids 0-result POST/GET catalog query limits)
     const cleanA = (artist || '').trim();
-    const cleanT = (title || '').trim();
-    const q = cleanA && cleanT ? `${cleanA} ${cleanT} key camelot tunebat` : `${cleanA} ${cleanT} camelot key`.trim();
+    const cleanT = (title || '').replace(/\s*[\(\[].*?[\)\]]/g, '').trim() || (title || '').trim();
+    const q = `site:getsongbpm.com ${cleanA} ${cleanT}`.trim();
     const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
 }
@@ -124,6 +130,7 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
     const trackEscaped = trackStr.replace(/'/g, "\\'").replace(/"/g, '&quot;');
     const artistEscaped = (isObj && track.artist ? track.artist : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     const titleEscaped = (isObj && track.title ? track.title : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const urlEscaped = (isObj && track.getsongUrl ? track.getsongUrl : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
     let badgesHTML = '';
@@ -141,7 +148,7 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
         const verifiedBpmClass = 'bg-[#051a05] border border-[#1a7b1a] text-[#39ff14] shadow-[0_0_6px_rgba(57,255,20,0.3)] hover:border-[#39ff14] hover:bg-[#0a2a0a] cursor-pointer';
         const verifiedKeyClass = 'bg-[#001428] border border-[#0055aa] text-[#3399ff] shadow-[0_0_6px_rgba(51,153,255,0.3)] hover:border-[#3399ff] hover:bg-[#002244] cursor-pointer';
 
-        badgesHTML = `<span class="track-badges ml-1.5 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to view on Google Search">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to view on Google Search">${key}${keyCheckIcon}</span></span>`;
+        badgesHTML = `<span class="track-badges ml-1.5 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event,'${urlEscaped}')" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify on GetSongBPM">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event,'${urlEscaped}')" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to verify on GetSongBPM">${key}${keyCheckIcon}</span></span>`;
     } else if (isObj && !track.notFound) {
         // Show progressive analyzing state while querying GetSongBPM API
         badgesHTML = `<span class="track-badges ml-1.5 flex items-center gap-1 shrink-0"><span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span></span>`;

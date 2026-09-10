@@ -142,6 +142,7 @@ function saveSongToDatabase(artist, title, data) {
             source: data.source || 'api',
             databaseName: data.databaseName || 'GetSongBPM API',
             verified: true,
+            getsongUrl: data.getsongUrl || null,
             timestamp: Date.now()
         };
         localStorage.setItem(STORAGE_KEYS.songDatabase, JSON.stringify(db));

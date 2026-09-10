@@ -89,13 +89,18 @@ async function fetchGetSongBpmDirect(artist, title, apiKey) {
                         }
                         const camelotCode = keyInfo ? keyInfo.camelot : '8A';
                         const musicalScale = keyInfo ? keyInfo.name : (top.key_of || 'Standard Scale');
+                        const songId = top.id || top.song_id;
+                        const songTitle = top.song_title || top.title || title;
+                        const slug = String(songTitle).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                        const getsongUrl = songId ? `https://getsongbpm.com/song/${slug}/${songId}` : null;
                         return {
                             bpm: bpm,
                             key: camelotCode,
                             musicalKey: musicalScale,
                             source: 'api',
                             databaseName: 'GetSongBPM API',
-                            verified: true
+                            verified: true,
+                            getsongUrl: getsongUrl
                         };
                     }
                 }
@@ -125,7 +130,8 @@ async function lookupLiveScraper(artist, title) {
                     musicalKey: data.musicalKey || 'Standard Scale',
                     source: 'api',
                     databaseName: data.databaseName || 'GetSongBPM API',
-                    verified: true
+                    verified: true,
+                    getsongUrl: data.getsongUrl || null
                 };
             }
         }
@@ -693,6 +699,7 @@ function isMixVerifying(ts) {
                     t.verified = true;
                     t.source = match.source || 'api';
                     t.databaseName = match.databaseName || 'GetSongBPM API';
+                    t.getsongUrl = match.getsongUrl || null;
                     updateTrackVerificationUI(ts, i, t);
                     if (typeof onProgress === 'function') {
                         onProgress(i, mixData.tracks.length, t);
@@ -723,6 +730,7 @@ function isMixVerifying(ts) {
                         t.source = 'api';
                         t.databaseName = result.databaseName || 'GetSongBPM API';
                         t.verified = true;
+                        t.getsongUrl = result.getsongUrl || null;
                         saveToVerifiedCatalog(t.artist, t.title, t);
                     } else {
                         // Zero Guessing Mode: Track not found in GetSongBPM database
@@ -790,10 +798,11 @@ function updateTrackVerificationUI(ts, index, track) {
 
     const artistEscaped = (track.artist || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     const titleEscaped = (track.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const urlEscaped = (track.getsongUrl || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     badgeContainer.innerHTML = `
-        <span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to view on Google Search">${track.bpm} BPM${checkIcon}</span>
-        <span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${track.key} (${track.musicalKey || 'Standard Scale'}) — Click to view on Google Search">${track.key}${keyCheckIcon}</span>
+        <span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event,'${urlEscaped}')" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify on GetSongBPM">${track.bpm} BPM${checkIcon}</span>
+        <span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event,'${urlEscaped}')" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${track.key} (${track.musicalKey || 'Standard Scale'}) — Click to verify on GetSongBPM">${track.key}${keyCheckIcon}</span>
     `;
 
     // Subtle flash animation on newly verified item

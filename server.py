@@ -149,13 +149,18 @@ def fetch_getsongbpm(artist, title, api_key):
                                     if bpm < 85:
                                         bpm *= 2
                                     camelot, musical_key = to_camelot(key_of, open_key)
+                                    song_id = top.get('id') or top.get('song_id')
+                                    song_title = top.get('song_title') or top.get('title') or clean_title
+                                    slug = re.sub(r'[^a-z0-9]+', '-', str(song_title).lower()).strip('-')
+                                    getsong_url = f"https://getsongbpm.com/song/{slug}/{song_id}" if song_id else None
                                     return {
                                         'bpm': bpm,
                                         'key': camelot,
                                         'musicalKey': musical_key,
                                         'source': 'api',
                                         'databaseName': 'GetSongBPM API',
-                                        'verified': True
+                                        'verified': True,
+                                        'getsongUrl': getsong_url
                                     }
             except Exception:
                 pass
