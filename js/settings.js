@@ -113,28 +113,59 @@ async function saveSettings() {
 
     if (musicKey) {
         validationPromises.push(
-            fetch(`/api/validate_music_key?api_key=${encodeURIComponent(musicKey)}`)
-                .then(async mr => {
-                    const mdata = await mr.json();
-                    if (mr.ok && mdata.valid) {
-                        if (musicStatusEl) {
-                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
-                            musicStatusEl.textContent = '✓ KEY VALID';
+            (async () => {
+                // 1. Try local server endpoint first
+                try {
+                    const mr = await fetch(`/api/validate_music_key?api_key=${encodeURIComponent(musicKey)}`);
+                    if (mr.ok) {
+                        const mdata = await mr.json();
+                        if (mdata.valid) {
+                            if (musicStatusEl) {
+                                musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
+                                musicStatusEl.textContent = '✓ KEY VALID';
+                            }
+                            return;
                         }
-                    } else {
+                    } else if (mr.status === 400 || mr.status === 401 || mr.status === 403) {
                         if (musicStatusEl) {
                             musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff3333]';
                             musicStatusEl.textContent = '✗ INVALID KEY — check and try again';
                         }
                         musicValid = false;
+                        return;
                     }
-                })
-                .catch(() => {
+                } catch (e) {
+                    // Local server endpoint unreachable, attempt direct client-side validation
+                }
+
+                // 2. Direct client-side validation fallback
+                try {
+                    const directUrl = `https://api.getsong.co/search/?api_key=${encodeURIComponent(musicKey)}&type=both&lookup=song:test+artist:test`;
+                    const dr = await fetch(directUrl);
+                    if (dr.ok) {
+                        if (musicStatusEl) {
+                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
+                            musicStatusEl.textContent = '✓ KEY VALID';
+                        }
+                    } else if (dr.status === 401 || dr.status === 403) {
+                        if (musicStatusEl) {
+                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff3333]';
+                            musicStatusEl.textContent = '✗ INVALID KEY — check and try again';
+                        }
+                        musicValid = false;
+                    } else {
+                        if (musicStatusEl) {
+                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff9900]';
+                            musicStatusEl.textContent = '⚠ NETWORK ERROR — saved anyway';
+                        }
+                    }
+                } catch (directErr) {
                     if (musicStatusEl) {
                         musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff9900]';
                         musicStatusEl.textContent = '⚠ NETWORK ERROR — saved anyway';
                     }
-                })
+                }
+            })()
         );
     }
 

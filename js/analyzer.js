@@ -58,10 +58,61 @@ function saveTrackToCache(artist, title, result) {
  * Queries the local backend live scraper endpoint for authoritative BPM & Camelot Key.
  * Scrapes Beatport, SongBPM, and web search snippets live with zero API keys.
  */
+async function fetchGetSongBpmDirect(artist, title, apiKey) {
+    if (!artist || !title || !apiKey) return null;
+    const cleanTitle = title.replace(/[\(\[\{].*?[\)\]\}]/g, '').trim();
+    const cleanArtist = artist.replace(/[\(\[\{].*?[\)\]\}]/g, '').trim();
+    const firstArtist = cleanArtist.split(/[,&]|\s+feat\b|\s+ft\b|\s+vs\b/i)[0].trim();
+
+    const queries = [
+        `song:${cleanTitle} artist:${cleanArtist}`,
+        firstArtist !== cleanArtist ? `song:${cleanTitle} artist:${firstArtist}` : null,
+        `${firstArtist} ${cleanTitle}`
+    ].filter(Boolean);
+
+    for (const q of queries) {
+        try {
+            const url = `https://api.getsong.co/search/?api_key=${encodeURIComponent(apiKey)}&type=both&lookup=${encodeURIComponent(q)}`;
+            const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            if (resp.ok) {
+                const data = await resp.json();
+                const search = data && Array.isArray(data.search) ? data.search : [];
+                if (search.length > 0) {
+                    const top = search[0];
+                    if (top.tempo) {
+                        let bpm = Math.round(parseFloat(top.tempo));
+                        if (bpm < 85) bpm *= 2;
+                        let keyInfo = null;
+                        if (typeof parseHarmonicKey === 'function') {
+                            if (top.open_key) keyInfo = parseHarmonicKey(top.open_key);
+                            if (!keyInfo && top.key_of) keyInfo = parseHarmonicKey(top.key_of);
+                        }
+                        const camelotCode = keyInfo ? keyInfo.camelot : '8A';
+                        const musicalScale = keyInfo ? keyInfo.name : (top.key_of || 'Standard Scale');
+                        return {
+                            bpm: bpm,
+                            key: camelotCode,
+                            musicalKey: musicalScale,
+                            source: 'api',
+                            databaseName: 'GetSongBPM API',
+                            verified: true
+                        };
+                    }
+                }
+            }
+        } catch (err) {
+            // Try next query fallback
+        }
+    }
+    return null;
+}
+
 async function lookupLiveScraper(artist, title) {
     if (!artist || !title) return null;
     const musicKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
     if (!musicKey) return null;
+
+    // 1. Try local server endpoint first
     try {
         const url = `/api/lookup?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}&api_key=${encodeURIComponent(musicKey)}`;
         const resp = await fetch(url, { signal: AbortSignal.timeout(6000) });
@@ -79,8 +130,15 @@ async function lookupLiveScraper(artist, title) {
             }
         }
     } catch (e) {
-        // Fallback gracefully
+        // Local server unreachable, fall through to direct query
     }
+
+    // 2. Direct client-side fallback (works on any machine, even without server.py!)
+    try {
+        const direct = await fetchGetSongBpmDirect(artist, title, musicKey);
+        if (direct) return direct;
+    } catch (e) {}
+
     return null;
 }
 
