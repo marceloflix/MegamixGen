@@ -165,6 +165,12 @@ function sortMixByCamelot(ts) {
 
 // ── Manually Re-verify / Harmonic Sync Mix Tracks ──
 async function reverifyMixTracks(ts, btn) {
+    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+    if (!musicApiKey) {
+        if (typeof openSettings === 'function') openSettings();
+        return;
+    }
+
     const history = getHistory();
     let mix = history.find(m => m._timestamp === ts);
     if (!mix) {
@@ -180,7 +186,7 @@ async function reverifyMixTracks(ts, btn) {
                     const parts = text.split(' - ');
                     const artist = (parts[0] || '').trim();
                     const title = (parts.slice(1).join(' - ') || parts[0] || '').trim();
-                    tracks.push({ artist, title, bpm: 120, key: '8A' });
+                    tracks.push({ artist, title, bpm: null, key: null });
                 });
                 mix = { _timestamp: ts, title: 'System Initialization Mix', tracks };
             }
@@ -188,10 +194,11 @@ async function reverifyMixTracks(ts, btn) {
     }
     if (!mix || !Array.isArray(mix.tracks)) return;
 
-    // Reset verified flags to re-run verification pass (instant from persistent DB, zero API saturation)
+    // Reset verified and notFound flags to re-run GetSongBPM verification pass
     mix.tracks.forEach((t, i) => {
         if (typeof t === 'object' && t !== null) {
             t.verified = false;
+            delete t.notFound;
             if (typeof updateTrackVerificationUI === 'function') {
                 updateTrackVerificationUI(ts, i, t);
             }

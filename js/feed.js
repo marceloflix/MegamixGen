@@ -125,17 +125,15 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
     const artistEscaped = (isObj && track.artist ? track.artist : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     const titleEscaped = (isObj && track.title ? track.title : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
+    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
     let badgesHTML = '';
-    if (isObj && track.verified) {
+    if (!musicApiKey) {
+        // Zero Guessing Mode: Do NOT show BPM or Key badges at all when user hasn't provided a key
+        badgesHTML = '';
+    } else if (isObj && track.verified) {
         const bpm = track.bpm || '—';
         const key = track.key || '—';
-        const sourceLabel = track.source === 'scraped'
-            ? `Verified via ${track.databaseName || 'Live Web Scraper'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
-            : (track.source === 'database'
-                ? `Verified via ${track.databaseName || 'Local Song Database'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
-                : (track.source === 'audio'
-                    ? `Verified via Audio Analyzer (${track.musicalKey || track.key}, ${track.bpm} BPM)`
-                    : `Verified (${track.bpm} BPM, ${track.key})`));
+        const sourceLabel = `Verified via GetSongBPM API (${bpm} BPM, ${track.musicalKey || key})`;
 
         const checkIcon = '<i class="fas fa-check text-[7px] text-[#39ff14] ml-0.5"></i>';
         const keyCheckIcon = '<i class="fas fa-check text-[7px] text-[#3399ff] ml-0.5"></i>';
@@ -143,9 +141,9 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
         const verifiedBpmClass = 'bg-[#051a05] border border-[#1a7b1a] text-[#39ff14] shadow-[0_0_6px_rgba(57,255,20,0.3)] hover:border-[#39ff14] hover:bg-[#0a2a0a] cursor-pointer';
         const verifiedKeyClass = 'bg-[#001428] border border-[#0055aa] text-[#3399ff] shadow-[0_0_6px_rgba(51,153,255,0.3)] hover:border-[#3399ff] hover:bg-[#002244] cursor-pointer';
 
-        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify on Tunebat">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to verify on Tunebat">${key}${keyCheckIcon}</span></span>`;
-    } else if (isObj) {
-        // Do NOT show unverified AI hallucinations — show progressive analyzing state!
+        badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to view on Google Search">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to view on Google Search">${key}${keyCheckIcon}</span></span>`;
+    } else if (isObj && !track.notFound) {
+        // Show progressive analyzing state while querying GetSongBPM API
         badgesHTML = `<span class="track-badges ml-2 flex items-center gap-1 shrink-0"><span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span></span>`;
     }
 
@@ -172,8 +170,9 @@ function renderNewMix(data, persist = false) {
     const ts         = data._timestamp || new Date().toISOString();
     data._timestamp  = ts;
 
-    // Check tracks against Tunebat catalog immediately
-    if (Array.isArray(data.tracks) && typeof lookupVerifiedCatalog === 'function') {
+    // Check tracks against GetSongBPM verified catalog if API key is configured
+    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+    if (musicApiKey && Array.isArray(data.tracks) && typeof lookupVerifiedCatalog === 'function') {
         data.tracks.forEach(track => {
             if (typeof track === 'object' && track !== null && !track.verified) {
                 const match = lookupVerifiedCatalog(track.artist, track.title);
@@ -182,8 +181,8 @@ function renderNewMix(data, persist = false) {
                     track.key = match.key;
                     track.musicalKey = match.musicalKey;
                     track.verified = true;
-                    track.source = match.source;
-                    track.databaseName = match.databaseName;
+                    track.source = match.source || 'api';
+                    track.databaseName = match.databaseName || 'GetSongBPM API';
                 }
             }
         });
@@ -207,12 +206,12 @@ function renderNewMix(data, persist = false) {
     }).join('');
 
     const verifiedCount = data.tracks.filter(t => t && t.verified).length;
-    const isAllVerified = verifiedCount === data.tracks.length && data.tracks.length > 0;
+    const isAllVerified = !!musicApiKey && verifiedCount === data.tracks.length && data.tracks.length > 0;
 
     const bpms = data.tracks.map(t => (typeof t === 'object' && t.bpm ? parseInt(t.bpm) : null));
-    const validBpms = bpms.filter(b => b);
+    const validBpms = musicApiKey ? bpms.filter(b => b) : [];
     let visualizerHTML = '';
-    if (validBpms.length > 0) {
+    if (musicApiKey && validBpms.length > 0) {
         const minBpm = Math.min(...validBpms) - 5;
         const maxBpm = Math.max(...validBpms) + 5;
         const barsHTML = bpms.map((bpm, i) => {
@@ -257,11 +256,11 @@ function renderNewMix(data, persist = false) {
                 <div class="flex items-start justify-between flex-wrap gap-x-4 gap-y-1">
                     <div class="flex items-center gap-2">
                         <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
-                        <span class="diag-verified-status">${isAllVerified ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with Tunebat Database"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (${verifiedCount}/${data.tracks.length})</span>`}</span>
+                        <span class="diag-verified-status">${!musicApiKey ? `<button onclick="event.stopPropagation();openSettings()" class="bg-[#0a1a0a] hover:bg-[#1a3a1a] text-[#888] hover:text-[#39ff14] border border-[#222] hover:border-[#1a7b1a] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all inline-flex items-center gap-1 cursor-pointer" title="Add a free GetSongBPM API key in Settings to verify BPM and Camelot Keys"><i class="fas fa-key text-[8px] text-[#39ff14]"></i><span>UNLOCK BPM & KEY</span></button>` : (isAllVerified ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with GetSongBPM API"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : (verifiedCount > 0 ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#1a1500] hover:bg-[#2a2000] text-[#ffcc00] hover:text-[#ffdd44] border border-[#665200] hover:border-[#ffcc00] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with GetSongBPM API"><i class="fas fa-check text-[8px] text-[#ffcc00]"></i><span>${Math.round((verifiedCount/data.tracks.length)*100)}% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#997a00] group-hover/reverify:text-[#ffcc00] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : (typeof isMixVerifying === 'function' && isMixVerifying(ts) ? `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (0/${data.tracks.length})</span>` : `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#1a0a0a] hover:bg-[#2a1010] text-[#ff6666] hover:text-[#ff9999] border border-[#662222] hover:border-[#ff4444] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="0 tracks verified with GetSongBPM API. Click to retry."><i class="fas fa-exclamation-triangle text-[8px] text-[#ff4444]"></i><span>0% VERIFIED (0/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#993333] group-hover/reverify:text-[#ff6666] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`)))}</span>
                     </div>
                     <span class="flex items-center gap-3 flex-wrap">
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px]">${data.tracks.length}</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">BPM</span><span class="text-white text-[11px] diag-bpm-val">${isAllVerified ? data.bpm : 'Verifying...'}</span></span>
+                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">BPM</span><span class="text-white text-[11px] diag-bpm-val">${!musicApiKey ? '—' : (validBpms.length > 0 ? (Math.min(...validBpms) === Math.max(...validBpms) ? `${Math.min(...validBpms)}` : `${Math.min(...validBpms)}-${Math.max(...validBpms)}`) : '—')}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Est.</span><span class="text-white text-[11px]">~${data.tracks.length * 4}m</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre}</span></span>
@@ -341,8 +340,8 @@ function renderNewMix(data, persist = false) {
         saveHistory(history);
     }
 
-    // Trigger non-blocking async verification
-    if (typeof verifyPlaylistTracks === 'function' && Array.isArray(data.tracks)) {
+    // Trigger non-blocking async verification if GetSongBPM API key is configured
+    if (musicApiKey && typeof verifyPlaylistTracks === 'function' && Array.isArray(data.tracks)) {
         setTimeout(() => {
             verifyPlaylistTracks(data);
         }, 200);

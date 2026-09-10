@@ -139,8 +139,8 @@ function saveSongToDatabase(artist, title, data) {
             bpm: parseInt(data.bpm, 10),
             key: data.key,
             musicalKey: data.musicalKey || 'Standard Scale',
-            source: data.source || 'scraped',
-            databaseName: data.databaseName || 'Live Web Scraper',
+            source: data.source || 'api',
+            databaseName: data.databaseName || 'GetSongBPM API',
             verified: true,
             timestamp: Date.now()
         };

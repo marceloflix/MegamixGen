@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """
-MegamixGen Local Server with Live BPM & Camelot Key Scraper
-Serves static assets and provides an authoritative zero-config scraping endpoint:
+MegamixGen Local Server with Authoritative GetSongBPM API Proxy & Zero Guessing Mode
+Serves static assets and provides:
 GET /api/lookup?artist=...&title=...&api_key=...
+
+When no api_key is provided, returns { "status": "no_api_key" } without scraping.
+When api_key is provided, queries GetSongBPM official API and translates key to Camelot.
 """
 
 import http.server
@@ -11,7 +14,6 @@ import urllib.parse
 import urllib.request
 import json
 import re
-import html
 import os
 import sys
 
@@ -23,224 +25,164 @@ HEADERS = {
 # ── Camelot Wheel Mapping ──
 CAMELOT_MAP = {
     # Minor Keys (A Wheel)
-    'AB MINOR': '1A', 'G# MINOR': '1A',
-    'EB MINOR': '2A', 'D# MINOR': '2A',
-    'BB MINOR': '3A', 'A# MINOR': '3A',
-    'F MINOR': '4A',
-    'C MINOR': '5A',
-    'G MINOR': '6A',
-    'D MINOR': '7A',
-    'A MINOR': '8A',
-    'E MINOR': '9A',
-    'B MINOR': '10A',
-    'F# MINOR': '11A', 'GB MINOR': '11A',
-    'C# MINOR': '12A', 'DB MINOR': '12A',
+    'AB MINOR': '1A', 'G# MINOR': '1A', 'ABM': '1A', 'G#M': '1A',
+    'EB MINOR': '2A', 'D# MINOR': '2A', 'EBM': '2A', 'D#M': '2A',
+    'BB MINOR': '3A', 'A# MINOR': '3A', 'BBM': '3A', 'A#M': '3A',
+    'F MINOR': '4A', 'FM': '4A',
+    'C MINOR': '5A', 'CM': '5A',
+    'G MINOR': '6A', 'GM': '6A',
+    'D MINOR': '7A', 'DM': '7A',
+    'A MINOR': '8A', 'AM': '8A',
+    'E MINOR': '9A', 'EM': '9A',
+    'B MINOR': '10A', 'BM': '10A',
+    'F# MINOR': '11A', 'GB MINOR': '11A', 'F#M': '11A', 'GBM': '11A',
+    'C# MINOR': '12A', 'DB MINOR': '12A', 'C#M': '12A', 'DBM': '12A',
 
     # Major Keys (B Wheel)
-    'B MAJOR': '1B',
-    'F# MAJOR': '2B', 'GB MAJOR': '2B',
-    'C# MAJOR': '3B', 'DB MAJOR': '3B',
-    'AB MAJOR': '4B', 'G# MAJOR': '4B',
-    'EB MAJOR': '5B', 'D# MAJOR': '5B',
-    'BB MAJOR': '6B', 'A# MAJOR': '6B',
-    'F MAJOR': '7B',
-    'C MAJOR': '8B',
-    'G MAJOR': '9B',
-    'D MAJOR': '10B',
-    'A MAJOR': '11B',
-    'E MAJOR': '12B'
+    'B MAJOR': '1B', 'B': '1B', 'B MAJ': '1B',
+    'F# MAJOR': '2B', 'GB MAJOR': '2B', 'F#': '2B', 'GB': '2B', 'F# MAJ': '2B', 'GB MAJ': '2B',
+    'C# MAJOR': '3B', 'DB MAJOR': '3B', 'C#': '3B', 'DB': '3B', 'C# MAJ': '3B', 'DB MAJ': '3B',
+    'AB MAJOR': '4B', 'G# MAJOR': '4B', 'AB': '4B', 'G#': '4B', 'AB MAJ': '4B', 'G# MAJ': '4B',
+    'EB MAJOR': '5B', 'D# MAJOR': '5B', 'EB': '5B', 'D#': '5B', 'EB MAJ': '5B', 'D# MAJ': '5B',
+    'BB MAJOR': '6B', 'A# MAJOR': '6B', 'BB': '6B', 'A#': '6B', 'BB MAJ': '6B', 'A# MAJ': '6B',
+    'F MAJOR': '7B', 'F': '7B', 'F MAJ': '7B',
+    'C MAJOR': '8B', 'C': '8B', 'C MAJ': '8B',
+    'G MAJOR': '9B', 'G': '9B', 'G MAJ': '9B',
+    'D MAJOR': '10B', 'D': '10B', 'D MAJ': '10B',
+    'A MAJOR': '11B', 'A': '11B', 'A MAJ': '11B',
+    'E MAJOR': '12B', 'E': '12B', 'E MAJ': '12B'
 }
 
-def to_camelot(raw_key):
-    if not raw_key:
-        return '8A', 'Standard Scale'
-    
-    clean = raw_key.strip().upper()
-    cam_match = re.match(r'^([1-9]|1[0-2])([AB])$', clean)
-    if cam_match:
-        return clean, raw_key
-    
-    norm = clean.replace('♯', '#').replace('♭', 'B')
-    norm = re.sub(r'\s+', ' ', norm)
-    
-    if norm in CAMELOT_MAP:
-        return CAMELOT_MAP[norm], raw_key.title()
-    
-    m = re.search(r'([A-G][#B]?)\s*(MIN|MAJ|M\b)', norm)
-    if m:
-        root = m.group(1)
-        mode = 'MINOR' if 'MIN' in m.group(2) or m.group(2) == 'M' else 'MAJOR'
-        k = f'{root} {mode}'
-        if k in CAMELOT_MAP:
-            return CAMELOT_MAP[k], f"{root} {mode.capitalize()}"
-            
-    return '8A', raw_key.title()
+REVERSE_CAMELOT_MAP = {
+    '1A': 'G# Minor', '2A': 'D# Minor', '3A': 'Bb Minor', '4A': 'F Minor',
+    '5A': 'C Minor', '6A': 'G Minor', '7A': 'D Minor', '8A': 'A Minor',
+    '9A': 'E Minor', '10A': 'B Minor', '11A': 'F# Minor', '12A': 'C# Minor',
+    '1B': 'B Major', '2B': 'F# Major', '3B': 'C# Major', '4B': 'Ab Major',
+    '5B': 'Eb Major', '6B': 'Bb Major', '7B': 'F Major', '8B': 'C Major',
+    '9B': 'G Major', '10B': 'D Major', '11B': 'A Major', '12B': 'E Major'
+}
 
-def scrape_getsongbpm_api(artist, title, api_key):
+def to_camelot(raw_key, open_key=None):
+    # 1. Try musical key notation first (e.g. C#m, G, Eb Minor)
+    if raw_key:
+        clean = raw_key.strip().upper()
+        cam_match = re.match(r'^([1-9]|1[0-2])([AB])$', clean)
+        if cam_match:
+            return clean, REVERSE_CAMELOT_MAP.get(clean, raw_key)
+
+        norm = clean.replace('♯', '#').replace('♭', 'B')
+        norm = re.sub(r'\s+', ' ', norm)
+
+        if norm in CAMELOT_MAP:
+            code = CAMELOT_MAP[norm]
+            return code, REVERSE_CAMELOT_MAP.get(code, raw_key.title())
+
+        m = re.search(r'([A-G][#B]?)\s*(MIN|MAJ|M\b)?', norm)
+        if m:
+            root = m.group(1)
+            suffix = m.group(2) or ''
+            mode = 'MINOR' if 'MIN' in suffix or suffix == 'M' else 'MAJOR'
+            k = f'{root} {mode}'
+            if k in CAMELOT_MAP:
+                code = CAMELOT_MAP[k]
+                return code, REVERSE_CAMELOT_MAP.get(code, f"{root} {mode.capitalize()}")
+
+    # 2. Try Open Key notation (e.g. 1d-12d, 1m-12m)
+    if open_key:
+        m = re.match(r'^([1-9]|1[0-2])([MDmd])$', str(open_key).strip())
+        if m:
+            num = int(m.group(1))
+            mode = m.group(2).lower()
+            cam_num = ((num + 6) % 12) + 1
+            cam_letter = 'A' if mode == 'm' else 'B'
+            cam_code = f"{cam_num}{cam_letter}"
+            musical_name = REVERSE_CAMELOT_MAP.get(cam_code, raw_key or 'Standard Scale')
+            return cam_code, musical_name
+
+    return '8A', (raw_key or 'Standard Scale').title()
+
+def fetch_getsongbpm(artist, title, api_key):
+    """
+    Queries official GetSongBPM search API.
+    Zero guessing: parses authoritative tempo, key_of, and open_key.
+    """
     if not api_key:
-        return None, None, None
+        return None
+    api_key = api_key.strip()
+    clean_title = re.sub(r'[\(\[\{].*?[\)\]\}]', '', title).strip()
+    clean_artist = re.sub(r'[\(\[\{].*?[\)\]\}]', '', artist).strip()
+
+    artist_first = re.split(r'[,&]|\s+feat\b|\s+ft\b|\s+vs\b', clean_artist, flags=re.IGNORECASE)[0].strip()
+
+    # Search query candidates:
+    # 1. Official syntax: song:TITLE artist:ARTIST
+    # 2. Secondary: song:TITLE artist:FIRST_ARTIST
+    # 3. Simple combined fallback
+    queries = [
+        f"song:{clean_title} artist:{clean_artist}",
+        f"song:{clean_title} artist:{artist_first}" if artist_first != clean_artist else None,
+        f"{artist_first} {clean_title}"
+    ]
+
+    for q_str in queries:
+        if not q_str:
+            continue
+        for endpoint in ['https://api.getsong.co/search/', 'https://api.getsongbpm.com/search/']:
+            try:
+                url = f"{endpoint}?api_key={api_key}&type=both&lookup={urllib.parse.quote(q_str)}"
+                req = urllib.request.Request(url, headers=HEADERS)
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    if r.status == 200:
+                        data = json.loads(r.read().decode('utf-8'))
+                        search_results = data.get('search', [])
+                        if isinstance(search_results, list) and len(search_results) > 0:
+                            top = search_results[0]
+                            tempo = top.get('tempo')
+                            key_of = top.get('key_of')
+                            open_key = top.get('open_key')
+                            if tempo:
+                                try:
+                                    bpm = int(round(float(tempo)))
+                                except (ValueError, TypeError):
+                                    bpm = None
+                                if bpm:
+                                    if bpm < 85:
+                                        bpm *= 2
+                                    camelot, musical_key = to_camelot(key_of, open_key)
+                                    return {
+                                        'bpm': bpm,
+                                        'key': camelot,
+                                        'musicalKey': musical_key,
+                                        'source': 'api',
+                                        'databaseName': 'GetSongBPM API',
+                                        'verified': True
+                                    }
+            except Exception:
+                pass
+
+    return None
+
+def validate_getsongbpm_key(api_key):
+    """
+    Validates a GetSongBPM API key by making a test search query.
+    Returns (True, 'Key valid') or (False, error_message).
+    """
+    if not api_key:
+        return False, 'API key cannot be empty'
+    api_key = api_key.strip()
+    url = f"https://api.getsong.co/search/?api_key={api_key}&type=both&lookup=song:test+artist:test"
+    req = urllib.request.Request(url, headers=HEADERS)
     try:
-        clean_title = re.sub(r'[\(\[\{].*?[\)\]\}]', '', title).strip()
-        q = urllib.parse.quote(f'{artist} {clean_title}')
-        url = f'https://api.getsongbpm.com/search/?api_key={api_key.strip()}&type=both&lookup={q}'
-        req = urllib.request.Request(url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=5) as r:
             if r.status == 200:
-                data = json.loads(r.read().decode('utf-8'))
-                search_results = data.get('search', [])
-                if isinstance(search_results, list) and len(search_results) > 0:
-                    top = search_results[0]
-                    bpm = top.get('tempo')
-                    key = top.get('key_of')
-                    if bpm:
-                        bpm_int = int(bpm)
-                        if bpm_int < 85: bpm_int *= 2
-                        return bpm_int, key or 'Standard Scale', 'GetSongBPM API'
+                return True, 'Key valid'
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403):
+            return False, 'Invalid API Key, or inactive.'
+        return False, f"Server responded with error {e.code}"
     except Exception:
-        pass
-    return None, None, None
-
-def scrape_ddg_snippets(artist, title):
-    try:
-        clean_title = re.sub(r'[\(\[\{].*?[\)\]\}]', '', title).strip()
-        q = f'{artist} {clean_title} bpm key tunebat'
-        url = 'https://lite.duckduckgo.com/lite/'
-        data = urllib.parse.urlencode({'q': q}).encode('utf-8')
-        req = urllib.request.Request(url, data=data, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=4) as r:
-            content = r.read().decode('utf-8', errors='ignore')
-            snippets = re.findall(r"<td class='result-snippet'>(.*?)</td>", content, re.DOTALL)
-            for s in snippets[:8]:
-                clean = html.unescape(re.sub(r'<[^>]+>', '', s)).strip()
-                norm = clean.replace('♯', '#').replace('♭', 'b')
-                
-                m_bpm = re.search(r'\b(1?\d{2,3})\s*BPM\b', norm, re.IGNORECASE)
-                bpm = int(m_bpm.group(1)) if m_bpm else None
-                
-                m_cam = re.search(r'\b(?:camelot:?\s*)?([1-9]|1[0-2])([AB])\b', norm, re.IGNORECASE)
-                m_key = re.search(r'\b([A-G][#b]?)\s*(?:minor|major|min|maj|m\b)', norm, re.IGNORECASE)
-                m_slash = re.search(r'\b([A-G][#b]?)(?:/[A-G][#b]?)?\s*key\s*and\s*a\s*(minor|major)', norm, re.IGNORECASE)
-                
-                key = None
-                if m_cam and 'camelot' in norm.lower():
-                    key = m_cam.group(1).upper() + m_cam.group(2).upper()
-                elif m_slash:
-                    key = f"{m_slash.group(1)} {m_slash.group(2).capitalize()}"
-                elif m_key:
-                    key = m_key.group(0)
-                elif m_cam:
-                    key = m_cam.group(1).upper() + m_cam.group(2).upper()
-                    
-                if bpm and key:
-                    return bpm, key, 'Web Search'
-    except Exception:
-        pass
-    return None, None, None
-
-def scrape_beatport(artist, title):
-    try:
-        clean_title = re.sub(r'[\(\[\{].*?[\)\]\}]', '', title).strip()
-        q = urllib.parse.quote(f'{artist} {clean_title}')
-        url = f'https://www.beatport.com/search?q={q}'
-        req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=4) as r:
-            content = r.read().decode('utf-8', errors='ignore')
-            m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', content, re.DOTALL)
-            if m:
-                data = json.loads(m.group(1))
-                queries = data.get('props', {}).get('pageProps', {}).get('dehydratedState', {}).get('queries', [])
-                for q_obj in queries:
-                    t_data = q_obj.get('state', {}).get('data', {}).get('tracks', {}).get('data', [])
-                    if t_data:
-                        # 1. Prioritize Original Mix / Classic / Radio Edit (avoid modern remixes)
-                        for t in t_data:
-                            mix = (t.get('mix_name') or '').lower()
-                            if 'original' in mix or 'radio' in mix or t.get('is_classic'):
-                                bpm = t.get('bpm')
-                                key = t.get('key_name')
-                                if bpm and bpm < 85: bpm = bpm * 2
-                                if bpm and key:
-                                    return bpm, key, 'Beatport'
-                        # 2. Avoid obvious modern remixes if possible
-                        for t in t_data:
-                            mix = (t.get('mix_name') or '').lower()
-                            if not any(w in mix for w in ['remix', 'edit', 'bootleg', '202']):
-                                bpm = t.get('bpm')
-                                key = t.get('key_name')
-                                if bpm and bpm < 85: bpm = bpm * 2
-                                if bpm and key:
-                                    return bpm, key, 'Beatport'
-                        # 3. Fallback to top result
-                        top = t_data[0]
-                        bpm = top.get('bpm')
-                        if bpm and bpm < 85: bpm = bpm * 2
-                        key = top.get('key_name')
-                        if bpm and key:
-                            return bpm, key, 'Beatport'
-    except Exception:
-        pass
-    return None, None, None
-
-def scrape_songbpm(artist, title):
-    try:
-        def slug(s):
-            return re.sub(r'[^a-z0-9]+', '-', re.sub(r'[\(\[\{].*?[\)\]\}]', '', s.lower().replace('&', 'and'))).strip('-')
-        url = f'https://songbpm.com/@{slug(artist)}/{slug(title)}'
-        req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=4) as r:
-            if r.status == 200:
-                content = r.read().decode('utf-8', errors='ignore')
-                m_bpm = re.search(r'Tempo\s*\(BPM\)\s*</dt>\s*<dd[^>]*>\s*(\d+)', content)
-                m_key = re.search(r'Key\s*</dt>\s*<dd[^>]*>\s*([^<]+)', content)
-                m_mode = re.search(r'\b(minor|major)\b\s*mode', content, re.IGNORECASE)
-                bpm = int(m_bpm.group(1)) if m_bpm else None
-                key_raw = m_key.group(1).strip() if m_key else None
-                mode = m_mode.group(1).capitalize() if m_mode else 'Minor'
-                if key_raw:
-                    # Normalize unicode accidentals: C♯/D♭ -> C#
-                    norm_k = key_raw.replace('♯', '#').replace('♭', 'b').split('/')[0].strip()
-                    if norm_k:
-                        return bpm, f'{norm_k} {mode}', 'SongBPM'
-                elif bpm:
-                    return bpm, None, 'SongBPM'
-    except Exception:
-        pass
-    return None, None, None
-
-def live_lookup(artist, title, api_key=None):
-    # 1. Optional GetSongBPM API if user provided key
-    if api_key:
-        bpm_api, key_api, src_api = scrape_getsongbpm_api(artist, title, api_key)
-        if bpm_api and key_api:
-            camelot, musical = to_camelot(key_api)
-            return { 'bpm': bpm_api, 'key': camelot, 'musicalKey': musical, 'source': 'scraped', 'databaseName': src_api, 'verified': True }
-
-    # 2. SongBPM Authoritative Original Studio Database
-    bpm_sb, key_sb, src_sb = scrape_songbpm(artist, title)
-    if bpm_sb and key_sb:
-        camelot, musical = to_camelot(key_sb)
-        return { 'bpm': bpm_sb, 'key': camelot, 'musicalKey': musical, 'source': 'scraped', 'databaseName': src_sb, 'verified': True }
-
-    # 3. Beatport Search (with Original Mix prioritization)
-    bpm_bp, key_bp, src_bp = scrape_beatport(artist, title)
-    if bpm_bp and key_bp:
-        camelot, musical = to_camelot(key_bp)
-        return { 'bpm': bpm_bp, 'key': camelot, 'musicalKey': musical, 'source': 'scraped', 'databaseName': src_bp, 'verified': True }
-
-    # 4. DuckDuckGo Search Snippets (Tunebat / SongBPM index)
-    bpm_ddg, key_ddg, src_ddg = scrape_ddg_snippets(artist, title)
-    if bpm_ddg and key_ddg:
-        camelot, musical = to_camelot(key_ddg)
-        return { 'bpm': bpm_ddg, 'key': camelot, 'musicalKey': musical, 'source': 'scraped', 'databaseName': src_ddg, 'verified': True }
-    
-    # 5. Composite fallback
-    final_bpm = bpm_sb or bpm_bp or bpm_ddg
-    final_key = key_sb or key_bp or key_ddg
-    if final_bpm:
-        camelot, musical = to_camelot(final_key or '8A')
-        return { 'bpm': final_bpm, 'key': camelot, 'musicalKey': musical, 'source': 'scraped', 'databaseName': src_sb or src_bp or src_ddg or 'Live Web Scraper', 'verified': True }
-        
-    return None
+        return False, 'Network error while validating key'
+    return False, 'Invalid API Key'
 
 class MegamixHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -255,12 +197,41 @@ class MegamixHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+
+        if parsed.path == '/api/validate_music_key':
+            params = urllib.parse.parse_qs(parsed.query)
+            api_key = params.get('api_key', [''])[0].strip()
+            if not api_key:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'valid': False, 'message': 'API key is required'}).encode('utf-8'))
+                return
+
+            valid, msg = validate_getsongbpm_key(api_key)
+            self.send_response(200 if valid else 400)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'valid': valid, 'message': msg}).encode('utf-8'))
+            return
+
         if parsed.path == '/api/lookup':
             params = urllib.parse.parse_qs(parsed.query)
             artist = params.get('artist', [''])[0].strip()
             title = params.get('title', [''])[0].strip()
             api_key = params.get('api_key', [''])[0].strip()
-            
+
+            # Zero Guessing Mode: If no key is provided, refuse to guess or scrape
+            if not api_key:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'no_api_key',
+                    'message': 'GetSongBPM API key is required. Free key at getsongbpm.com/api'
+                }).encode('utf-8'))
+                return
+
             if not artist or not title:
                 self.send_response(400)
                 self.send_header('Content-Type', 'application/json')
@@ -268,7 +239,7 @@ class MegamixHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': 'Missing artist or title'}).encode('utf-8'))
                 return
 
-            result = live_lookup(artist, title, api_key=api_key)
+            result = fetch_getsongbpm(artist, title, api_key=api_key)
             if result:
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
@@ -278,9 +249,9 @@ class MegamixHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(404)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({'error': 'Not found'}).encode('utf-8'))
+                self.wfile.write(json.dumps({'error': 'Not found in GetSongBPM database'}).encode('utf-8'))
             return
-        
+
         return super().do_GET()
 
 if __name__ == '__main__':

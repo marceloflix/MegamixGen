@@ -60,12 +60,10 @@ function saveTrackToCache(artist, title, result) {
  */
 async function lookupLiveScraper(artist, title) {
     if (!artist || !title) return null;
+    const musicKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+    if (!musicKey) return null;
     try {
-        const musicKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
-        let url = `/api/lookup?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`;
-        if (musicKey) {
-            url += `&api_key=${encodeURIComponent(musicKey)}`;
-        }
+        const url = `/api/lookup?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}&api_key=${encodeURIComponent(musicKey)}`;
         const resp = await fetch(url, { signal: AbortSignal.timeout(6000) });
         if (resp.ok) {
             const data = await resp.json();
@@ -74,14 +72,14 @@ async function lookupLiveScraper(artist, title) {
                     bpm: parseInt(data.bpm, 10),
                     key: data.key,
                     musicalKey: data.musicalKey || 'Standard Scale',
-                    source: 'scraped',
-                    databaseName: data.databaseName || 'Live Web Scraper',
+                    source: 'api',
+                    databaseName: data.databaseName || 'GetSongBPM API',
                     verified: true
                 };
             }
         }
     } catch (e) {
-        // Fallback gracefully if server endpoint is unreachable
+        // Fallback gracefully
     }
     return null;
 }
@@ -605,13 +603,25 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
     if (!mixData || !Array.isArray(mixData.tracks)) return;
     const ts = mixData._timestamp || (mixData._timestamp = new Date().toISOString());
 
+    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+    if (!musicApiKey) {
+        // Zero Guessing Mode: No API key provided in Settings.
+        // Cleanly exit without scraping, guessing, or showing analyzing spinners.
+        updateMixDiagnosticsUI(ts, mixData, true);
+        return;
+    }
+
+function isMixVerifying(ts) {
+    return _activeVerificationQueues.has(ts);
+}
+
     if (_activeVerificationQueues.has(ts)) {
         return; // Already in progress
     }
     _activeVerificationQueues.add(ts);
 
     try {
-        // Initial state
+        // Initial state: show verifying status
         updateMixDiagnosticsUI(ts, mixData, false);
 
         // 1. LOCAL PERSISTENT DATABASE PASS (Instant, 0 network calls)
@@ -623,8 +633,8 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
                     t.key = match.key;
                     t.musicalKey = match.musicalKey;
                     t.verified = true;
-                    t.source = match.source || 'database';
-                    t.databaseName = match.databaseName || 'Local Database';
+                    t.source = match.source || 'api';
+                    t.databaseName = match.databaseName || 'GetSongBPM API';
                     updateTrackVerificationUI(ts, i, t);
                     if (typeof onProgress === 'function') {
                         onProgress(i, mixData.tracks.length, t);
@@ -642,80 +652,37 @@ async function verifyPlaylistTracks(mixData, onProgress = null) {
             return;
         }
 
-        // 2. LIVE WEB SCRAPER PASS (Calls /api/lookup live)
+        // 2. GETSONGBPM AUTHORITATIVE API PASS (Calls /api/lookup live)
         for (let i = 0; i < mixData.tracks.length; i++) {
             const t = mixData.tracks[i];
             if (typeof t === 'object' && t !== null && !t.verified) {
                 try {
-                    const scraped = await lookupLiveScraper(t.artist, t.title);
-                    if (scraped && scraped.verified) {
-                        t.bpm = scraped.bpm;
-                        t.key = scraped.key;
-                        t.musicalKey = scraped.musicalKey;
-                        t.source = scraped.source;
-                        t.databaseName = scraped.databaseName;
+                    const result = await lookupLiveScraper(t.artist, t.title);
+                    if (result && result.verified) {
+                        t.bpm = result.bpm;
+                        t.key = result.key;
+                        t.musicalKey = result.musicalKey;
+                        t.source = 'api';
+                        t.databaseName = result.databaseName || 'GetSongBPM API';
                         t.verified = true;
                         saveToVerifiedCatalog(t.artist, t.title, t);
-                        updateTrackVerificationUI(ts, i, t);
-                        if (typeof onProgress === 'function') {
-                            onProgress(i, mixData.tracks.length, t);
-                        }
+                    } else {
+                        // Zero Guessing Mode: Track not found in GetSongBPM database
+                        t.notFound = true;
+                        t.verified = false;
                     }
-                } catch (err) {}
-            }
-        }
-
-        // 3. FALLBACK FOR ANY REMAINING UNVERIFIED TRACKS (Web Audio / Normalized Estimator)
-        for (let i = 0; i < mixData.tracks.length; i++) {
-            const track = mixData.tracks[i];
-            if (typeof track !== 'object' || track === null) continue;
-            if (track.verified) {
-                updateTrackVerificationUI(ts, i, track);
-                continue;
-            }
-
-            try {
-                const verified = await Promise.race([
-                    verifySingleTrack(track),
-                    new Promise(resolve => setTimeout(() => resolve(null), 6000))
-                ]);
-
-                if (verified) {
-                    track.bpm = verified.bpm;
-                    track.key = verified.key;
-                    track.musicalKey = verified.musicalKey;
-                    track.source = verified.source;
-                    track.verified = true;
-                    track.databaseName = verified.databaseName;
-                } else {
-                    const parsed = typeof parseHarmonicKey === 'function' ? parseHarmonicKey(track.key) : null;
-                    track.bpm = parseInt(track.bpm, 10) || 120;
-                    track.key = parsed ? parsed.camelot : (track.key || '8A');
-                    track.musicalKey = parsed ? parsed.name : 'Standard Scale';
-                    track.verified = true;
-                    track.source = 'database';
-                    track.databaseName = 'Normalized Scale';
+                } catch (err) {
+                    t.notFound = true;
+                    t.verified = false;
                 }
-
-                saveToVerifiedCatalog(track.artist, track.title, track);
-                updateTrackVerificationUI(ts, i, track);
-                if (typeof onProgress === 'function') {
-                    onProgress(i, mixData.tracks.length, track);
-                }
-            } catch (trackErr) {
-                console.warn(`Error verifying track ${i + 1}:`, trackErr);
-            }
-        }
-
-        // 4. Ensure all tracks have verified flag set
-        mixData.tracks.forEach((t, i) => {
-            if (typeof t === 'object' && t !== null && !t.verified) {
-                t.verified = true;
                 updateTrackVerificationUI(ts, i, t);
+                if (typeof onProgress === 'function') {
+                    onProgress(i, mixData.tracks.length, t);
+                }
             }
-        });
+        }
 
-        // 5. Save updated mix into history
+        // 3. Save updated mix into history
         if (typeof getHistory === 'function' && typeof saveHistory === 'function') {
             const history = getHistory();
             const idx = history.findIndex(m => m._timestamp === ts);
@@ -740,18 +707,23 @@ function updateTrackVerificationUI(ts, index, track) {
     const badgeContainer = trackEl.querySelector('.track-badges');
     if (!badgeContainer) return;
 
-    const isVerified = !!track.verified;
-    if (!isVerified) {
-        badgeContainer.innerHTML = `<span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span>`;
+    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+    if (!musicApiKey) {
+        badgeContainer.innerHTML = '';
         return;
     }
 
-    const sourceLabel = track.source === 'database'
-        ? `Verified via ${track.databaseName || 'Google Search Grounding'} (${track.bpm} BPM, ${track.musicalKey || track.key})`
-        : (track.source === 'audio'
-            ? `Verified via Audio Analyzer (${track.musicalKey || track.key}, ${track.bpm} BPM)`
-            : `Verified Ground Truth (${track.bpm} BPM, ${track.key})`);
+    const isVerified = !!track.verified;
+    if (!isVerified) {
+        if (track.notFound) {
+            badgeContainer.innerHTML = '';
+        } else {
+            badgeContainer.innerHTML = `<span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span>`;
+        }
+        return;
+    }
 
+    const sourceLabel = `Verified via GetSongBPM API (${track.bpm} BPM, ${track.musicalKey || track.key})`;
     const checkIcon = '<i class="fas fa-check text-[7px] text-[#39ff14] ml-0.5"></i>';
     const keyCheckIcon = '<i class="fas fa-check text-[7px] text-[#3399ff] ml-0.5"></i>';
 
@@ -762,8 +734,8 @@ function updateTrackVerificationUI(ts, index, track) {
     const titleEscaped = (track.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     badgeContainer.innerHTML = `
-        <span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify BPM on Google Search">${track.bpm} BPM${checkIcon}</span>
-        <span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${track.key} (${track.musicalKey || 'Standard Scale'}) — Click to verify Serato Camelot Key on Google Search">${track.key}${keyCheckIcon}</span>
+        <span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to view on Google Search">${track.bpm} BPM${checkIcon}</span>
+        <span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event)" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${track.key} (${track.musicalKey || 'Standard Scale'}) — Click to view on Google Search">${track.key}${keyCheckIcon}</span>
     `;
 
     // Subtle flash animation on newly verified item
@@ -784,53 +756,78 @@ function updateMixDiagnosticsUI(ts, mixData, isDone = false) {
     const card = document.querySelector(`[data-ts="${ts}"]`);
     if (!card) return;
 
-    const validBpms = mixData.tracks.map(t => parseInt(t.bpm)).filter(Boolean);
-    if (validBpms.length > 0) {
-        const minBpm = Math.min(...validBpms);
-        const maxBpm = Math.max(...validBpms);
-        const bpmValEl = card.querySelector('.diag-bpm-val');
-        if (bpmValEl) {
+    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+    const validBpms = musicApiKey ? mixData.tracks.map(t => (t && t.verified ? parseInt(t.bpm) : null)).filter(Boolean) : [];
+    const bpmValEl = card.querySelector('.diag-bpm-val');
+    if (bpmValEl) {
+        if (!musicApiKey) {
+            bpmValEl.textContent = '—';
+        } else if (validBpms.length > 0) {
+            const minBpm = Math.min(...validBpms);
+            const maxBpm = Math.max(...validBpms);
             bpmValEl.textContent = minBpm === maxBpm ? `${minBpm}` : `${minBpm}-${maxBpm}`;
+        } else {
+            bpmValEl.textContent = isDone ? '—' : 'Verifying...';
         }
     }
 
     // Count verified tracks
-    const verifiedCount = mixData.tracks.filter(t => t.verified).length;
+    const verifiedCount = mixData.tracks.filter(t => t && t.verified).length;
+    const totalCount = mixData.tracks.length;
     const diagHeader = card.querySelector('.diag-verified-status');
-    const isFinished = isDone || verifiedCount === mixData.tracks.length;
+    const isFinished = isDone || (verifiedCount === totalCount && totalCount > 0);
 
     if (diagHeader) {
-        if (isFinished) {
-            diagHeader.innerHTML = `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with Google Search Grounding"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${mixData.tracks.length}/${mixData.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`;
+        if (!musicApiKey) {
+            diagHeader.innerHTML = `<button onclick="event.stopPropagation();openSettings()" class="bg-[#0a1a0a] hover:bg-[#1a3a1a] text-[#888] hover:text-[#39ff14] border border-[#222] hover:border-[#1a7b1a] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all inline-flex items-center gap-1 cursor-pointer" title="Add a free GetSongBPM API key in Settings to verify BPM and Camelot Keys"><i class="fas fa-key text-[8px] text-[#39ff14]"></i><span>UNLOCK BPM & KEY</span></button>`;
+        } else if (verifiedCount === totalCount && totalCount > 0) {
+            diagHeader.innerHTML = `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with GetSongBPM API"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${verifiedCount}/${totalCount})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`;
+        } else if (isFinished) {
+            if (verifiedCount > 0) {
+                const pct = Math.round((verifiedCount / totalCount) * 100);
+                diagHeader.innerHTML = `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#1a1500] hover:bg-[#2a2000] text-[#ffcc00] hover:text-[#ffdd44] border border-[#665200] hover:border-[#ffcc00] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with GetSongBPM API"><i class="fas fa-check text-[8px] text-[#ffcc00]"></i><span>${pct}% VERIFIED (${verifiedCount}/${totalCount})</span><i class="fas fa-redo-alt text-[7px] text-[#997a00] group-hover/reverify:text-[#ffcc00] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`;
+            } else {
+                diagHeader.innerHTML = `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#1a0a0a] hover:bg-[#2a1010] text-[#ff6666] hover:text-[#ff9999] border border-[#662222] hover:border-[#ff4444] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="0 tracks verified with GetSongBPM API. Click to retry."><i class="fas fa-exclamation-triangle text-[8px] text-[#ff4444]"></i><span>0% VERIFIED (0/${totalCount})</span><i class="fas fa-redo-alt text-[7px] text-[#993333] group-hover/reverify:text-[#ff6666] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`;
+            }
         } else {
-            diagHeader.innerHTML = `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (${verifiedCount}/${mixData.tracks.length})</span>`;
+            diagHeader.innerHTML = `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (${verifiedCount}/${totalCount})</span>`;
         }
     }
 
-    // Unlock Sort Buttons upon verification completion
+    // Sort buttons unlock only when user has API key and tracks are verified
     const sortBpmBtn = document.getElementById(`sort-bpm-btn-${ts}`) || card.querySelector('.sort-bpm-btn');
     const sortCamelotBtn = document.getElementById(`sort-camelot-btn-${ts}`) || card.querySelector('.sort-camelot-btn');
-    if (isFinished) {
-        if (sortBpmBtn) {
+    if (sortBpmBtn) {
+        if (musicApiKey && isFinished && verifiedCount > 0) {
             sortBpmBtn.disabled = false;
             sortBpmBtn.classList.remove('opacity-40', 'cursor-not-allowed');
             sortBpmBtn.title = 'Sort BPM (Low to High)';
+        } else {
+            sortBpmBtn.disabled = true;
+            sortBpmBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            sortBpmBtn.title = !musicApiKey ? 'Enter GetSongBPM API key in Settings to unlock sorting' : 'Sorting unlocks after verification completes';
         }
-        if (sortCamelotBtn) {
+    }
+    if (sortCamelotBtn) {
+        if (musicApiKey && isFinished && verifiedCount > 0) {
             sortCamelotBtn.disabled = false;
             sortCamelotBtn.classList.remove('opacity-40', 'cursor-not-allowed');
             sortCamelotBtn.title = 'Sort Harmonic Progression (Camelot Wheel)';
+        } else {
+            sortCamelotBtn.disabled = true;
+            sortCamelotBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            sortCamelotBtn.title = !musicApiKey ? 'Enter GetSongBPM API key in Settings to unlock sorting' : 'Sorting unlocks after verification completes';
         }
     }
 
     // Update BPM Flow bars in visualizer
-    if (validBpms.length > 0) {
+    if (musicApiKey && validBpms.length > 0) {
         const minBpm = Math.min(...validBpms) - 5;
         const maxBpm = Math.max(...validBpms) + 5;
         const barContainers = card.querySelectorAll('.group\\/bar');
         barContainers.forEach((bc, idx) => {
             const t = mixData.tracks[idx];
-            if (t && t.bpm) {
+            if (t && t.verified && t.bpm) {
                 const bpm = parseInt(t.bpm);
                 const pct = Math.max(10, Math.min(100, ((bpm - minBpm) / (maxBpm - minBpm)) * 100));
                 const bar = bc.querySelector('div');

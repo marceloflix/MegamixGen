@@ -61,13 +61,11 @@
                     <span class="text-[#39ff14] text-[11px] font-mono font-bold">gemini-3.5-flash-lite</span>
                 </div>
                 <div>
-                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1 flex items-center justify-between">
-                        <span>Music Database API Key (GetSongBPM)</span>
-                        <span class="text-[#555] text-[9px] font-normal uppercase">Optional</span>
-                    </label>
-                    <input type="password" id="music-api-key-input" placeholder="Optional: Paste GetSongBPM API key..."
+                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">GetSongBPM API Key</label>
+                    <input type="password" id="music-api-key-input" placeholder="Paste your API key here..."
                            class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-2.5 py-1.5 outline-none font-bold placeholder-[#333] key-input-vis text-[11px]">
-                    <p class="text-[#555] text-[9px] mt-1">Leave empty to use automatic live web scraping (Tunebat, SongBPM, Beatport).</p>
+                    <div id="music-api-key-status" class="hidden text-[10px] mt-1 font-bold uppercase tracking-wider"></div>
+                    <p class="text-[#555] text-[9px] mt-1">Get a key from <a href="https://getsongbpm.com/api" target="_blank" rel="noopener noreferrer" class="text-[#3399ff] underline">GetSongBPM</a>. Stored locally in your browser only.</p>
                 </div>
                 <div>
                     <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Text & UI Size</label>
@@ -114,7 +112,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" onclick="saveSettings()" class="flex-1 bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">
+                <button type="button" id="settings-save-btn" onclick="saveSettings()" class="flex-1 bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">
                     <i class="fas fa-save mr-1"></i> Save
                 </button>
                 <button type="button" onclick="closeSettings()" class="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white border border-[#333] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">
@@ -257,7 +255,7 @@
 
     <!-- ── Footer ── -->
     <div class="bg-black text-[#666] text-[9px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
-        <div>Megamix Gen v3.1</div>
+        <div>Megamix Gen v3.1 &bull; BPM & Key data by <a href="https://getsongbpm.com" target="_blank" rel="noopener noreferrer" class="text-[#888] hover:text-[#39ff14] underline">GetSongBPM</a></div>
         <div class="italic">made by MFlix</div>
     </div>
 
@@ -287,17 +285,17 @@
 </button>
 
 <!-- ── JavaScript Modules (load order matters) ── -->
-<script src="js/storage.js?v=3.3.5"></script>
-<script src="js/settings.js?v=3.3.5"></script>
-<script src="js/stats.js?v=3.3.5"></script>
-<script src="js/harmonic.js?v=3.3.5"></script>
-<script src="js/analyzer.js?v=3.3.5"></script>
-<script src="js/player.js?v=3.3.5"></script>
-<script src="js/playlist.js?v=3.3.5"></script>
-<script src="js/merge.js?v=3.3.5"></script>
-<script src="js/feed.js?v=3.3.5"></script>
-<script src="js/api.js?v=3.3.5"></script>
-<script src="js/ui.js?v=3.3.5"></script>
+<script src="js/storage.js?v=3.4.0"></script>
+<script src="js/settings.js?v=3.4.0"></script>
+<script src="js/stats.js?v=3.4.0"></script>
+<script src="js/harmonic.js?v=3.4.0"></script>
+<script src="js/analyzer.js?v=3.4.0"></script>
+<script src="js/player.js?v=3.4.0"></script>
+<script src="js/playlist.js?v=3.4.0"></script>
+<script src="js/merge.js?v=3.4.0"></script>
+<script src="js/feed.js?v=3.4.0"></script>
+<script src="js/api.js?v=3.4.0"></script>
+<script src="js/ui.js?v=3.4.0"></script>
 
 </body>
 </html>
