@@ -12,11 +12,10 @@ MegamixGen helps DJs design cohesive track sequences based on eras, genres, or m
 
 ## Interface Preview
 
-### Main Curation & Setlist View
-![MegamixGen Main Interface](assets/screenshots/main_view.png)
-
-### Settings & API Configuration
-![MegamixGen Settings Modal](assets/screenshots/settings_view.png)
+| [**Main Curation & Setlist View**](assets/screenshots/main_view.png) | [**Settings & API Configuration**](assets/screenshots/settings_view.png) |
+| :---: | :---: |
+| <a href="assets/screenshots/main_view.png"><img src="assets/screenshots/main_view.png" width="600" alt="MegamixGen Main Interface"></a> | <a href="assets/screenshots/settings_view.png"><img src="assets/screenshots/settings_view.png" width="285" alt="MegamixGen Settings Modal"></a> |
+| *Setlist curation, Camelot harmonic flow, and BPM progression sorting* | *Free Gemini AI & GetSongBPM API key setup* |
 
 ---
 
