@@ -3,9 +3,6 @@ function openSettings() {
     document.getElementById('api-key-input').value = getApiKey();
     const statusEl = document.getElementById('api-key-status');
     if (statusEl) statusEl.classList.add('hidden');
-
-    const musicStatusEl = document.getElementById('music-api-key-status');
-    if (musicStatusEl) musicStatusEl.classList.add('hidden');
     
     document.getElementById('text-size-select').value = getTextSize();
     document.getElementById('auto-scroll-toggle').checked = getAutoScroll();
@@ -13,11 +10,6 @@ function openSettings() {
     document.getElementById('prompt-constraints-input').value = getPromptConstraints();
     document.getElementById('prompt-explicit-input').value = getPromptExplicit();
     document.getElementById('prompt-popularity-input').value = getPromptPopularity();
-    
-    const musicKeyInput = document.getElementById('music-api-key-input');
-    if (musicKeyInput && typeof getMusicApiKey === 'function') {
-        musicKeyInput.value = getMusicApiKey();
-    }
 
     const spotifyInput = document.getElementById('spotify-client-id-input');
     if (spotifyInput && typeof getSpotifyClientId === 'function') {
@@ -28,21 +20,13 @@ function openSettings() {
 }
 
 function resetStructuredPrompt(btn) {
-    if (btn && !btn.dataset.confirming) {
-        btn.dataset.confirming = 'true';
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<span class="text-[9px] font-extrabold uppercase text-[#ff3333] bg-[#220000] border border-[#ff3333] px-1.5 py-[2px] rounded shadow-[0_0_6px_rgba(255,51,51,0.6)] cursor-pointer select-none">Reset?</span>';
-        btn._resetTimer = setTimeout(() => {
-            btn.innerHTML = originalHTML;
-            delete btn.dataset.confirming;
-        }, 4000);
-        return;
-    }
-
-    if (btn && btn._resetTimer) clearTimeout(btn._resetTimer);
     if (btn) {
-        delete btn.dataset.confirming;
-        btn.innerHTML = 'Reset to Default';
+        const badge = '<span class="text-[9px] font-extrabold uppercase text-[#ff3333] bg-[#220000] border border-[#ff3333] px-1.5 py-[2px] rounded shadow-[0_0_6px_rgba(255,51,51,0.6)] cursor-pointer select-none pointer-events-none">Reset?</span>';
+        if (typeof armConfirmButton === 'function') {
+            if (armConfirmButton(btn, badge, 'Click again to confirm reset', typeof DEFAULT_CONFIRM_TIMEOUT_MS !== 'undefined' ? DEFAULT_CONFIRM_TIMEOUT_MS : 8000)) {
+                return;
+            }
+        }
     }
 
     document.getElementById('prompt-persona-input').value = DEFAULT_PROMPT.persona;
@@ -83,13 +67,8 @@ async function saveSettings() {
     const constraints = document.getElementById('prompt-constraints-input').value;
     const explicit = document.getElementById('prompt-explicit-input').value;
     const popularity = document.getElementById('prompt-popularity-input').value;
-    const musicKeyInput = document.getElementById('music-api-key-input');
-    const musicKey = musicKeyInput ? musicKeyInput.value.trim() : '';
-    const oldMusicKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
-    const musicStatusEl = document.getElementById('music-api-key-status');
 
     let geminiValid = true;
-    let musicValid = true;
 
     // Show validating state immediately
     if (key && statusEl) {
@@ -100,117 +79,35 @@ async function saveSettings() {
         statusEl.classList.add('hidden');
     }
 
-    if (musicKey && musicStatusEl) {
-        musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ffcc00]';
-        musicStatusEl.textContent = 'VALIDATING KEY...';
-        musicStatusEl.classList.remove('hidden');
-    } else if (musicStatusEl) {
-        musicStatusEl.classList.add('hidden');
-    }
-
-    // Run validations concurrently
-    const validationPromises = [];
-
     if (key) {
-        validationPromises.push(
-            fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}?key=${key}`)
-                .then(r => {
-                    if (r.ok) {
-                        if (statusEl) {
-                            statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
-                            statusEl.textContent = '✓ KEY VALID';
-                        }
-                    } else {
-                        if (statusEl) {
-                            statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff3333]';
-                            statusEl.textContent = '✗ INVALID KEY — check and try again';
-                        }
-                        geminiValid = false;
-                    }
-                })
-                .catch(() => {
-                    if (statusEl) {
-                        statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff9900]';
-                        statusEl.textContent = '⚠ NETWORK ERROR — saved anyway';
-                    }
-                })
-        );
+        try {
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}?key=${key}`);
+            if (r.ok) {
+                if (statusEl) {
+                    statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
+                    statusEl.textContent = '✓ KEY VALID';
+                }
+            } else {
+                if (statusEl) {
+                    statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff3333]';
+                    statusEl.textContent = '✗ INVALID KEY — check and try again';
+                }
+                geminiValid = false;
+            }
+        } catch {
+            if (statusEl) {
+                statusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff9900]';
+                statusEl.textContent = '⚠ NETWORK ERROR — saved anyway';
+            }
+        }
     }
 
-    if (musicKey) {
-        validationPromises.push(
-            (async () => {
-                // 1. Try local server endpoint first
-                try {
-                    const mr = await fetch(`/api/validate_music_key?api_key=${encodeURIComponent(musicKey)}`);
-                    if (mr.ok) {
-                        const mdata = await mr.json();
-                        if (mdata.valid) {
-                            if (musicStatusEl) {
-                                musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
-                                musicStatusEl.textContent = '✓ KEY VALID';
-                            }
-                            return;
-                        }
-                    } else if (mr.status === 400 || mr.status === 401 || mr.status === 403) {
-                        if (musicStatusEl) {
-                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff3333]';
-                            musicStatusEl.textContent = '✗ INVALID KEY — check and try again';
-                        }
-                        musicValid = false;
-                        return;
-                    }
-                } catch (e) {
-                    // Local server endpoint unreachable, attempt direct client-side validation
-                }
-
-                // 2. Direct client-side validation fallback
-                try {
-                    const directUrl = `https://api.getsong.co/search/?api_key=${encodeURIComponent(musicKey)}&type=both&lookup=song:test+artist:test`;
-                    const dr = await fetch(directUrl);
-                    if (dr.ok) {
-                        if (musicStatusEl) {
-                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#39ff14]';
-                            musicStatusEl.textContent = '✓ KEY VALID';
-                        }
-                    } else if (dr.status === 401 || dr.status === 403) {
-                        if (musicStatusEl) {
-                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff3333]';
-                            musicStatusEl.textContent = '✗ INVALID KEY — check and try again';
-                        }
-                        musicValid = false;
-                    } else {
-                        if (musicStatusEl) {
-                            musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff9900]';
-                            musicStatusEl.textContent = '⚠ NETWORK ERROR — saved anyway';
-                        }
-                    }
-                } catch (directErr) {
-                    if (musicStatusEl) {
-                        musicStatusEl.className = 'text-[10px] mt-1 font-bold uppercase tracking-wider text-[#ff9900]';
-                        musicStatusEl.textContent = '⚠ NETWORK ERROR — saved anyway';
-                    }
-                }
-            })()
-        );
-    }
-
-    await Promise.all(validationPromises);
-
-    // If any key was invalid: clear the input field and remove from storage immediately
+    // If key was invalid: clear the input field and remove from storage immediately
     if (!geminiValid) {
         const geminiInput = document.getElementById('api-key-input');
         if (geminiInput) geminiInput.value = '';
         localStorage.removeItem(STORAGE_KEYS.apiKey);
-    }
-    if (!musicValid) {
-        if (musicKeyInput) musicKeyInput.value = '';
-        if (typeof saveMusicApiKey === 'function') saveMusicApiKey('');
-        if (typeof onMusicApiKeyUpdated === 'function') onMusicApiKeyUpdated('', oldMusicKey);
-    }
 
-    // Stop if any provided key is invalid
-    if (!geminiValid || !musicValid) {
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.innerHTML = originalBtnHtml;
@@ -242,19 +139,12 @@ async function saveSettings() {
     localStorage.setItem(STORAGE_KEYS.promptPopularity, popularity);
     applyTextSize(textSize);
 
-    if (typeof saveMusicApiKey === 'function') {
-        saveMusicApiKey(musicKey);
-    }
-
     const spotifyInput = document.getElementById('spotify-client-id-input');
     if (spotifyInput && typeof setSpotifyClientId === 'function') {
         setSpotifyClientId(spotifyInput.value.trim());
     }
 
     setTimeout(() => {
-        if (typeof onMusicApiKeyUpdated === 'function') {
-            onMusicApiKeyUpdated(musicKey, oldMusicKey);
-        }
         closeSettings();
         if (saveBtn) {
             saveBtn.disabled = false;
@@ -262,19 +152,5 @@ async function saveSettings() {
             saveBtn.style.opacity = '1';
             saveBtn.style.cursor = 'pointer';
         }
-    }, 700);
-}
-
-function onMusicApiKeyUpdated(newKey, oldKey) {
-    if (newKey !== oldKey) {
-        if (typeof rebuildFeed === 'function') rebuildFeed();
-        if (newKey) {
-            const history = typeof getHistory === 'function' ? getHistory() : [];
-            history.forEach(mix => {
-                if (mix && Array.isArray(mix.tracks) && typeof verifyPlaylistTracks === 'function') {
-                    verifyPlaylistTracks(mix);
-                }
-            });
-        }
-    }
+    }, 600);
 }

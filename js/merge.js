@@ -61,20 +61,10 @@ function executeMerge() {
         }
     }));
 
-    // Harmonically sequence merged tracks by Camelot Wheel
-    let sortedTracks = allTracks;
-    if (typeof sortTracksByCamelotOrder === 'function') {
-        sortedTracks = sortTracksByCamelotOrder(allTracks);
-    }
-
-    const bpms = allTracks.map(t => (typeof t === 'object' && t.bpm) ? parseInt(t.bpm) : null).filter(Boolean);
-    const bpmRange = bpms.length > 0 ? `${Math.min(...bpms)}-${Math.max(...bpms)}` : (selected[0].bpm || '120');
-
     const merged = {
         title:       selected.map(m => m.title).join(' + '),
-        description: `Merged playlist from ${selected.length} playlists (${allTracks.length} unique tracks, harmonically sequenced).`,
-        tracks:      sortedTracks,
-        bpm:         bpmRange,
+        description: `Merged playlist from ${selected.length} playlists (${allTracks.length} unique tracks).`,
+        tracks:      allTracks,
         energy:      Math.round(selected.reduce((s, m) => s + (parseInt(m.energy) || 3), 0) / selected.length),
         genre:       [...new Set(selected.map(m => m.genre).filter(Boolean))].join(', '),
         _prompt:     'Merged: ' + selected.map(m => m._prompt || m.title).join(' + ')

@@ -38,6 +38,7 @@ function setView(mode) {
 // ── Rebuild Feed ──
 function rebuildFeed() {
     const container = document.getElementById('mixes-container');
+    if (!container) return;
     container.innerHTML = '';
     let history = getHistory();
     if (currentFilter === 'favorites') history = history.filter(m => m._favorite);
@@ -54,12 +55,14 @@ function rebuildFeed() {
     history.slice().reverse().forEach(mix => renderNewMix(mix, false));
 
     if (container.children.length === 0 && currentFilter === 'favorites') {
-        container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-star mr-2"></i>No favorites yet — star a mix to save it here.</div>';
+        container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-star mr-2"></i>No favorites yet — star a playlist to save it here.</div>';
     } else if (container.children.length === 0 && searchTerm) {
         container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-search mr-2"></i>No playlists match that search.</div>';
     }
 
-    if (mergeMode) applyMergeHighlights();
+    if (typeof mergeMode !== 'undefined' && mergeMode && typeof applyMergeHighlights === 'function') {
+        applyMergeHighlights();
+    }
 }
 
 function filterHistory() { rebuildFeed(); }
@@ -89,31 +92,6 @@ function highlightTrack(ts, index) {
     setTimeout(() => { el.style.backgroundColor = 'transparent'; }, 1500);
 }
 
-// ── Open Source in New Tab (Direct GetSongBPM Verification) ──
-function openBpmSource(artist, title, e, directUrl) {
-    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-    openGetSongBpmLink(artist, title, directUrl);
-}
-
-function openKeySource(artist, title, e, directUrl) {
-    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-    openGetSongBpmLink(artist, title, directUrl);
-}
-
-function openGetSongBpmLink(artist, title, directUrl) {
-    // 1. Direct song page if known from API response
-    if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('https://getsongbpm.com/song/')) {
-        window.open(directUrl, '_blank', 'noopener,noreferrer');
-        return;
-    }
-    // 2. Guaranteed site search fallback (avoids 0-result POST/GET catalog query limits)
-    const cleanA = (artist || '').trim();
-    const cleanT = (title || '').replace(/\s*[\(\[].*?[\)\]]/g, '').trim() || (title || '').trim();
-    const q = `site:getsongbpm.com ${cleanA} ${cleanT}`.trim();
-    const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-}
-
 // ── Track string helper ──
 function getTrackString(t) {
     if (!t) return '';
@@ -132,27 +110,6 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
     const trackEscaped = trackStr.replace(/'/g, "\\'").replace(/"/g, '&quot;');
     const artistEscaped = (isObj && track.artist ? track.artist : (trackStr.includes(' - ') ? trackStr.split(' - ')[0] : '')).replace(/'/g, "\\'").replace(/"/g, '&quot;');
     const titleEscaped = (isObj && track.title ? track.title : (trackStr.includes(' - ') ? trackStr.split(' - ').slice(1).join(' - ') : trackStr)).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    const urlEscaped = (isObj && track.getsongUrl ? track.getsongUrl : '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-
-    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
-    let badgesHTML = '';
-    if (!musicApiKey) {
-        badgesHTML = '';
-    } else if (isObj && track.verified) {
-        const bpm = track.bpm || '—';
-        const key = track.key || '—';
-        const sourceLabel = `Verified via GetSongBPM API (${bpm} BPM, ${track.musicalKey || key})`;
-
-        const checkIcon = '<i class="fas fa-check text-[7px] text-[#39ff14] ml-0.5"></i>';
-        const keyCheckIcon = '<i class="fas fa-check text-[7px] text-[#3399ff] ml-0.5"></i>';
-
-        const verifiedBpmClass = 'bg-[#051a05] border border-[#1a7b1a] text-[#39ff14] shadow-[0_0_6px_rgba(57,255,20,0.3)] hover:border-[#39ff14] hover:bg-[#0a2a0a] cursor-pointer';
-        const verifiedKeyClass = 'bg-[#001428] border border-[#0055aa] text-[#3399ff] shadow-[0_0_6px_rgba(51,153,255,0.3)] hover:border-[#3399ff] hover:bg-[#002244] cursor-pointer';
-
-        badgesHTML = `<span class="track-badges ml-1.5 flex items-center gap-1 shrink-0"><span onclick="openBpmSource('${artistEscaped}','${titleEscaped}',event,'${urlEscaped}')" class="${verifiedBpmClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="${sourceLabel} — Click to verify on GetSongBPM">${bpm} BPM${checkIcon}</span><span onclick="openKeySource('${artistEscaped}','${titleEscaped}',event,'${urlEscaped}')" class="${verifiedKeyClass} text-[8px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-0.5 transition-all duration-300" title="Camelot Key: ${key} (${track.musicalKey || 'Standard Scale'}) — Click to verify on GetSongBPM">${key}${keyCheckIcon}</span></span>`;
-    } else if (isObj && !track.notFound) {
-        badgesHTML = `<span class="track-badges ml-1.5 flex items-center gap-1 shrink-0"><span class="bg-[#051405] border border-[#113311] text-[#448844] text-[7.5px] font-bold px-1.5 py-[2px] rounded uppercase tracking-wider inline-flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[6.5px] text-[#39ff14]"></i> analyzing</span></span>`;
-    }
 
     const inStash = typeof isStashed === 'function' ? isStashed(artistEscaped, titleEscaped) : false;
     const starClass = inStash
@@ -168,29 +125,34 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
 
         <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#333] text-white text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
 
-        <!-- Track Title & Badges -->
+        <!-- Track Title -->
         <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy: ${trackEscaped}" class="track-title-wrapper text-white text-[15px] leading-tight cursor-pointer select-none flex items-center min-w-0 flex-1 overflow-hidden mr-1">
             <span class="track-name truncate group-hover/track:text-[#ccc] transition-colors">${trackStr}</span>
-            ${badgesHTML}
             <i class="fas fa-clipboard text-[#333] text-[9px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0 ml-1" aria-hidden="true"></i>
         </span>
 
-        <!-- Dig Deeper (Magnifying Glass) -->
-        <button onclick="event.stopPropagation();openDigDeeperModal('${ts}', ${index}, '${artistEscaped}','${titleEscaped}')" title="Dig Deeper: Find tracks similar to ${trackStr}" aria-label="Find tracks similar to ${trackStr}" class="shrink-0 flex items-center justify-center w-6 h-6 bg-[#001428] border border-[#003366] text-[#3399ff] hover:border-[#3399ff] hover:bg-[#002244] hover:shadow-[0_0_6px_rgba(51,153,255,0.4)] text-[10px] transition-all cursor-pointer">
-            <i class="fas fa-search"></i>
-        </button>
-
-        <!-- Save to Download Stash -->
-        <button onclick="event.stopPropagation();toggleStashTrack({ artist: '${artistEscaped}', title: '${titleEscaped}', bpm: ${track.bpm || 'null'}, key: '${track.key || ''}', musicalKey: '${track.musicalKey || ''}', getsongUrl: '${urlEscaped}' }, this)" data-artist="${artistEscaped}" data-title="${titleEscaped}" title="${starTitle}" aria-label="${starTitle}" class="stash-star-btn shrink-0 flex items-center justify-center w-6 h-6 border ${starClass} text-[11px] transition-all cursor-pointer">
-            <i class="fas fa-star"></i>
-        </button>
-
-        <!-- Quick Actions: Audition & Streaming -->
+        <!-- Track Actions Line -->
         <div class="track-actions flex gap-1 shrink-0 ml-1 items-center">
+            <!-- 1. Preview 30s (First) -->
             <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${trackStr}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#39ff14] hover:bg-[#0a2a0a] hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all cursor-pointer"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
+
+            <!-- 2. Streaming & Download Links -->
             <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer" title="Search YouTube" aria-label="Search ${trackStr} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#ff4444] hover:bg-[#330000] hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
             <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Search Spotify" aria-label="Search ${trackStr} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#1db954] hover:bg-[#003300] hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
             <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Download on Monochrome" aria-label="Search ${trackStr} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-75 group-hover:opacity-100 hover:border-[#bb86fc] hover:bg-[#1a0033] hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
+
+            <!-- Spacing divider -->
+            <span class="w-[1px] h-3.5 bg-[#222] mx-1 shrink-0"></span>
+
+            <!-- 3. Dig Deeper (Magnifying Glass) -->
+            <button onclick="event.stopPropagation();openDigDeeperModal('${ts}', ${index}, '${artistEscaped}','${titleEscaped}')" title="Dig Deeper: Find tracks similar to ${trackStr}" aria-label="Find tracks similar to ${trackStr}" class="shrink-0 flex items-center justify-center w-6 h-6 bg-[#001428] border border-[#003366] text-[#3399ff] hover:border-[#3399ff] hover:bg-[#002244] hover:shadow-[0_0_6px_rgba(51,153,255,0.4)] text-[10px] transition-all cursor-pointer">
+                <i class="fas fa-search"></i>
+            </button>
+
+            <!-- 4. Save to Download Stash (End) -->
+            <button onclick="event.stopPropagation();toggleStashTrack({ artist: '${artistEscaped}', title: '${titleEscaped}' }, this)" data-artist="${artistEscaped}" data-title="${titleEscaped}" title="${starTitle}" aria-label="${starTitle}" class="stash-star-btn shrink-0 flex items-center justify-center w-6 h-6 border ${starClass} text-[11px] transition-all cursor-pointer">
+                <i class="fas fa-star"></i>
+            </button>
         </div>
     </li>`;
 }
@@ -204,7 +166,7 @@ function renderTracklistBlocks(tracks, ts) {
 
     for (let b = 0; b < tracks.length; b += blockSize) {
         const chunk = tracks.slice(b, b + blockSize);
-        // For 10 or fewer tracks, split evenly (e.g. 5 on left, 5 on right)
+        // For 10 or fewer tracks, split evenly
         // For more than 10 tracks, first 10 go to left column, remaining up to 10 go to right column
         const half = chunk.length <= 10 ? Math.ceil(chunk.length / 2) : 10;
         const leftTracks = chunk.slice(0, half);
@@ -235,24 +197,6 @@ function renderNewMix(data, persist = false) {
     const ts         = data._timestamp || new Date().toISOString();
     data._timestamp  = ts;
 
-    // Check tracks against GetSongBPM verified catalog if API key is configured
-    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
-    if (musicApiKey && Array.isArray(data.tracks) && typeof lookupVerifiedCatalog === 'function') {
-        data.tracks.forEach(track => {
-            if (typeof track === 'object' && track !== null && !track.verified) {
-                const match = lookupVerifiedCatalog(track.artist, track.title);
-                if (match) {
-                    track.bpm = match.bpm;
-                    track.key = match.key;
-                    track.musicalKey = match.musicalKey;
-                    track.verified = true;
-                    track.source = match.source || 'api';
-                    track.databaseName = match.databaseName || 'GetSongBPM API';
-                }
-            }
-        });
-    }
-
     const d          = new Date(ts);
     const currentDate = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
     const currentTime = d.toLocaleTimeString('en-US', { hour12: false });
@@ -270,102 +214,51 @@ function renderNewMix(data, persist = false) {
         return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:2px;vertical-align:middle"></span>`;
     }).join('');
 
-    const verifiedCount = data.tracks.filter(t => t && t.verified).length;
-    const isAllVerified = !!musicApiKey && verifiedCount === data.tracks.length && data.tracks.length > 0;
-
-    const bpms = data.tracks.map(t => (typeof t === 'object' && t.bpm ? parseInt(t.bpm) : null));
-    const validBpms = musicApiKey ? bpms.filter(b => b) : [];
-    let visualizerHTML = '';
-    if (musicApiKey && validBpms.length > 0) {
-        const minBpm = Math.min(...validBpms) - 5;
-        const maxBpm = Math.max(...validBpms) + 5;
-        const barsHTML = bpms.map((bpm, i) => {
-            if (!bpm) return `<div class="flex-1"></div>`;
-            const pct = Math.max(10, Math.min(100, ((bpm - minBpm) / (maxBpm - minBpm)) * 100));
-            return `<div onclick="event.stopPropagation();highlightTrack('${ts}', ${i})" class="flex-1 flex flex-col justify-end cursor-pointer group/bar relative">
-                <div class="w-full bg-[#39ff14] group-hover/bar:bg-[#ffcc00] transition-colors" style="height:${pct}%; box-shadow:0 0 5px rgba(57,255,20,0.3)"></div>
-                <span class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-bold px-1 py-[2px] border border-[#333] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">${bpm} BPM</span>
-            </div>`;
-        }).join('');
-        visualizerHTML = `<div class="bg-[#050505] border border-[#111] p-2 mt-2 flex flex-col gap-1 w-full max-w-xs ml-auto">
-            <div class="flex items-center justify-between text-[#1a7b1a] text-[8px] uppercase font-bold tracking-widest">
-                <span>BPM Flow</span>
-                <div class="flex items-center gap-1">
-                    <button id="sort-bpm-btn-${ts}" onclick="event.stopPropagation();sortMixByBpm('${ts}')" class="sort-bpm-btn bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(57,255,20,0.2)] flex items-center -translate-y-[10px] scale-[1.15] origin-right ${isAllVerified ? '' : 'opacity-40 cursor-not-allowed'}" ${isAllVerified ? '' : 'disabled'} title="${isAllVerified ? 'Sort BPM (Low to High)' : 'Sorting unlocks after verification completes'}"><i class="fas fa-sort-amount-up mr-1"></i>BPM</button>
-                    <button id="sort-camelot-btn-${ts}" onclick="event.stopPropagation();sortMixByCamelot('${ts}')" class="sort-camelot-btn bg-[#001a33] hover:bg-[#002b4d] text-[#3399ff] border border-[#0055aa] px-2 py-[1px] rounded transition-transform shadow-[0_0_5px_rgba(51,153,255,0.2)] flex items-center -translate-y-[10px] scale-[1.15] origin-right ml-1 ${isAllVerified ? '' : 'opacity-40 cursor-not-allowed'}" ${isAllVerified ? '' : 'disabled'} title="${isAllVerified ? 'Sort Harmonic Progression (Camelot Wheel)' : 'Sorting unlocks after verification completes'}"><i class="fas fa-circle-nodes mr-1"></i>Camelot</button>
-                </div>
-            </div>
-            <div class="h-8 flex items-stretch gap-[2px] w-full">${barsHTML}</div>
-        </div>`;
-    }
-
-    const flatTracksStr = encodeURIComponent(data.tracks.map(t => {
-        const base = getTrackString(t);
-        if (typeof t === 'object' && t !== null && t.bpm && t.key) {
-            return `${base} [${t.bpm} BPM, ${t.key}]`;
-        }
-        return base;
-    }).join('\n'));
-
-    const flowType = data._flowType || 'camelot';
-    const flowIcon = flowType === 'bpm' ? 'fa-sort-amount-up' : 'fa-circle-nodes';
-    const flowColor = flowType === 'bpm' ? 'text-[#39ff14]' : 'text-[#3399ff]';
-    const flowText = flowType === 'bpm' ? 'BPM Flow' : 'Camelot Flow';
-
     const bodyHTML = isCompact ? '' : `
         <div class="mix-datebar bg-[#050f05] text-right px-2 py-[2px] mix-title-date border-b border-[#1a4a1a] text-[#39ff14] uppercase tracking-wider">
             ${currentDate} @ ${currentTime}
         </div>
         <div class="mix-body panel-content flex flex-col gap-4">
             <div class="details-box">
-                <div class="flex items-start justify-between flex-wrap gap-x-4 gap-y-1">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[#39ff14] font-bold text-[10px] uppercase tracking-wider">Diagnostics</span>
-                        <span class="diag-verified-status">${!musicApiKey ? `<button onclick="event.stopPropagation();openSettings()" class="bg-[#0a1a0a] hover:bg-[#1a3a1a] text-[#888] hover:text-[#39ff14] border border-[#222] hover:border-[#1a7b1a] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all inline-flex items-center gap-1 cursor-pointer" title="Add a free GetSongBPM API key in Settings to verify BPM and Camelot Keys"><i class="fas fa-key text-[8px] text-[#39ff14]"></i><span>UNLOCK BPM & KEY</span></button>` : (isAllVerified ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#051a05] hover:bg-[#0a2a0a] text-[#39ff14] hover:text-[#77ff55] border border-[#1a7b1a] hover:border-[#39ff14] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all shadow-[0_0_6px_rgba(57,255,20,0.25)] hover:shadow-[0_0_10px_rgba(57,255,20,0.5)] cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with GetSongBPM API"><i class="fas fa-check-double text-[8px] text-[#39ff14] group-hover/reverify:scale-110 transition-transform"></i><span>100% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#1a7b1a] group-hover/reverify:text-[#39ff14] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : (verifiedCount > 0 ? `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#1a1500] hover:bg-[#2a2000] text-[#ffcc00] hover:text-[#ffdd44] border border-[#665200] hover:border-[#ffcc00] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="Click to re-verify BPM & Keys with GetSongBPM API"><i class="fas fa-check text-[8px] text-[#ffcc00]"></i><span>${Math.round((verifiedCount/data.tracks.length)*100)}% VERIFIED (${verifiedCount}/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#997a00] group-hover/reverify:text-[#ffcc00] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>` : (typeof isMixVerifying === 'function' && isMixVerifying(ts) ? `<span class="text-[#ffcc00] text-[9px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>VERIFYING (0/${data.tracks.length})</span>` : `<button onclick="event.stopPropagation();reverifyMixTracks('${ts}', this)" class="reverify-btn bg-[#1a0a0a] hover:bg-[#2a1010] text-[#ff6666] hover:text-[#ff9999] border border-[#662222] hover:border-[#ff4444] px-1.5 py-[1.5px] rounded text-[9px] font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 group/reverify" title="0 tracks verified with GetSongBPM API. Click to retry."><i class="fas fa-exclamation-triangle text-[8px] text-[#ff4444]"></i><span>0% VERIFIED (0/${data.tracks.length})</span><i class="fas fa-redo-alt text-[7px] text-[#993333] group-hover/reverify:text-[#ff6666] group-hover/reverify:rotate-180 transition-all duration-500"></i></button>`)))}</span>
-                    </div>
-                    <span class="flex items-center gap-3 flex-wrap">
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px]">${data.tracks.length}</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">BPM</span><span class="text-white text-[11px] diag-bpm-val">${!musicApiKey ? '—' : (validBpms.length > 0 ? (Math.min(...validBpms) === Math.max(...validBpms) ? `${Math.min(...validBpms)}` : `${Math.min(...validBpms)}-${Math.max(...validBpms)}`) : '—')}</span></span>
+                <div class="flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
+                    <span class="flex items-center gap-3.5 flex-wrap py-1">
+                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px] diag-track-count">${data.tracks.length}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Est.</span><span class="text-white text-[11px]">~${data.tracks.length * 4}m</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre}</span></span>
+                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre || 'Music Discovery'}</span></span>
                     </span>
-                    ${visualizerHTML}
                 </div>
             </div>
             <div class="flex flex-col gap-4">
-            <div class="flex-1 flex flex-col justify-between">
-                <div class="text-[#b0b0b0] text-[12px]">
-                    ${data._prompt ? `<p class="mb-2 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
-                    ${data.description ? `<p class="mb-3 text-[11px] text-white italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
-                    <div class="bg-[#050505] border border-[#1a4a1a] p-2">
-                        <div class="text-[#1a7b1a] text-[9px] uppercase font-bold border-b border-[#111] mb-2 pb-1 flex items-center justify-end">
-                            <span id="flow-indicator-${ts}" class="${flowColor} flex items-center gap-1 font-bold"><i class="fas ${flowIcon}"></i> ${flowText}</span>
-                        </div>
-                        ${renderTracklistBlocks(data.tracks, ts)}
-                        <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2 items-center">
-                            <button onclick="createSpotifyPlaylist('${ts}', this)"
-                                    title="Send this curated list directly to Spotify"
-                                    class="spotify-create-btn bg-[#002b00] hover:bg-[#004d00] text-[#1db954] hover:text-white border border-[#1db954] px-3 py-1 rounded text-[10px] uppercase font-bold transition-all shadow-[0_0_8px_rgba(29,185,84,0.25)] flex items-center cursor-pointer">
-                                <i class="fab fa-spotify mr-1.5 text-[12px]"></i> Create Spotify Playlist
-                            </button>
-                            <button onclick="refineMix('${ts}')" title="Refine this mix with AI"
-                                    class="bg-[#111] hover:bg-[#1a1a00] text-[#ffcc00] border border-[#554400] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(255,204,0,0.15)] flex items-center cursor-pointer">
-                                <i class="fas fa-magic mr-1"></i> Refine
-                            </button>
+                <div class="flex-1 flex flex-col justify-between">
+                    <div class="text-[#b0b0b0] text-[12px]">
+                        ${data._prompt ? `<p class="mb-2 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
+                        ${data.description ? `<p class="mb-3 text-[11px] text-white italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
+                        <div class="bg-[#050505] border border-[#1a4a1a] p-2">
+                            ${renderTracklistBlocks(data.tracks, ts)}
+                            <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2 items-center">
+                                <button onclick="createSpotifyPlaylist('${ts}', this)"
+                                        title="Send this curated list directly to Spotify"
+                                        class="spotify-create-btn bg-[#002b00] hover:bg-[#004d00] text-[#1db954] hover:text-white border border-[#1db954] px-3 py-1 rounded text-[10px] uppercase font-bold transition-all shadow-[0_0_8px_rgba(29,185,84,0.25)] flex items-center cursor-pointer">
+                                    <i class="fab fa-spotify mr-1.5 text-[12px]"></i> Create Spotify Playlist
+                                </button>
+                                <button onclick="refineMix('${ts}')" title="Refine this playlist with AI"
+                                        class="bg-[#111] hover:bg-[#1a1a00] text-[#ffcc00] border border-[#554400] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(255,204,0,0.15)] flex items-center cursor-pointer">
+                                    <i class="fas fa-magic mr-1"></i> Refine
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
             </div>
         </div>`;
 
     const mixHTML = `
-        <div class="panel group/card border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-300 animate-fade-in-down${isCompact ? ' mix-card-compact' : ''}" data-ts="${ts}" onclick="if(mergeMode){event.stopPropagation();toggleMergeSelect('${ts}')}">
-            <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a] flex items-center justify-between${isCompact ? ' cursor-pointer' : ''}" ${isCompact && !mergeMode ? `onclick="expandAndScrollTo('${ts}')" title="Click to expand"` : ''}>
+        <div class="panel group/card border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-300 animate-fade-in-down${isCompact ? ' mix-card-compact' : ''}" data-ts="${ts}" onclick="if(typeof mergeMode !== 'undefined' && mergeMode){event.stopPropagation();toggleMergeSelect('${ts}')}">
+            <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a] flex items-center justify-between${isCompact ? ' cursor-pointer' : ''}" ${isCompact && (typeof mergeMode === 'undefined' || !mergeMode) ? `onclick="expandAndScrollTo('${ts}')" title="Click to expand"` : ''}>
                 <div class="text-sm flex items-center gap-2 min-w-0">
-                    <i class="fas fa-magic text-[#39ff14] shrink-0"></i>
-                    <span class="truncate">${data.title}</span>
+                    <i class="fas fa-compact-disc text-[#39ff14] shrink-0"></i>
+                    <span class="truncate font-bold">${data.title}</span>
                     ${isCompact ? `<span class="text-white text-[10px] shrink-0">${data.tracks.length} tracks &bull; ${currentDate}</span>` : ''}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
@@ -373,7 +266,7 @@ function renderNewMix(data, persist = false) {
                             class="${starColor} text-[13px] transition-colors px-1 shrink-0">
                         <i class="${starIcon}"></i>
                     </button>
-                    <button onclick="event.stopPropagation();deleteMix(this, '${ts}')" title="Delete this mix"
+                    <button onclick="event.stopPropagation();deleteMix(this, '${ts}')" title="Delete this playlist"
                             class="text-white hover:text-[#ff3333] text-[11px] transition-all px-1.5 py-0.5 shrink-0 hover:drop-shadow-[0_0_4px_rgba(255,51,51,0.5)] cursor-pointer">
                         <i class="fas fa-times"></i>
                     </button>
@@ -393,13 +286,5 @@ function renderNewMix(data, persist = false) {
         history.unshift(data);
         if (history.length > 50) history.length = 50;
         saveHistory(history);
-    }
-
-    // Trigger non-blocking async verification if GetSongBPM API key is configured
-    // ONLY on initial generation (persist === true) to avoid re-verifying when sorting or filtering!
-    if (persist && musicApiKey && typeof verifyPlaylistTracks === 'function' && Array.isArray(data.tracks)) {
-        setTimeout(() => {
-            verifyPlaylistTracks(data);
-        }, 200);
     }
 }

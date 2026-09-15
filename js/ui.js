@@ -45,13 +45,12 @@ window.addEventListener('DOMContentLoaded', () => {
                 title: 'SoundHunt Discovery Demo',
                 description: 'Welcome to SoundHunt! Type any vibe, era, or mood above to hunt down tracks. Click ✕ to prune unwanted songs, 🔍 to dig deeper into similar tracks, or ★ to stash tracks for 1-click Monochrome downloading.',
                 tracks: [
-                    { title: 'Technologic', artist: 'Daft Punk', bpm: 126, key: '9A', musicalKey: 'A Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
-                    { title: 'Galvanize', artist: 'The Chemical Brothers', bpm: 104, key: '2A', musicalKey: 'E-Flat Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
-                    { title: 'D.A.N.C.E.', artist: 'Justice', bpm: 113, key: '10A', musicalKey: 'B Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
-                    { title: 'Right Here, Right Now', artist: 'Fatboy Slim', bpm: 125, key: '10B', musicalKey: 'D Major', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
-                    { title: 'Smack My Bitch Up', artist: 'The Prodigy', bpm: 135, key: '10A', musicalKey: 'B Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' }
+                    { title: 'Technologic', artist: 'Daft Punk' },
+                    { title: 'Galvanize', artist: 'The Chemical Brothers' },
+                    { title: 'D.A.N.C.E.', artist: 'Justice' },
+                    { title: 'Right Here, Right Now', artist: 'Fatboy Slim' },
+                    { title: 'Smack My Bitch Up', artist: 'The Prodigy' }
                 ],
-                bpm:   '104-135',
                 genre: 'Electronic Discovery'
             }, true);
         }, 500);

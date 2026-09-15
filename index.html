@@ -88,13 +88,6 @@
                     <span class="text-[#39ff14] text-[11px] font-mono font-bold">gemini-3.5-flash-lite</span>
                 </div>
                 <div>
-                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">GetSongBPM API Key</label>
-                    <input type="password" id="music-api-key-input" placeholder="Paste your API key here..."
-                           class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-2.5 py-1.5 outline-none font-bold placeholder-[#333] key-input-vis text-[11px]">
-                    <div id="music-api-key-status" class="hidden text-[10px] mt-1 font-bold uppercase tracking-wider"></div>
-                    <p class="text-[#555] text-[9px] mt-1">Get a key from <a href="https://getsongbpm.com/api" target="_blank" rel="noopener noreferrer" class="text-[#3399ff] underline">GetSongBPM</a>. Stored locally in your browser only.</p>
-                </div>
-                <div>
                     <label class="block text-[#1db954] text-[10px] uppercase font-bold mb-1">Spotify Client ID (Optional — 1-Click Playlist Export)</label>
                     <input type="text" id="spotify-client-id-input" placeholder="Paste your Spotify Client ID..."
                            class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#1db954] text-[#1db954] px-2.5 py-1.5 outline-none font-bold placeholder-[#333] text-[11px]">
@@ -349,7 +342,7 @@
 
     <!-- ── Footer ── -->
     <div class="bg-black text-white text-[10px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
-        <div>SoundHunt &bull; Hunt down songs you didn't know you needed &bull; BPM & Key data by <a href="https://getsongbpm.com" target="_blank" rel="noopener noreferrer" class="text-[#39ff14] font-bold hover:underline">GetSongBPM</a></div>
+        <div>SoundHunt &bull; Hunt down songs you didn't know you needed &bull; Pure Music Discovery & Crate Digging</div>
         <div class="italic text-[#ddd]">made by MFlix</div>
     </div>
 
@@ -379,19 +372,17 @@
 </button>
 
 <!-- ── JavaScript Modules (load order matters) ── -->
-<script src="js/storage.js?v=0.1.0"></script>
-<script src="js/stash.js?v=0.1.0"></script>
-<script src="js/spotify.js?v=0.1.0"></script>
-<script src="js/settings.js?v=0.1.0"></script>
-<script src="js/stats.js?v=0.1.0"></script>
-<script src="js/harmonic.js?v=0.1.0"></script>
-<script src="js/analyzer.js?v=0.1.0"></script>
-<script src="js/player.js?v=0.1.0"></script>
-<script src="js/playlist.js?v=0.1.0"></script>
-<script src="js/merge.js?v=0.1.0"></script>
-<script src="js/feed.js?v=0.1.0"></script>
-<script src="js/api.js?v=0.1.0"></script>
-<script src="js/ui.js?v=0.1.0"></script>
+<script src="js/storage.js?v=0.1.3"></script>
+<script src="js/stash.js?v=0.1.3"></script>
+<script src="js/spotify.js?v=0.1.3"></script>
+<script src="js/settings.js?v=0.1.3"></script>
+<script src="js/stats.js?v=0.1.3"></script>
+<script src="js/player.js?v=0.1.3"></script>
+<script src="js/playlist.js?v=0.1.3"></script>
+<script src="js/merge.js?v=0.1.3"></script>
+<script src="js/feed.js?v=0.1.3"></script>
+<script src="js/api.js?v=0.1.3"></script>
+<script src="js/ui.js?v=0.1.3"></script>
 
 </body>
 </html>

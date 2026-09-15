@@ -12,9 +12,7 @@ const STORAGE_KEYS = {
     promptPersona: 'megamix_prompt_persona',
     promptConstraints: 'megamix_prompt_constraints',
     promptExplicit: 'megamix_prompt_explicit',
-    promptPopularity: 'megamix_prompt_popularity',
-    songDatabase: 'soundhunt_song_ground_truth_v2',
-    musicApiKey:  'megamix_music_api_key'
+    promptPopularity: 'megamix_prompt_popularity'
 };
 
 const DEFAULT_PROMPT = {
@@ -92,64 +90,11 @@ function getApiKey() {
     return localStorage.getItem(STORAGE_KEYS.apiKey) || '';
 }
 
-function getMusicApiKey() {
-    return localStorage.getItem(STORAGE_KEYS.musicApiKey) || '';
-}
-
-function saveMusicApiKey(key) {
-    if (key) localStorage.setItem(STORAGE_KEYS.musicApiKey, key.trim());
-    else localStorage.removeItem(STORAGE_KEYS.musicApiKey);
-}
-
-// ── Local Song Database (Zero API Saturation) ──
-function normalizeSongKey(artist, title) {
-    if (!artist || !title) return '';
-    const cleanStr = (s) => (s || '')
-        .toLowerCase()
-        .replace(/\b(the|a|an)\b/gi, '')
-        .replace(/[\(\[\{].*?[\)\]\}]/g, '') // strip (feat. ...), [remastered], etc.
-        .replace(/[^a-z0-9]/g, '')
-        .trim();
-    return `${cleanStr(artist)}:::${cleanStr(title)}`;
-}
-
-function getSongDatabase() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEYS.songDatabase);
-        return raw ? JSON.parse(raw) : {};
-    } catch (e) {
-        return {};
-    }
-}
-
-function lookupSongInDatabase(artist, title) {
-    const key = normalizeSongKey(artist, title);
-    if (!key) return null;
-    const db = getSongDatabase();
-    return db[key] || null;
-}
-
-function saveSongToDatabase(artist, title, data) {
-    if (!artist || !title || !data || !data.bpm || !data.key) return;
-    const key = normalizeSongKey(artist, title);
-    if (!key) return;
-    try {
-        const db = getSongDatabase();
-        db[key] = {
-            bpm: parseInt(data.bpm, 10),
-            key: data.key,
-            musicalKey: data.musicalKey || 'Standard Scale',
-            source: data.source || 'api',
-            databaseName: data.databaseName || 'GetSongBPM API',
-            verified: true,
-            getsongUrl: data.getsongUrl || null,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(STORAGE_KEYS.songDatabase, JSON.stringify(db));
-    } catch (e) {
-        console.warn('Failed to save track to local database:', e);
-    }
-}
+// Backward-compatibility safe stubs
+function getMusicApiKey() { return ''; }
+function saveMusicApiKey() {}
+function lookupSongInDatabase() { return null; }
+function lookupVerifiedCatalog() { return null; }
 
 function getModel() {
     return GEMINI_MODEL;
@@ -198,36 +143,110 @@ function updateHistoryControls() {
     try {
         const used = new Blob(Object.values(localStorage)).size;
         if (used > 4 * 1024 * 1024) {
-            console.warn('MegamixGen: localStorage usage high (' + Math.round(used / 1024) + 'KB). Consider clearing old mixes.');
+            console.warn('SoundHunt: localStorage usage high (' + Math.round(used / 1024) + 'KB). Consider clearing old playlists.');
         }
     } catch (e) {}
 }
 
-function clearHistory(btn) {
-    if (btn && !btn.dataset.confirming) {
-        btn.dataset.confirming = 'true';
-        const originalHTML = btn.innerHTML;
-        const originalTitle = btn.title;
-        btn.innerHTML = '<span class="text-[10px] text-[#ff3333] font-bold uppercase px-1">Clear all?</span>';
-        btn.title = 'Click again to confirm clearing all mixes';
-        btn._resetTimer = setTimeout(() => {
-            btn.innerHTML = originalHTML;
-            btn.title = originalTitle;
-            delete btn.dataset.confirming;
-        }, 3500);
-        return;
-    }
-    if (btn && btn._resetTimer) clearTimeout(btn._resetTimer);
-    if (btn) delete btn.dataset.confirming;
+// ── Universal Confirmation Button System (Long Timeout & Click-Outside Dismissal) ──
+const _armedConfirmButtons = new Set();
+const DEFAULT_CONFIRM_TIMEOUT_MS = 8000; // 8 seconds allows comfortable decision time
 
-    if (!btn && typeof confirm === 'function') {
-        if (!confirm('Clear all saved mixes?')) return;
+function disarmConfirmButton(btn) {
+    if (!btn || !btn._confirmData) return;
+    if (btn._resetTimer) {
+        clearTimeout(btn._resetTimer);
+        btn._resetTimer = null;
+    }
+    const data = btn._confirmData;
+    if (btn.isConnected) {
+        btn.innerHTML = data.html;
+        btn.title = data.title;
+        if (data.width !== undefined) btn.style.width = data.width;
+        if (data.padding !== undefined) btn.style.padding = data.padding;
+    }
+    delete btn.dataset.confirming;
+    delete btn._confirmData;
+    _armedConfirmButtons.delete(btn);
+}
+
+function disarmAllConfirmButtons(exceptBtn = null) {
+    _armedConfirmButtons.forEach(b => {
+        if (b !== exceptBtn) {
+            disarmConfirmButton(b);
+        }
+    });
+}
+
+function armConfirmButton(btn, confirmHtml, confirmTitle = 'Click again to confirm', duration = DEFAULT_CONFIRM_TIMEOUT_MS, extraStyles = null) {
+    if (!btn) return false;
+
+    // Second click: already confirming -> disarm and return false to let caller execute destructive action
+    if (btn.dataset.confirming) {
+        disarmConfirmButton(btn);
+        return false;
+    }
+
+    // First click: disarm any other active confirmation buttons across the app
+    disarmAllConfirmButtons();
+
+    btn._confirmData = {
+        html: btn.innerHTML,
+        title: btn.title || '',
+        width: btn.style.width,
+        padding: btn.style.padding
+    };
+    btn.dataset.confirming = 'true';
+
+    if (extraStyles) {
+        if (extraStyles.width !== undefined) btn.style.width = extraStyles.width;
+        if (extraStyles.padding !== undefined) btn.style.padding = extraStyles.padding;
+    }
+
+    btn.innerHTML = confirmHtml;
+    if (confirmTitle) btn.title = confirmTitle;
+
+    btn._resetTimer = setTimeout(() => {
+        disarmConfirmButton(btn);
+    }, duration);
+
+    _armedConfirmButtons.add(btn);
+    return true; // Return true to tell caller to wait for confirmation
+}
+
+// Global dismiss listeners: click outside or press Escape immediately reverts confirmation
+if (typeof document !== 'undefined') {
+    document.addEventListener('click', (e) => {
+        if (_armedConfirmButtons.size === 0) return;
+        _armedConfirmButtons.forEach(btn => {
+            if (!btn.contains(e.target)) {
+                disarmConfirmButton(btn);
+            }
+        });
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && _armedConfirmButtons.size > 0) {
+            disarmAllConfirmButtons();
+        }
+    });
+}
+
+function clearHistory(btn) {
+    if (btn) {
+        const badge = '<span class="text-[10px] text-[#ff3333] font-bold uppercase px-1 pointer-events-none">Clear all?</span>';
+        if (armConfirmButton(btn, badge, 'Click again to confirm clearing all playlists', DEFAULT_CONFIRM_TIMEOUT_MS)) {
+            return;
+        }
+    } else if (typeof confirm === 'function') {
+        if (!confirm('Clear all saved playlists?')) return;
     }
 
     localStorage.removeItem(STORAGE_KEYS.history);
     const container = document.getElementById('mixes-container');
     if (container) {
-        container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-compact-disc mr-2"></i>No playlists yet — enter a prompt above to generate one.</div>';
+        container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-compact-disc mr-2"></i>No playlists yet — enter a prompt above to hunt tracks.</div>';
     }
     updateHistoryControls();
 }
+

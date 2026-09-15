@@ -56,10 +56,6 @@ function toggleStashTrack(track, btn) {
         const newItem = {
             artist: artist.trim(),
             title: title.trim(),
-            bpm: track.bpm || null,
-            key: track.key || null,
-            musicalKey: track.musicalKey || null,
-            getsongUrl: track.getsongUrl || null,
             addedAt: Date.now()
         };
         stash.unshift(newItem);
@@ -148,7 +144,7 @@ function renderStash() {
                 <i class="fas fa-box-open text-3xl text-[#444] mb-3"></i>
                 <h4 class="text-white font-bold text-sm uppercase tracking-wider mb-1">Your Stash is Empty</h4>
                 <p class="text-[11px] max-w-xs mx-auto leading-relaxed">
-                    While exploring songs, click the <span class="text-[#ffcc00] font-bold">★ star</span> on any track to save it here. You can then download it in one click via <span class="text-[#bb86fc] font-bold">Monochrome</span> or stream on Spotify.
+                    While exploring songs, click the <span class="text-[#ffcc00] font-bold">★ star</span> on any track to save it here. You can then download it in one click via <span class="text-[#bb86fc] font-bold">Monochrome</span>.
                 </p>
             </div>`;
         return;
@@ -157,7 +153,7 @@ function renderStash() {
     let html = `
         <div class="flex justify-between items-center pb-2 border-b border-[#222] mb-3">
             <span class="text-[10px] text-[#888] uppercase font-bold tracking-wider">${stash.length} Keeper${stash.length > 1 ? 's' : ''} Stashed</span>
-            <button onclick="clearStash()" class="text-[#ff4444] hover:text-[#ff6666] text-[9.5px] uppercase font-bold transition-colors cursor-pointer">
+            <button onclick="clearStash(this)" class="text-[#ff4444] hover:text-[#ff6666] text-[9.5px] uppercase font-bold transition-colors cursor-pointer">
                 <i class="fas fa-trash-alt mr-1"></i> Clear Stash
             </button>
         </div>
@@ -170,20 +166,12 @@ function renderStash() {
         const artistEscaped = (item.artist || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const titleEscaped = (item.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
-        let badges = '';
-        if (item.bpm) {
-            badges += `<span class="bg-[#051a05] border border-[#1a7b1a] text-[#39ff14] text-[8px] font-bold px-1.5 py-[1px] rounded uppercase">${item.bpm} BPM</span>`;
-        }
-        if (item.key) {
-            badges += `<span class="bg-[#001428] border border-[#0055aa] text-[#3399ff] text-[8px] font-bold px-1.5 py-[1px] rounded uppercase ml-1">${item.key}</span>`;
-        }
-
         html += `
-            <div class="bg-[#0a0a0a] border border-[#1f3a1f] p-2 flex items-center justify-between gap-2 hover:border-[#39ff14] transition-all group">
+            <div class="bg-[#0a0a0a] border border-[#1f3a1f] p-2.5 flex items-center justify-between gap-2 hover:border-[#39ff14] transition-all group">
                 <div class="min-w-0 flex-1">
                     <div class="text-white text-[12px] font-bold truncate leading-tight group-hover:text-[#39ff14] transition-colors" title="${fullTitle}">${fullTitle}</div>
-                    <div class="flex items-center gap-1 mt-1">
-                        ${badges}
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="text-[#3399ff] text-[9px] font-mono uppercase tracking-wider">SoundHunt Crate</span>
                         <span class="text-[#555] text-[9px] ml-auto">#${idx + 1}</span>
                     </div>
                 </div>
@@ -195,12 +183,6 @@ function renderStash() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true">
                             <g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g>
                         </svg>
-                    </a>
-                    <!-- Spotify Stream -->
-                    <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener noreferrer"
-                       title="Stream on Spotify" aria-label="Stream on Spotify"
-                       class="flex items-center justify-center w-7 h-7 bg-[#001a00] border border-[#005500] text-[#1db954] hover:border-[#1db954] hover:bg-[#003300] hover:shadow-[0_0_8px_rgba(29,185,84,0.5)] transition-all">
-                        <i class="fab fa-spotify text-xs"></i>
                     </a>
                     <!-- Remove from Stash -->
                     <button onclick="toggleStashTrack({ artist: '${artistEscaped}', title: '${titleEscaped}' })"
@@ -217,16 +199,25 @@ function renderStash() {
     container.innerHTML = html;
 }
 
-function clearStash() {
-    if (confirm('Clear all stashed tracks?')) {
-        saveStash([]);
-        renderStash();
-        // Reset star icons in DOM
-        document.querySelectorAll('.stash-star-btn').forEach(btn => {
-            updateStarButtonUI(btn, false);
-        });
-        showStashToast('Stash cleared');
+function clearStash(btn) {
+    if (btn) {
+        const badge = '<span class="text-[9.5px] font-extrabold uppercase text-[#ff3333] bg-[#220000] border border-[#ff3333] px-1.5 py-[1px] rounded shadow-[0_0_6px_rgba(255,51,51,0.6)] pointer-events-none">Clear all?</span>';
+        if (typeof armConfirmButton === 'function') {
+            if (armConfirmButton(btn, badge, 'Click again to clear stash', typeof DEFAULT_CONFIRM_TIMEOUT_MS !== 'undefined' ? DEFAULT_CONFIRM_TIMEOUT_MS : 8000)) {
+                return;
+            }
+        }
+    } else if (typeof confirm === 'function') {
+        if (!confirm('Clear all stashed tracks?')) return;
     }
+
+    saveStash([]);
+    renderStash();
+    // Reset star icons in DOM
+    document.querySelectorAll('.stash-star-btn').forEach(btn => {
+        updateStarButtonUI(btn, false);
+    });
+    showStashToast('Stash cleared');
 }
 
 function showStashToast(msg) {
