@@ -2,9 +2,9 @@
 
 > **Hunt down songs you didn't know you needed.**
 
-Ever have a craving for a super specific vibe—like *underground 90s acid trance with hypnotic female vocals*, or *obscure Japanese city pop from 1983*—and streaming algorithms just feed you the same 20 songs you've heard a thousand times?
-
 **SoundHunt** lets you dig through musical history using natural, conversational language. Type what you're feeling, unearth buried gems and deep cuts, audition tracks on the fly, prune out whatever misses the mark, stash keepers, and export playlists directly into Spotify.
+
+![SoundHunt Discovery Console](assets/screenshots/main_view.png)
 
 ---
 
@@ -25,7 +25,7 @@ Ever have a craving for a super specific vibe—like *underground 90s acid tranc
 
 ### 1. Clone & Run Locally
 ```bash
-git clone https://github.com/marceloflix/MegamixGen.git soundhunt
+git clone https://github.com/marceloflix/SoundHunt.git soundhunt
 cd soundhunt
 python3 server.py
 ```
@@ -40,6 +40,8 @@ SoundHunt uses Google's Gemini API (`gemini-3.5-flash-lite`) to understand your 
 3. Paste it into SoundHunt under **⚙ Settings** & you're ready to hunt!
 
 *(Keys are saved strictly in your local browser storage—never sent anywhere else).*
+
+![SoundHunt Settings](assets/screenshots/settings_view.png)
 
 ---
 

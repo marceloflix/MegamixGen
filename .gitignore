@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Internal Documentation & Agent Rules
+SOUNDHUNT_STATE.md
+GEMINI.md
+.agents/
+
+# Environment variables & secrets
+.env
+.env.*
+*.local
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*~
