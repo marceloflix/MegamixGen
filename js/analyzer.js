@@ -720,7 +720,7 @@ function isMixVerifying(ts) {
         // 2. GETSONGBPM AUTHORITATIVE API PASS (Calls /api/lookup live)
         for (let i = 0; i < mixData.tracks.length; i++) {
             const t = mixData.tracks[i];
-            if (typeof t === 'object' && t !== null && !t.verified) {
+            if (typeof t === 'object' && t !== null && !t.verified && !t.notFound) {
                 try {
                     const result = await lookupLiveScraper(t.artist, t.title);
                     if (result && result.verified) {
@@ -745,6 +745,85 @@ function isMixVerifying(ts) {
                 if (typeof onProgress === 'function') {
                     onProgress(i, mixData.tracks.length, t);
                 }
+            }
+        }
+
+        // 3. Save updated mix into history
+        if (typeof getHistory === 'function' && typeof saveHistory === 'function') {
+            const history = getHistory();
+            const idx = history.findIndex(m => m._timestamp === ts);
+            if (idx !== -1) {
+                history[idx] = mixData;
+                saveHistory(history);
+            }
+        }
+    } finally {
+        _activeVerificationQueues.delete(ts);
+        updateMixDiagnosticsUI(ts, mixData, true);
+    }
+}
+
+/**
+ * Asynchronously verifies ONLY newly appended tracks (e.g., from Dig Deeper)
+ * without re-verifying or disturbing already verified tracks.
+ */
+async function verifyNewTracksOnly(mixData, startIndex = 0) {
+    if (!mixData || !Array.isArray(mixData.tracks)) return;
+    const ts = mixData._timestamp;
+    const musicApiKey = typeof getMusicApiKey === 'function' ? getMusicApiKey() : '';
+    if (!musicApiKey) {
+        updateMixDiagnosticsUI(ts, mixData, true);
+        return;
+    }
+
+    if (_activeVerificationQueues.has(ts)) return;
+    _activeVerificationQueues.add(ts);
+
+    try {
+        updateMixDiagnosticsUI(ts, mixData, false);
+
+        // 1. Local database pass for new tracks
+        for (let i = startIndex; i < mixData.tracks.length; i++) {
+            const t = mixData.tracks[i];
+            if (typeof t === 'object' && t !== null && !t.verified) {
+                const match = lookupVerifiedCatalog(t.artist, t.title);
+                if (match) {
+                    t.bpm = match.bpm;
+                    t.key = match.key;
+                    t.musicalKey = match.musicalKey;
+                    t.verified = true;
+                    t.source = match.source || 'api';
+                    t.databaseName = match.databaseName || 'GetSongBPM API';
+                    t.getsongUrl = match.getsongUrl || null;
+                    updateTrackVerificationUI(ts, i, t);
+                }
+            }
+        }
+
+        // 2. Query GetSongBPM live only for unverified new tracks
+        for (let i = startIndex; i < mixData.tracks.length; i++) {
+            const t = mixData.tracks[i];
+            if (typeof t === 'object' && t !== null && !t.verified && !t.notFound) {
+                try {
+                    const result = await lookupLiveScraper(t.artist, t.title);
+                    if (result && result.verified) {
+                        t.bpm = result.bpm;
+                        t.key = result.key;
+                        t.musicalKey = result.musicalKey;
+                        t.source = 'api';
+                        t.databaseName = result.databaseName || 'GetSongBPM API';
+                        t.verified = true;
+                        t.getsongUrl = result.getsongUrl || null;
+                        saveToVerifiedCatalog(t.artist, t.title, t);
+                    } else {
+                        t.notFound = true;
+                        t.verified = false;
+                    }
+                } catch (err) {
+                    t.notFound = true;
+                    t.verified = false;
+                }
+                updateTrackVerificationUI(ts, i, t);
             }
         }
 

@@ -1,35 +1,56 @@
-// ── Export Playlist ──
-function exportPlaylist(btn) {
-    const title      = btn.getAttribute('data-title') || 'playlist';
-    const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
-    const blob = new Blob([`${title}\n${'='.repeat(title.length)}\n\n${tracksText}\n`], { type: 'text/plain' });
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
-    a.download = `${title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}.txt`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Saved!';
-    setTimeout(() => { btn.innerHTML = orig; }, 2000);
-}
+// ── Remove Individual Track from Curated Mix (Pruning) ──
+function removeTrackFromMix(ts, trackIndex, btn) {
+    const history = typeof getHistory === 'function' ? getHistory() : [];
+    const mixIndex = history.findIndex(m => m._timestamp === ts);
 
-
-
-// ── Copy Full Tracklist ──
-async function copyTracks(btn) {
-    const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
-    try { await navigator.clipboard.writeText(tracksText); }
-    catch {
-        const el = document.createElement('textarea');
-        el.value = tracksText;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
+    // Animate DOM row removal
+    const row = btn ? btn.closest('.track-row') : document.getElementById(`track-${ts}-${trackIndex}`);
+    if (row) {
+        row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-15px)';
     }
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
-    setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+
+    setTimeout(() => {
+        if (mixIndex !== -1) {
+            const mix = history[mixIndex];
+            if (Array.isArray(mix.tracks) && trackIndex >= 0 && trackIndex < mix.tracks.length) {
+                mix.tracks.splice(trackIndex, 1);
+
+                if (mix.tracks.length === 0) {
+                    history.splice(mixIndex, 1);
+                    saveHistory(history);
+                    if (typeof rebuildFeed === 'function') rebuildFeed();
+                    return;
+                }
+
+                // Recalculate BPM range
+                const validBpms = mix.tracks
+                    .map(t => (typeof t === 'object' && t.bpm) ? parseInt(t.bpm, 10) : null)
+                    .filter(b => b && !isNaN(b));
+                if (validBpms.length > 0) {
+                    mix.bpm = Math.min(...validBpms) === Math.max(...validBpms)
+                        ? `${Math.min(...validBpms)}`
+                        : `${Math.min(...validBpms)}-${Math.max(...validBpms)}`;
+                }
+
+                saveHistory(history);
+                if (typeof rebuildFeed === 'function') {
+                    rebuildFeed();
+                }
+            }
+        } else {
+            // For demo card or transient card not yet in history
+            if (row) row.remove();
+            const card = document.querySelector(`[data-ts="${ts}"]`);
+            if (card) {
+                const remaining = card.querySelectorAll('.track-row').length;
+                const countSpan = card.querySelector('.diag-track-count') || card.querySelectorAll('span.font-bold.text-\\[11px\\]')[0];
+                if (countSpan) countSpan.textContent = remaining;
+                if (remaining === 0) card.remove();
+            }
+        }
+    }, 200);
 }
 
 // ── Copy Single Track ──
@@ -99,27 +120,6 @@ function deleteMix(btn, ts) {
     }, 200);
 }
 
-// ── Export M3U ──
-function exportM3U(btn) {
-    const title      = btn.getAttribute('data-title') || 'playlist';
-    const tracksText = decodeURIComponent(btn.getAttribute('data-tracks'));
-    const tracksArray = tracksText.split('\n').filter(Boolean);
-    
-    let m3uContent = '#EXTM3U\n';
-    tracksArray.forEach(track => {
-        m3uContent += `#EXTINF:-1,${track}\n${track}.mp3\n`;
-    });
-    
-    const blob = new Blob([m3uContent], { type: 'audio/x-mpegurl' });
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
-    a.download = `${title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}.m3u`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Saved!';
-    setTimeout(() => { btn.innerHTML = orig; }, 2000);
-}
 
 // ── Sort Mix by BPM ──
 function sortMixByBpm(ts) {

@@ -42,8 +42,8 @@ window.addEventListener('DOMContentLoaded', () => {
         // Show demo mix on first launch
         setTimeout(() => {
             renderNewMix({
-                title: 'System Initialization Mix',
-                description: 'Welcome to the Megamix Gen AI Studio. This is a pre-calculated sequence to demonstrate system capabilities. Enter a prompt above to begin generating custom synthetic audio tracklists.',
+                title: 'SoundHunt Discovery Demo',
+                description: 'Welcome to SoundHunt! Type any vibe, era, or mood above to hunt down tracks. Click ✕ to prune unwanted songs, 🔍 to dig deeper into similar tracks, or ★ to stash tracks for 1-click Monochrome downloading.',
                 tracks: [
                     { title: 'Technologic', artist: 'Daft Punk', bpm: 126, key: '9A', musicalKey: 'A Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
                     { title: 'Galvanize', artist: 'The Chemical Brothers', bpm: 104, key: '2A', musicalKey: 'E-Flat Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
@@ -51,10 +51,16 @@ window.addEventListener('DOMContentLoaded', () => {
                     { title: 'Right Here, Right Now', artist: 'Fatboy Slim', bpm: 125, key: '10B', musicalKey: 'D Major', verified: true, source: 'database', databaseName: 'System Diagnostic DB' },
                     { title: 'Smack My Bitch Up', artist: 'The Prodigy', bpm: 135, key: '10A', musicalKey: 'B Minor', verified: true, source: 'database', databaseName: 'System Diagnostic DB' }
                 ],
-                bpm:   '125-133',
-                genre: 'Electronic Boot Sequence'
-            });
+                bpm:   '104-135',
+                genre: 'Electronic Discovery'
+            }, true);
         }, 500);
+    }
+
+    // Initialize discovery chip
+    if (typeof setDiscoveryChip === 'function') {
+        const savedChip = localStorage.getItem('soundhunt_discovery_chip') || 'balanced';
+        setDiscoveryChip(savedChip);
     }
 
     // Enter key triggers generation
@@ -68,7 +74,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Global keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { closeSettings(); closeStats(); }
+        if (e.key === 'Escape') {
+            closeSettings();
+            closeStats();
+            if (typeof closeDigDeeperModal === 'function') closeDigDeeperModal();
+            if (typeof closeStashDrawer === 'function') closeStashDrawer();
+        }
         if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('ai-vibe').focus(); }
     });
 });

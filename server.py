@@ -114,55 +114,68 @@ def fetch_getsongbpm(artist, title, api_key):
 
     artist_first = re.split(r'[,&]|\s+feat\b|\s+ft\b|\s+vs\b', clean_artist, flags=re.IGNORECASE)[0].strip()
 
+    def clean_comp(s):
+        return re.sub(r'[^a-z0-9]', '', str(s or '').lower())
+
+    target_title_comp = clean_comp(clean_title)
+
     # Search query candidates:
-    # 1. Official syntax: song:TITLE artist:ARTIST
-    # 2. Secondary: song:TITLE artist:FIRST_ARTIST
-    # 3. Simple combined fallback
+    # 1. Official syntax: song:TITLE artist:ARTIST (both)
+    # 2. Secondary: song:TITLE artist:FIRST_ARTIST (both)
+    # 3. Simple combined fallback: ARTIST TITLE (both)
+    # 4. Title fallback: TITLE (song) - resolves aliases like Wham! vs George Michael
     queries = [
-        f"song:{clean_title} artist:{clean_artist}",
-        f"song:{clean_title} artist:{artist_first}" if artist_first != clean_artist else None,
-        f"{artist_first} {clean_title}"
+        ('both', f"song:{clean_title} artist:{clean_artist}"),
+        ('both', f"song:{clean_title} artist:{artist_first}" if artist_first != clean_artist else None),
+        ('both', f"{artist_first} {clean_title}"),
+        ('song', clean_title)
     ]
 
-    for q_str in queries:
+    for q_type, q_str in queries:
         if not q_str:
             continue
         for endpoint in ['https://api.getsong.co/search/', 'https://api.getsongbpm.com/search/']:
             try:
-                url = f"{endpoint}?api_key={api_key}&type=both&lookup={urllib.parse.quote(q_str)}"
+                url = f"{endpoint}?api_key={api_key}&type={q_type}&lookup={urllib.parse.quote(q_str)}"
                 req = urllib.request.Request(url, headers=HEADERS)
                 with urllib.request.urlopen(req, timeout=5) as r:
                     if r.status == 200:
                         data = json.loads(r.read().decode('utf-8'))
                         search_results = data.get('search', [])
                         if isinstance(search_results, list) and len(search_results) > 0:
-                            top = search_results[0]
-                            tempo = top.get('tempo')
-                            key_of = top.get('key_of')
-                            open_key = top.get('open_key')
-                            if tempo:
-                                try:
-                                    bpm = int(round(float(tempo)))
-                                except (ValueError, TypeError):
-                                    bpm = None
-                                if bpm:
-                                    if bpm < 85:
-                                        bpm *= 2
-                                    camelot, musical_key = to_camelot(key_of, open_key)
-                                    song_id = top.get('id') or top.get('song_id')
-                                    song_title = top.get('song_title') or top.get('title') or clean_title
-                                    slug = re.sub(r'[^a-z0-9]+', '-', str(song_title).lower()).strip('-')
-                                    getsong_url = f"https://getsongbpm.com/song/{slug}/{song_id}" if song_id else None
-                                    return {
-                                        'bpm': bpm,
-                                        'key': camelot,
-                                        'musicalKey': musical_key,
-                                        'source': 'api',
-                                        'databaseName': 'GetSongBPM API',
-                                        'verified': True,
-                                        'getsongUrl': getsong_url
-                                    }
+                            for top in search_results:
+                                song_title = top.get('song_title') or top.get('title') or clean_title
+                                if q_type == 'song':
+                                    top_comp = clean_comp(song_title)
+                                    if target_title_comp not in top_comp and top_comp not in target_title_comp:
+                                        continue
+
+                                tempo = top.get('tempo')
+                                key_of = top.get('key_of')
+                                open_key = top.get('open_key')
+                                if tempo:
+                                    try:
+                                        bpm = int(round(float(tempo)))
+                                    except (ValueError, TypeError):
+                                        bpm = None
+                                    if bpm:
+                                        if bpm < 85:
+                                            bpm *= 2
+                                        camelot, musical_key = to_camelot(key_of, open_key)
+                                        song_id = top.get('id') or top.get('song_id')
+                                        slug = re.sub(r'[^a-z0-9]+', '-', str(song_title).lower()).strip('-')
+                                        getsong_url = f"https://getsongbpm.com/song/{slug}/{song_id}" if song_id else None
+                                        return {
+                                            'bpm': bpm,
+                                            'key': camelot,
+                                            'musicalKey': musical_key,
+                                            'source': 'api',
+                                            'databaseName': 'GetSongBPM API',
+                                            'verified': True,
+                                            'getsongUrl': getsong_url
+                                        }
             except Exception:
+                continue
                 pass
 
     return None

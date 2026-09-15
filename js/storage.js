@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_PROMPT = {
-    persona: "a knowledgeable music curator",
-    constraints: "Strictly adhere to any specified era, decade, or release timeframe. Choose tracks that genuinely fit the request — matching era, tempo, mood, and sonic character.",
+    persona: "an elite music curator and sonic crate digger for SoundHunt",
+    constraints: "ZERO HALLUCINATIONS: Strictly select only real, verifiable songs by genuine artists. Always credit the official primary artist on the original release (e.g. George Michael for Careless Whisper, not Wham!; Phil Collins, not Genesis; Sting, not The Police). Strictly adhere to any specified era, decade, or release timeframe. Choose tracks that genuinely fit the request — matching era, tempo, mood, and sonic character.",
     explicit: "allow", // 'allow' or 'clean'
     popularity: "any" // 'any', 'mainstream', 'obscure'
 };

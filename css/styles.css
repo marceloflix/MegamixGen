@@ -446,3 +446,61 @@ body.merge-active [data-ts]:active {
     animation: verificationPulse 0.4s ease-out;
 }
 
+/* ── SoundHunt: Stash Drawer & Overlay ── */
+#stash-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(3px);
+    z-index: 60;
+    transition: opacity 0.3s ease;
+}
+
+#stash-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 440px;
+    background-color: #080808;
+    border-left: 2px solid #ffcc00;
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.9);
+    z-index: 70;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── SoundHunt: Discovery Chips ── */
+.discovery-chip {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+    color: #ffffff;
+    border-color: #444;
+}
+
+.discovery-chip:hover {
+    border-color: #39ff14;
+    color: #39ff14;
+    transform: translateY(-1px);
+}
+
+.discovery-chip.active {
+    border-color: #39ff14 !important;
+    color: #39ff14 !important;
+    background-color: #0a2a0a !important;
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+/* ── Track Row Pruning & Hover State ── */
+.track-row {
+    transition: background-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.track-row:hover {
+    background-color: rgba(57, 255, 20, 0.04) !important;
+}
+
+

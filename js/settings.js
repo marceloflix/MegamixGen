@@ -18,6 +18,11 @@ function openSettings() {
     if (musicKeyInput && typeof getMusicApiKey === 'function') {
         musicKeyInput.value = getMusicApiKey();
     }
+
+    const spotifyInput = document.getElementById('spotify-client-id-input');
+    if (spotifyInput && typeof getSpotifyClientId === 'function') {
+        spotifyInput.value = getSpotifyClientId();
+    }
     
     document.getElementById('settings-modal').classList.remove('hidden');
 }
@@ -53,6 +58,10 @@ function applyTextSize(sizeClass) {
 
 function closeSettings() {
     document.getElementById('settings-modal').classList.add('hidden');
+    const mainErrorDiv = document.getElementById('ai-error');
+    if (mainErrorDiv && mainErrorDiv.textContent.includes('API KEY REQUIRED') && getApiKey()) {
+        mainErrorDiv.classList.add('hidden');
+    }
 }
 
 async function saveSettings() {
@@ -216,6 +225,12 @@ async function saveSettings() {
         saveBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Saved!';
     }
 
+    // Clear any previous "API KEY REQUIRED" error on main screen
+    const mainErrorDiv = document.getElementById('ai-error');
+    if (mainErrorDiv && (mainErrorDiv.textContent.includes('API KEY REQUIRED') || mainErrorDiv.textContent.includes('API_KEY_ERROR'))) {
+        mainErrorDiv.classList.add('hidden');
+    }
+
     // Save preferences
     localStorage.setItem(STORAGE_KEYS.apiKey, key);
     localStorage.setItem(STORAGE_KEYS.model, GEMINI_MODEL);
@@ -229,6 +244,11 @@ async function saveSettings() {
 
     if (typeof saveMusicApiKey === 'function') {
         saveMusicApiKey(musicKey);
+    }
+
+    const spotifyInput = document.getElementById('spotify-client-id-input');
+    if (spotifyInput && typeof setSpotifyClientId === 'function') {
+        setSpotifyClientId(spotifyInput.value.trim());
     }
 
     setTimeout(() => {
