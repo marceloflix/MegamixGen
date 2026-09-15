@@ -15,7 +15,7 @@ function getSharedAudioContext() {
 }
 
 // ── Local Song Database & Live Scraper Integration ──
-const GROUND_TRUTH_STORAGE_KEY = 'megamix_song_ground_truth';
+const GROUND_TRUTH_STORAGE_KEY = 'soundhunt_song_ground_truth_v2';
 
 /**
  * Retrieves verified metadata for a song from the persistent local database.
@@ -81,7 +81,6 @@ async function fetchGetSongBpmDirect(artist, title, apiKey) {
                     const top = search[0];
                     if (top.tempo) {
                         let bpm = Math.round(parseFloat(top.tempo));
-                        if (bpm < 85) bpm *= 2;
                         let keyInfo = null;
                         if (typeof parseHarmonicKey === 'function') {
                             if (top.open_key) keyInfo = parseHarmonicKey(top.open_key);

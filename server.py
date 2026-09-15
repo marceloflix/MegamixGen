@@ -159,8 +159,6 @@ def fetch_getsongbpm(artist, title, api_key):
                                     except (ValueError, TypeError):
                                         bpm = None
                                     if bpm:
-                                        if bpm < 85:
-                                            bpm *= 2
                                         camelot, musical_key = to_camelot(key_of, open_key)
                                         song_id = top.get('id') or top.get('song_id')
                                         slug = re.sub(r'[^a-z0-9]+', '-', str(song_title).lower()).strip('-')

@@ -73,7 +73,45 @@
 
 ---
 
-## 4. Verification & Testing Environment
-- **Local Server:** Running on `http://localhost:8080/`.
+## 4. BPM & Key Accuracy Audit & Fixes
+- **BPM Double-Tempo Fix:**
+  - *Root Cause:* A legacy DJ rule `if (bpm < 85) bpm *= 2` in both `server.py` and `js/analyzer.js` was artificially doubling slow tempos (e.g. George Michael's *Careless Whisper* was converted from 66 BPM to 132 BPM).
+  - *Fix:* Removed the doubling check entirely from both Python and client JS. Slow ballads, downtempo, and hip-hop now preserve their authentic studio BPMs (e.g. *Careless Whisper* returns verified 66 BPM).
+- **Camelot Harmonic Key Audit:**
+  - *Standard:* Adheres strictly to the Mixed In Key Camelot Wheel (`1A`-`12A` for Minor, `1B`-`12B` for Major).
+  - *Careless Whisper:* In real life, it is in D Minor. GetSongBPM returns `key_of: "Dm"`, `open_key: "12m"`. SoundHunt maps D Minor to **7A** (relative major: 7B F Major), which is 100% accurate.
+- **Cache Invalidation:**
+  - Bumped the localStorage catalog database key to `soundhunt_song_ground_truth_v2` (in `js/storage.js` and `js/analyzer.js`) so any stale doubled-tempo cache entries from previous testing are cleanly flushed.
+
+---
+
+## 5. Architectural Consideration: Phasing Out GetSongBPM & Streamlining UI
+- **Decision Under Review:** Consider completely dropping the GetSongBPM API service requirement and removing BPM & Camelot Key displays and sorting from the main interface.
+- **Rationale & Benefits:**
+  1. **Zero External Friction:** Third-party catalog APIs often suffer from rate limits, missing underground/obscure cuts, and alias mismatch issues. Eliminating the API key requirement makes SoundHunt work out of the box with zero setup hurdles.
+  2. **Clean, Laser-Focused Discovery Experience:** SoundHunt shines as a high-speed crate-digging instrument. Removing the BPM/Key badges, verification spinners, and harmonic sorting controls declutters the interface, keeping the user 100% focused on discovering great music, digging deeper into tracks, stashing downloads, and building Spotify playlists.
+  3. **Future Audio Analyzer Context:** If BPM or key detection is ever revisited, it will be handled as an optional standalone audio analyzer or local file scanner rather than a dependency blocking the discovery workflow.
+
+---
+
+## 6. Serato Analyzer Clone Roadmap (Future Option)
+- **Goal:** If an offline analyzer is pursued, build an in-browser / local audio analyzer modeled after Serato DJ Pro / Mixed In Key:
+  1. **Audio Decoding & Spectral Flux:** Extract onset envelope and spectral flux from local audio previews/files.
+  2. **Multi-Band Autocorrelation Beat Tracking:** Estimate BPM across low-end kicks and transients without octave doubling or halving errors.
+  3. **Chromagram & Krumhansl-Schmuckler Key Detection:** 12-pitch chroma profile correlated against major/minor key profiles to yield exact Camelot Key notation (`1A`-`12B`).
+  4. **Beat Grid & Waveform Visualization:** Real-time visual phase/beat markers.
+
+---
+
+## 7. Verification & Testing Environment
+- **Local Server:** Running on `http://localhost:8080/` (`python3 server.py`).
 - **Browser Automation:** Tested with Antigravity IDE's official `browser_subagent` and Google Chrome (`/usr/bin/google-chrome`) via CDP.
 - **Playwright Driver Cache:** Cached at `~/.cache/ms-playwright-go/1.57.0/`.
+
+---
+
+## 8. How to Resume Work in a New Chat
+To resume in tomorrow's session, simply copy and paste the following prompt into the new chat:
+```markdown
+Review SOUNDHUNT_STATE.md. All recent changes (SoundHunt rebrand, Dig Deeper modal, Download Stash, Spotify playlist creator, and the 66 BPM ballad tempo fix) have been committed and pushed to main. Let's test the app and discuss whether to streamline the interface by phasing out GetSongBPM and removing BPM/Key sorting for a pure, frictionless music discovery experience.
+```

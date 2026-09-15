@@ -13,7 +13,7 @@ const STORAGE_KEYS = {
     promptConstraints: 'megamix_prompt_constraints',
     promptExplicit: 'megamix_prompt_explicit',
     promptPopularity: 'megamix_prompt_popularity',
-    songDatabase: 'megamix_song_ground_truth',
+    songDatabase: 'soundhunt_song_ground_truth_v2',
     musicApiKey:  'megamix_music_api_key'
 };
 
