@@ -172,28 +172,32 @@ function renderSelectionBarHTML(ts) {
     const isSelecting = isPlaylistSelecting(ts);
     const count = isSelecting ? (playlistSelectionState[ts]?.size || 0) : 0;
     return `
-        <div id="selection-bar-${ts}" class="selection-bar ${isSelecting ? 'flex' : 'hidden'} items-center justify-between flex-wrap gap-2 mb-2 px-3 py-1.5 rounded text-xs transition-all">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span class="flex items-center gap-1.5 text-xs text-white font-bold">
-                    <i class="fas fa-check-square text-[#39ff14]"></i>
-                    <span id="selection-count-${ts}" class="text-[#39ff14] font-extrabold text-sm">${count}</span>
-                    <span class="text-white text-[10.5px] uppercase font-semibold tracking-wider">selected</span>
-                </span>
-                <span class="w-[1px] h-3.5 bg-[#1a4a1a] mx-1"></span>
-                <button type="button" onclick="selectAllTracks('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#1a2a1a] text-white hover:text-[#39ff14] border border-[#444] hover:border-[#39ff14] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                    Select All
-                </button>
-                <button type="button" onclick="deselectAllTracks('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#222] text-white hover:text-[#ffcc00] border border-[#444] hover:border-[#ffcc00] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                    Deselect
-                </button>
-            </div>
-            <div class="flex items-center gap-2">
-                <button type="button" id="btn-delete-selected-${ts}" onclick="deleteSelectedTracks('${ts}', this)" class="px-3 py-1 bg-[#220000] hover:bg-[#330000] text-[#ff3333] border border-[#ff3333] hover:shadow-[0_0_8px_rgba(255,51,51,0.5)] text-[10.5px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${count === 0 ? 'opacity-40 pointer-events-none' : ''}">
-                    <i class="fas fa-trash-alt text-[9.5px]"></i> Delete Selected
-                </button>
-                <button type="button" onclick="exitSelectionMode('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#222] text-white hover:text-[#ff3333] border border-[#444] hover:border-[#ff3333] text-[10.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                    Cancel
-                </button>
+        <div id="selection-bar-wrapper-${ts}" class="selection-bar-wrapper${isSelecting ? ' active' : ''}">
+            <div class="selection-bar-inner">
+                <div id="selection-bar-${ts}" class="selection-bar flex items-center justify-between flex-wrap gap-2 px-3 py-1.5 rounded text-xs">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="flex items-center gap-1.5 text-xs text-white font-bold">
+                            <i class="fas fa-check-square text-[#39ff14]"></i>
+                            <span id="selection-count-${ts}" class="text-[#39ff14] font-extrabold text-sm">${count}</span>
+                            <span class="text-white text-[10.5px] uppercase font-semibold tracking-wider">selected</span>
+                        </span>
+                        <span class="w-[1px] h-3.5 bg-[#1a4a1a] mx-1"></span>
+                        <button type="button" onclick="selectAllTracks('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#1a2a1a] text-white hover:text-[#39ff14] border border-[#444] hover:border-[#39ff14] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                            Select All
+                        </button>
+                        <button type="button" onclick="deselectAllTracks('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#222] text-white hover:text-[#ffcc00] border border-[#444] hover:border-[#ffcc00] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                            Deselect
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btn-delete-selected-${ts}" onclick="deleteSelectedTracks('${ts}', this)" class="px-3 py-1 bg-[#220000] hover:bg-[#330000] text-[#ff3333] border border-[#ff3333] hover:shadow-[0_0_8px_rgba(255,51,51,0.5)] text-[10.5px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${count === 0 ? 'opacity-40 pointer-events-none' : ''}">
+                            <i class="fas fa-trash-alt text-[9.5px]"></i> Delete Selected
+                        </button>
+                        <button type="button" onclick="exitSelectionMode('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#222] text-white hover:text-[#ff3333] border border-[#444] hover:border-[#ff3333] text-[10.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -203,15 +207,14 @@ function updateSelectionUI(ts) {
     const card = document.querySelector(`[data-ts="${ts}"]`);
     if (!card) return;
 
-    const bar = document.getElementById(`selection-bar-${ts}`);
+    const wrapper = document.getElementById(`selection-bar-wrapper-${ts}`);
     const isSelecting = isPlaylistSelecting(ts);
     const selectedIndices = playlistSelectionState[ts] || new Set();
     const count = selectedIndices.size;
 
-    if (bar) {
+    if (wrapper) {
         if (isSelecting) {
-            bar.classList.remove('hidden');
-            bar.classList.add('flex');
+            wrapper.classList.add('active');
             const countSpan = document.getElementById(`selection-count-${ts}`);
             if (countSpan) countSpan.textContent = count;
 
@@ -229,8 +232,7 @@ function updateSelectionUI(ts) {
                 }
             }
         } else {
-            bar.classList.add('hidden');
-            bar.classList.remove('flex');
+            wrapper.classList.remove('active');
         }
     }
 
@@ -443,12 +445,6 @@ function renderNewMix(data, persist = false) {
                             ${renderSelectionBarHTML(ts)}
                             <div id="tracklist-container-${ts}">
                                 ${renderTracklistBlocks(data.tracks, ts)}
-                            </div>
-                            <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2 items-center">
-                                <button onclick="refineMix('${ts}')" title="Refine this playlist with AI"
-                                        class="bg-[#111] hover:bg-[#1a1a00] text-[#ffcc00] border border-[#554400] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(255,204,0,0.15)] flex items-center cursor-pointer">
-                                    <i class="fas fa-magic mr-1"></i> Refine
-                                </button>
                             </div>
                         </div>
                     </div>

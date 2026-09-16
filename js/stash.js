@@ -44,6 +44,14 @@ function toggleStashTrack(track, btn) {
     let stash = getStash();
     const alreadyStashed = isStashed(artist, title);
 
+    // Trigger pop micro-animation for tactile feedback
+    if (btn) {
+        btn.classList.remove('star-pop-animate');
+        void btn.offsetWidth; // Force reflow
+        btn.classList.add('star-pop-animate');
+        setTimeout(() => btn.classList.remove('star-pop-animate'), 400);
+    }
+
     if (alreadyStashed) {
         stash = stash.filter(item => !(
             (item.artist || '').trim().toLowerCase() === artist.trim().toLowerCase() &&
@@ -51,7 +59,6 @@ function toggleStashTrack(track, btn) {
         ));
         saveStash(stash);
         if (btn) updateStarButtonUI(btn, false);
-        showStashToast(`Removed from Stash: ${artist ? artist + ' - ' : ''}${title}`);
     } else {
         const newItem = {
             artist: artist.trim(),
@@ -61,7 +68,6 @@ function toggleStashTrack(track, btn) {
         stash.unshift(newItem);
         saveStash(stash);
         if (btn) updateStarButtonUI(btn, true);
-        showStashToast(`★ Added to Stash! Grab on Monochrome anytime.`);
     }
 
     // Update all matching star buttons currently rendered on screen
@@ -162,33 +168,38 @@ function renderStash() {
 
     stash.forEach((item, idx) => {
         const fullTitle = item.artist ? `${item.artist} - ${item.title}` : item.title;
-        const searchQ = encodeURIComponent(`${cleanQuery(item.artist)} ${cleanQuery(item.title)}`.trim());
-        const artistEscaped = (item.artist || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const titleEscaped = (item.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const queryTerm = `${cleanQuery(item.artist)} ${cleanQuery(item.title)}`.trim();
+        const searchUrl = 'https://monochrome.tf/search/' + encodeURIComponent(queryTerm).replace(/'/g, '%27');
+        const artistEscaped = (item.artist || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const titleEscaped = (item.title || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const displayTitleEscaped = fullTitle.replace(/"/g, '&quot;');
 
         html += `
-            <div class="bg-[#0a0a0a] border border-[#1f3a1f] p-2.5 flex items-center justify-between gap-2 hover:border-[#39ff14] transition-all group">
-                <div class="min-w-0 flex-1">
-                    <div class="text-white text-[12px] font-bold truncate leading-tight group-hover:text-[#39ff14] transition-colors" title="${fullTitle}">${fullTitle}</div>
-                    <div class="flex items-center gap-1 mt-0.5">
-                        <span class="text-[#3399ff] text-[9px] font-mono uppercase tracking-wider">SoundHunt Crate</span>
-                        <span class="text-[#555] text-[9px] ml-auto">#${idx + 1}</span>
+            <div onclick="window.open('${searchUrl}', '_blank', 'noopener,noreferrer')"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.open('${searchUrl}', '_blank', 'noopener,noreferrer');}"
+                 role="link"
+                 tabindex="0"
+                 class="bg-[#0a0a0a] border border-[#222] p-2.5 flex items-center justify-between gap-2 hover:border-[#bb86fc] hover:bg-[#140e1f] transition-all group cursor-pointer focus:outline-none focus:border-[#bb86fc]">
+                <div class="min-w-0 flex-1 pointer-events-none">
+                    <div class="text-white text-[12px] font-bold truncate leading-tight group-hover:text-[#bb86fc] transition-colors">${fullTitle}</div>
+                    <div class="flex items-center justify-end mt-0.5">
+                        <span class="text-[#555] text-[9px]">#${idx + 1}</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
-                    <!-- Monochrome Download -->
-                    <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener noreferrer"
-                       title="Download on Monochrome" aria-label="Download on Monochrome"
-                       class="flex items-center justify-center w-7 h-7 bg-[#1a0033] border border-[#5500aa] text-[#bb86fc] hover:border-[#bb86fc] hover:bg-[#2a0055] hover:shadow-[0_0_8px_rgba(187,134,252,0.5)] transition-all">
+                    <!-- Monochrome Indicator Badge (Non-clickable visual indicator) -->
+                    <div aria-label="Monochrome Download Ready"
+                         class="flex items-center justify-center w-7 h-7 bg-[#1a0033] border border-[#5500aa] text-[#bb86fc] group-hover:border-[#bb86fc] group-hover:bg-[#2a0055] group-hover:shadow-[0_0_8px_rgba(187,134,252,0.5)] transition-all pointer-events-none select-none shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true">
                             <g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g>
                         </svg>
-                    </a>
-                    <!-- Remove from Stash -->
-                    <button onclick="toggleStashTrack({ artist: '${artistEscaped}', title: '${titleEscaped}' })"
-                            title="Remove from Stash" aria-label="Remove from Stash"
-                            class="flex items-center justify-center w-7 h-7 bg-[#1a1a1a] border border-[#333] text-[#777] hover:border-[#ff4444] hover:text-[#ff4444] hover:bg-[#2a0000] transition-all cursor-pointer">
-                        <i class="fas fa-times text-xs"></i>
+                    </div>
+                    <!-- Remove from Stash Button with In-Place Confirmation -->
+                    <button type="button"
+                            onclick="event.stopPropagation(); removeStashTrackFromDrawer('${artistEscaped}', '${titleEscaped}', this)"
+                            title="Remove track from stash" aria-label="Remove track from stash"
+                            class="relative z-10 flex items-center justify-center min-w-[28px] h-7 px-1 bg-[#1a1a1a] border border-[#333] text-[#777] hover:border-[#ff4444] hover:text-[#ff4444] hover:bg-[#2a0000] transition-all cursor-pointer">
+                        <i class="fas fa-times text-xs pointer-events-none"></i>
                     </button>
                 </div>
             </div>
@@ -197,6 +208,29 @@ function renderStash() {
 
     html += `</div>`;
     container.innerHTML = html;
+}
+
+// ── Remove Individual Track from Stash Drawer with Confirmation ──
+function removeStashTrackFromDrawer(artist, title, btn) {
+    if (btn) {
+        const badge = '<span class="text-[8.5px] font-extrabold uppercase text-[#ff3333] bg-[#220000] border border-[#ff3333] px-1 py-[1px] rounded shadow-[0_0_6px_rgba(255,51,51,0.6)] cursor-pointer select-none pointer-events-none">Delete?</span>';
+        if (typeof armConfirmButton === 'function') {
+            if (armConfirmButton(btn, badge, 'Click again to remove from stash', typeof DEFAULT_CONFIRM_TIMEOUT_MS !== 'undefined' ? DEFAULT_CONFIRM_TIMEOUT_MS : 8000, { width: 'auto', padding: '0 4px' })) {
+                return;
+            }
+        }
+    }
+
+    let stash = getStash();
+    const cleanA = (artist || '').trim().toLowerCase();
+    const cleanT = (title || '').trim().toLowerCase();
+    stash = stash.filter(item => !(
+        (item.artist || '').trim().toLowerCase() === cleanA &&
+        (item.title || '').trim().toLowerCase() === cleanT
+    ));
+    saveStash(stash);
+    updateAllMatchingStarButtons(artist, title, false);
+    renderStash();
 }
 
 function clearStash(btn) {
@@ -217,26 +251,12 @@ function clearStash(btn) {
     document.querySelectorAll('.stash-star-btn').forEach(btn => {
         updateStarButtonUI(btn, false);
     });
-    showStashToast('Stash cleared');
 }
 
 function showStashToast(msg) {
-    let toast = document.getElementById('soundhunt-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'soundhunt-toast';
-        toast.className = 'fixed bottom-4 right-4 z-50 bg-[#0a0a0a] border border-[#39ff14] text-[#39ff14] px-4 py-2 text-[11px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-opacity duration-300 opacity-0 pointer-events-none flex items-center gap-2';
-        document.body.appendChild(toast);
-    }
-    toast.innerHTML = `<i class="fas fa-sparkles text-xs"></i> ${msg}`;
-    toast.classList.remove('opacity-0', 'pointer-events-none');
-    toast.classList.add('opacity-100');
-
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        toast.classList.add('opacity-0', 'pointer-events-none');
-    }, 2500);
+    // Disabled: Toast notifications removed as requested (previously rendered behind bottom player)
+    const existing = document.getElementById('soundhunt-toast');
+    if (existing) existing.remove();
 }
 
 // Initial badge update on load

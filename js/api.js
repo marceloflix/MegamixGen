@@ -241,65 +241,6 @@ Output specifications:
     }
 }
 
-// ── Refine Mix ──
-async function refineMix(ts) {
-    const history = getHistory();
-    const mixIndex = history.findIndex(m => m._timestamp === ts);
-    if (mixIndex === -1) return;
-    const mix = history[mixIndex];
-
-    const instruction = prompt(`Refine "${mix.title}":\n(e.g., "add more obscure underground cuts", "focus strictly on female vocals", "lean more acoustic")`);
-    if (!instruction || !instruction.trim()) return;
-
-    const apiKey = getApiKey();
-    if (!apiKey) { openSettings(); showError('API KEY REQUIRED. Click ⚙ to configure.'); return; }
-
-    const btn = document.getElementById('generate-btn');
-    const loading = document.getElementById('ai-loading');
-    const errorDiv = document.getElementById('ai-error');
-    if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
-    loading.classList.remove('hidden');
-    startLoadingMessages();
-    errorDiv.classList.add('hidden');
-    hideNotice();
-
-    const trackSummary = mix.tracks.map((t, i) => `${i + 1}. ${getTrackString(t)}`).join('\n');
-    const refinementPrompt = `You are an elite music curator. Refine this playlist titled "${mix.title}" (${mix.genre}):
-${trackSummary}
-
-User requested change: "${instruction}"
-Strict rules:
-- Strictly adhere to any era, decade, or release timeframe requested. If an era is specified (e.g., 80s, 90s), only include songs genuinely released in that era.
-- Return the complete updated playlist with energy (1-5) and updated description. Preserve tracks not affected by the change.`;
-
-    try {
-        const newMix = await executeGeminiGenerate(apiKey, refinementPrompt);
-        newMix._timestamp = ts;
-        newMix._favorite = mix._favorite;
-        newMix._prompt = `${mix._prompt || mix.title} → refined: "${instruction}"`;
-        history[mixIndex] = newMix;
-        saveHistory(history);
-        rebuildFeed();
-
-        requestAnimationFrame(() => {
-            const el = document.querySelector(`[data-ts="${ts}"]`);
-            if (el) {
-                el.style.boxShadow = '0 0 20px rgba(255,204,0,0.5)';
-                if (getAutoScroll()) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-                setTimeout(() => { el.style.boxShadow = ''; }, 2000);
-            }
-        });
-    } catch (e) {
-        showError('REFINEMENT FAILED: ' + (e.message || 'Unknown error'));
-    } finally {
-        if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
-        loading.classList.add('hidden');
-        stopLoadingMessages();
-    }
-}
-
 // ── Discovery Popularity Chips (Main Interface) ──
 function getActiveDiscoveryChip() {
     const activeBtn = document.querySelector('.discovery-chip.active');
@@ -421,6 +362,20 @@ async function executeDigDeeper() {
 
     showNotice(`🔍 Hunting ${count} similar tracks matching "${songLabel}"...`, 15000);
 
+    // Look up target mix upfront to build the exclusion list
+    const history = typeof getHistory === 'function' ? getHistory() : [];
+    const mix = history.find(m => String(m._timestamp) === String(ts));
+    const existingTracks = (mix && Array.isArray(mix.tracks)) ? mix.tracks : [];
+    const existingTrackLabels = existingTracks.map(t => {
+        if (typeof t === 'object' && t !== null) {
+            return t.artist ? `${t.artist} - ${t.title}` : t.title;
+        }
+        return String(t);
+    }).filter(Boolean);
+
+    const forbiddenTracks = [songLabel, ...existingTrackLabels].filter(Boolean);
+    const forbiddenListText = forbiddenTracks.slice(0, 40).map(t => `  * "${t}"`).join('\n');
+
     const explicit = getPromptExplicit() === 'clean' ? 'Only choose CLEAN, non-explicit tracks.' : 'Explicit tracks are allowed.';
     const chip = getActiveDiscoveryChip();
     let depthGuidance = '';
@@ -432,9 +387,12 @@ async function executeDigDeeper() {
         depthGuidance = 'Provide a balanced blend of authentic gems, compatible classics, and exciting discoveries.';
     }
 
+    // Request extra candidates so deduplication guarantees exact count
+    const requestedCandidates = Math.min(25, count + 3);
+
     const prompt = `You are an elite crate digger, sonic curator, and record specialist for SoundHunt.
-Discover exactly ${count} tracks that share the authentic sonic DNA, groove, production era, and mood of:
-Song: "${title}"
+Discover exactly ${requestedCandidates} tracks that share the authentic sonic DNA, groove, production era, and mood of:
+Seed Track: "${title}"
 Artist: "${artist}"
 
 ${explicit}
@@ -445,7 +403,13 @@ STRICT SELECTION CRITERIA:
 - ZERO HALLUCINATIONS & FACTUAL ARTIST INTEGRITY: NEVER invent or guess songs or attribute tracks to the wrong artist. Every track MUST be a real, verified song that exists in official discographies (Spotify, Apple Music, Discogs).
 - PRIMARY ARTIST ATTRIBUTION: Always credit the official primary artist (e.g. "George Michael", NOT "Wham!"; "Phil Collins", NOT "Genesis"; "Sting", NOT "The Police").
 - STRICT ERA AUTHENTICITY: If the seed song is from a specific decade (e.g. 80s, 90s, 70s, 2000s), every discovered track MUST be an authentic release from that era. Do NOT suggest modern retro revival tracks.
-- Title: "Hunted from: ${artist ? artist + ' - ' : ''}${title}"
+
+ABSOLUTE NO-DUPLICATION RULES (CRITICAL):
+- NEVER include or repeat the seed track "${songLabel}" in your recommendations.
+${forbiddenTracks.length > 0 ? `- DO NOT recommend any of the following songs already present in this playlist:\n${forbiddenListText}\n` : ''}- Every track in your response MUST be completely unique and distinct.
+
+Output:
+- Title: "Hunted from: ${songLabel}"
 - Description: 2 short sentences explaining why these songs match this track's groove and vibe.`;
 
     try {
@@ -457,32 +421,75 @@ STRICT SELECTION CRITERIA:
             return;
         }
 
-        // Tag new tracks as added via Dig Deeper
-        const processedTracks = newTracks.map(t => {
-            if (typeof t === 'string') {
-                const parts = t.split(' - ');
-                return {
-                    artist: parts.length > 1 ? parts[0].trim() : '',
-                    title: parts.length > 1 ? parts.slice(1).join(' - ').trim() : t.trim(),
-                    isDigDeeper: true
-                };
-            } else if (typeof t === 'object' && t !== null) {
-                return { ...t, isDigDeeper: true };
-            }
-            return t;
+        // Helper to normalize track identity for strict comparison
+        const normKey = (art, tit) => {
+            const a = (art || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const t = (tit || '').toLowerCase()
+                .replace(/\s*[\(\[\{].*?[\)\]\}]/g, '')
+                .replace(/[^a-z0-9]/g, '');
+            return `${a}:::${t}`;
+        };
+
+        const seenSongs = new Set();
+        // Register seed track as forbidden
+        seenSongs.add(normKey(artist, title));
+        if (title) seenSongs.add(normKey('', title));
+
+        // Register all current playlist tracks as forbidden
+        existingTracks.forEach(t => {
+            const art = typeof t === 'object' && t !== null ? (t.artist || '') : (String(t).includes(' - ') ? String(t).split(' - ')[0] : '');
+            const tit = typeof t === 'object' && t !== null ? (t.title || '') : (String(t).includes(' - ') ? String(t).split(' - ').slice(1).join(' - ') : String(t));
+            seenSongs.add(normKey(art, tit));
         });
 
-        // Find target mix in history
-        const history = getHistory();
-        let mix = history.find(m => String(m._timestamp) === String(ts));
+        // Filter incoming tracks strictly
+        const uniqueProcessedTracks = [];
+        for (const rawTrack of newTracks) {
+            let art = '';
+            let tit = '';
+            if (typeof rawTrack === 'string') {
+                const parts = rawTrack.split(' - ');
+                art = parts.length > 1 ? parts[0].trim() : '';
+                tit = parts.length > 1 ? parts.slice(1).join(' - ').trim() : rawTrack.trim();
+            } else if (typeof rawTrack === 'object' && rawTrack !== null) {
+                art = (rawTrack.artist || '').trim();
+                tit = (rawTrack.title || '').trim();
+            }
+
+            if (!tit) continue;
+
+            const key = normKey(art, tit);
+            const titleOnlyKey = normKey('', tit);
+
+            // Skip if duplicate of seed track, existing playlist track, or previously processed track
+            if (seenSongs.has(key) || (art && seenSongs.has(titleOnlyKey))) {
+                continue;
+            }
+
+            seenSongs.add(key);
+            uniqueProcessedTracks.push({
+                artist: art,
+                title: tit,
+                isDigDeeper: true
+            });
+
+            if (uniqueProcessedTracks.length >= count) {
+                break;
+            }
+        }
+
+        if (uniqueProcessedTracks.length === 0) {
+            showError('All discovered tracks were already in the playlist. Please try again.');
+            return;
+        }
 
         if (mix && Array.isArray(mix.tracks)) {
             const firstNewIndex = mix.tracks.length;
-            mix.tracks.push(...processedTracks);
+            mix.tracks.push(...uniqueProcessedTracks);
             saveHistory(history);
             rebuildFeed();
 
-            showNotice(`✓ Added ${processedTracks.length} tracks similar to "${songLabel}" directly into playlist!`, 5000);
+            showNotice(`✓ Added ${uniqueProcessedTracks.length} unique tracks similar to "${songLabel}" directly into playlist!`, 5000);
 
             // Scroll to the first newly added track and briefly highlight it
             setTimeout(() => {
@@ -498,10 +505,10 @@ STRICT SELECTION CRITERIA:
             }, 100);
         } else {
             // Fallback if mix not in history (e.g. demo card): create as standalone mix
-            geminiResult.tracks = processedTracks;
+            geminiResult.tracks = uniqueProcessedTracks;
             geminiResult._prompt = `Hunted from: ${artist ? artist + ' - ' : ''}${title}`;
             renderNewMix(geminiResult, true);
-            showNotice(`✓ Created new playlist with ${processedTracks.length} tracks similar to "${songLabel}"!`, 5000);
+            showNotice(`✓ Created new playlist with ${uniqueProcessedTracks.length} tracks similar to "${songLabel}"!`, 5000);
         }
     } catch (err) {
         showError(`Failed to unearth similar tracks: ${err.message}`);
