@@ -20,6 +20,11 @@ function removeTrackFromMix(ts, trackIndex, btn) {
         row.style.transform = 'translateX(-15px)';
     }
 
+    // Close player if this playing track is being deleted
+    if (typeof closeAudioPlayer === 'function' && typeof currentPreviewBtn !== 'undefined' && currentPreviewBtn && row && row.contains(currentPreviewBtn)) {
+        closeAudioPlayer();
+    }
+
     setTimeout(() => {
         if (mixIndex !== -1) {
             const mix = history[mixIndex];
@@ -94,6 +99,11 @@ function deleteMix(btn, ts) {
     card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
     card.style.opacity = '0';
     card.style.transform = 'scale(0.95)';
+
+    // Close player if playing track is within this deleted mix
+    if (typeof closeAudioPlayer === 'function' && typeof currentPreviewBtn !== 'undefined' && currentPreviewBtn && card.contains(currentPreviewBtn)) {
+        closeAudioPlayer();
+    }
 
     setTimeout(() => {
         card.remove();
