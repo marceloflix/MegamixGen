@@ -8,15 +8,9 @@
 
 <div align="center">
 
-<br>
-
 [![Launch SoundHunt on Vercel](https://img.shields.io/badge/▶_LAUNCH_LIVE_APP-SoundHunt_on_Vercel-1db954?style=for-the-badge&logo=vercel&logoColor=white&labelColor=0a0a0a)](https://sound-hunt.vercel.app)
 
-<br><br>
-
 *(Works on Windows, Mac, Linux & mobile • 1-click install as a standalone desktop app)*
-
-<br>
 
 </div>
 
