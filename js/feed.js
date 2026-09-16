@@ -237,11 +237,6 @@ function renderNewMix(data, persist = false) {
                         <div class="bg-[#050505] border border-[#1a4a1a] p-2">
                             ${renderTracklistBlocks(data.tracks, ts)}
                             <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2 items-center">
-                                <button onclick="createSpotifyPlaylist('${ts}', this)"
-                                        title="Send this curated list directly to Spotify"
-                                        class="spotify-create-btn bg-[#002b00] hover:bg-[#004d00] text-[#1db954] hover:text-white border border-[#1db954] px-3 py-1 rounded text-[10px] uppercase font-bold transition-all shadow-[0_0_8px_rgba(29,185,84,0.25)] flex items-center cursor-pointer">
-                                    <i class="fab fa-spotify mr-1.5 text-[12px]"></i> Create Spotify Playlist
-                                </button>
                                 <button onclick="refineMix('${ts}')" title="Refine this playlist with AI"
                                         class="bg-[#111] hover:bg-[#1a1a00] text-[#ffcc00] border border-[#554400] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(255,204,0,0.15)] flex items-center cursor-pointer">
                                     <i class="fas fa-magic mr-1"></i> Refine

@@ -10,10 +10,6 @@ function openSettings() {
     document.getElementById('prompt-constraints-input').value = getPromptConstraints();
     document.getElementById('prompt-explicit-input').value = getPromptExplicit();
 
-    const spotifyInput = document.getElementById('spotify-client-id-input');
-    if (spotifyInput && typeof getSpotifyClientId === 'function') {
-        spotifyInput.value = getSpotifyClientId();
-    }
     
     document.getElementById('settings-modal').classList.remove('hidden');
 }
@@ -134,11 +130,6 @@ async function saveSettings() {
     localStorage.setItem(STORAGE_KEYS.promptConstraints, constraints);
     localStorage.setItem(STORAGE_KEYS.promptExplicit, explicit);
     applyTextSize(textSize);
-
-    const spotifyInput = document.getElementById('spotify-client-id-input');
-    if (spotifyInput && typeof setSpotifyClientId === 'function') {
-        setSpotifyClientId(spotifyInput.value.trim());
-    }
 
     setTimeout(() => {
         closeSettings();
