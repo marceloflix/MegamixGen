@@ -172,7 +172,7 @@ async function generateMix() {
     errorDiv.classList.add('hidden');
     hideNotice();
 
-    const persona = getPromptPersona() || 'an elite music curator and sonic crate digger for SoundHunt';
+    const persona = getPromptPersona() || 'an elite music curator and musicologist with encyclopedic knowledge of genres, eras, and discographies';
     const constraints = getPromptConstraints();
     const explicit = getPromptExplicit() === 'clean' ? 'Only choose CLEAN, non-explicit tracks.' : 'Explicit tracks are allowed.';
     const chip = typeof getActiveDiscoveryChip === 'function' ? getActiveDiscoveryChip() : 'balanced';

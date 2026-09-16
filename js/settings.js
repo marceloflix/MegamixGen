@@ -9,7 +9,6 @@ function openSettings() {
     document.getElementById('prompt-persona-input').value = getPromptPersona();
     document.getElementById('prompt-constraints-input').value = getPromptConstraints();
     document.getElementById('prompt-explicit-input').value = getPromptExplicit();
-    document.getElementById('prompt-popularity-input').value = getPromptPopularity();
 
     const spotifyInput = document.getElementById('spotify-client-id-input');
     if (spotifyInput && typeof getSpotifyClientId === 'function') {
@@ -32,7 +31,6 @@ function resetStructuredPrompt(btn) {
     document.getElementById('prompt-persona-input').value = DEFAULT_PROMPT.persona;
     document.getElementById('prompt-constraints-input').value = DEFAULT_PROMPT.constraints;
     document.getElementById('prompt-explicit-input').value = DEFAULT_PROMPT.explicit;
-    document.getElementById('prompt-popularity-input').value = DEFAULT_PROMPT.popularity;
 }
 
 function applyTextSize(sizeClass) {
@@ -66,7 +64,6 @@ async function saveSettings() {
     const persona = document.getElementById('prompt-persona-input').value;
     const constraints = document.getElementById('prompt-constraints-input').value;
     const explicit = document.getElementById('prompt-explicit-input').value;
-    const popularity = document.getElementById('prompt-popularity-input').value;
 
     let geminiValid = true;
 
@@ -136,7 +133,6 @@ async function saveSettings() {
     localStorage.setItem(STORAGE_KEYS.promptPersona, persona);
     localStorage.setItem(STORAGE_KEYS.promptConstraints, constraints);
     localStorage.setItem(STORAGE_KEYS.promptExplicit, explicit);
-    localStorage.setItem(STORAGE_KEYS.promptPopularity, popularity);
     applyTextSize(textSize);
 
     const spotifyInput = document.getElementById('spotify-client-id-input');

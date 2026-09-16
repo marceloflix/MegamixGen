@@ -10,14 +10,13 @@
 
 ## What Can SoundHunt Do?
 
-- 🎯 **Vibe-Based Discovery**: Describe any era, subgenre, or mood in plain English. No rigid genre dropdowns or algorithmic echo chambers.
-- ⚡ **Deep Cuts or Hit Anthems**: Flip between **Deep Cuts & Obscure** (for rare vinyl B-sides and forgotten treasures), **Balanced**, or **Mainstream Hits**.
-- 🎧 **Instant 30s Audition**: Hit play to preview 30-second audio clips directly in your browser without leaving the page.
-- ✕ **Ruthless Pruning**: Suggested tracks that miss the mark? Click `✕` to prune them out instantly with smooth animations and dynamic count updates.
-- 🔍 **Dig Deeper**: Found a track you love? Click the magnifying glass (`🔍`) and choose how many similar tracks (+3, +5, +10, or custom) to hunt down sharing that exact sonic groove and DNA.
-- 📥 **One-Click Download via Monochrome**: Star tracks (`★`) to your **Download Stash** drawer and jump straight to [Monochrome](https://monochrome.tf) to download them in high quality.
-- 🟢 **1-Click Spotify Export**: Curated a lineup you love? One click creates a brand new playlist directly in your Spotify account via client-side PKCE OAuth.
-- 🚀 **Zero-Setup, Frictionless Experience**: No third-party metadata API keys, no verification spinners, no rate-limiting roadblocks. Just pure music discovery.
+- **Vibe-Based Discovery**: Describe any era, subgenre, or mood in plain English. No rigid genre dropdowns or algorithmic echo chambers.
+- **Deep Cuts or Hit Anthems**: Flip between **Deep Cuts & Obscure** (for rare vinyl B-sides and forgotten treasures), **Balanced**, or **Mainstream Hits**.
+- **Instant 30s Audition**: Hit play to preview 30-second audio clips directly in your browser without leaving the page.
+- **Ruthless Pruning**: Suggested tracks that miss the mark? Click `✕` to prune them out instantly with smooth animations and dynamic count updates.
+- **Dig Deeper**: Found a track you love? Click the magnifying glass (`🔍`) and choose how many similar tracks (+3, +5, +10, or custom) to hunt down sharing that exact sonic groove and DNA.
+- **One-Click Download via Monochrome**: Star tracks (`★`) to your **Download Stash** drawer and jump straight to [Monochrome](https://monochrome.tf) to download them in high quality.
+- **1-Click Spotify Export**: Curated a lineup you love? One click creates a brand new playlist directly in your Spotify account via client-side PKCE OAuth.
 
 ---
 

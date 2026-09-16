@@ -16,10 +16,9 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_PROMPT = {
-    persona: "an elite music curator and sonic crate digger for SoundHunt",
-    constraints: "ZERO HALLUCINATIONS: Strictly select only real, verifiable songs by genuine artists. Always credit the official primary artist on the original release (e.g. George Michael for Careless Whisper, not Wham!; Phil Collins, not Genesis; Sting, not The Police). Strictly adhere to any specified era, decade, or release timeframe. Choose tracks that genuinely fit the request — matching era, tempo, mood, and sonic character.",
-    explicit: "allow", // 'allow' or 'clean'
-    popularity: "any" // 'any', 'mainstream', 'obscure'
+    persona: "an elite music curator and musicologist with encyclopedic knowledge of genres, eras, and discographies",
+    constraints: "Prioritize sonic synergy, smooth transitions, and tracklist flow. Ensure diversity by picking at most one track per artist. Every song must authentically embody the mood, tempo, and era.",
+    explicit: "allow" // 'allow' or 'clean'
 };
 
 // ── Prompt History ──
@@ -110,16 +109,21 @@ function getAutoScroll() {
 }
 
 function getPromptPersona() {
-    return localStorage.getItem(STORAGE_KEYS.promptPersona) || DEFAULT_PROMPT.persona;
+    const val = localStorage.getItem(STORAGE_KEYS.promptPersona);
+    if (!val || val === 'an elite music curator and sonic crate digger for SoundHunt') {
+        return DEFAULT_PROMPT.persona;
+    }
+    return val;
 }
 function getPromptConstraints() {
-    return localStorage.getItem(STORAGE_KEYS.promptConstraints) || DEFAULT_PROMPT.constraints;
+    const val = localStorage.getItem(STORAGE_KEYS.promptConstraints);
+    if (!val || val.startsWith("ZERO HALLUCINATIONS:")) {
+        return DEFAULT_PROMPT.constraints;
+    }
+    return val;
 }
 function getPromptExplicit() {
     return localStorage.getItem(STORAGE_KEYS.promptExplicit) || DEFAULT_PROMPT.explicit;
-}
-function getPromptPopularity() {
-    return localStorage.getItem(STORAGE_KEYS.promptPopularity) || DEFAULT_PROMPT.popularity;
 }
 
 // ── Mix History ──
