@@ -457,27 +457,51 @@ STRICT SELECTION CRITERIA:
             return;
         }
 
+        // Tag new tracks as added via Dig Deeper
+        const processedTracks = newTracks.map(t => {
+            if (typeof t === 'string') {
+                const parts = t.split(' - ');
+                return {
+                    artist: parts.length > 1 ? parts[0].trim() : '',
+                    title: parts.length > 1 ? parts.slice(1).join(' - ').trim() : t.trim(),
+                    isDigDeeper: true
+                };
+            } else if (typeof t === 'object' && t !== null) {
+                return { ...t, isDigDeeper: true };
+            }
+            return t;
+        });
+
         // Find target mix in history
         const history = getHistory();
-        let mix = history.find(m => m._timestamp === ts);
+        let mix = history.find(m => String(m._timestamp) === String(ts));
 
         if (mix && Array.isArray(mix.tracks)) {
-            mix.tracks.push(...newTracks);
+            const firstNewIndex = mix.tracks.length;
+            mix.tracks.push(...processedTracks);
             saveHistory(history);
             rebuildFeed();
 
-            showNotice(`✓ Added ${newTracks.length} tracks similar to "${songLabel}" directly into playlist!`, 5000);
+            showNotice(`✓ Added ${processedTracks.length} tracks similar to "${songLabel}" directly into playlist!`, 5000);
 
-            // Scroll to the updated playlist
+            // Scroll to the first newly added track and briefly highlight it
             setTimeout(() => {
-                const card = document.querySelector(`[data-ts="${ts}"]`);
-                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const firstNewEl = document.getElementById(`track-${ts}-${firstNewIndex}`);
+                if (firstNewEl) {
+                    firstNewEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstNewEl.style.backgroundColor = 'rgba(0, 51, 102, 0.4)';
+                    setTimeout(() => { firstNewEl.style.backgroundColor = 'transparent'; }, 1500);
+                } else {
+                    const card = document.querySelector(`[data-ts="${ts}"]`);
+                    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
             }, 100);
         } else {
             // Fallback if mix not in history (e.g. demo card): create as standalone mix
+            geminiResult.tracks = processedTracks;
             geminiResult._prompt = `Hunted from: ${artist ? artist + ' - ' : ''}${title}`;
             renderNewMix(geminiResult, true);
-            showNotice(`✓ Created new playlist with ${newTracks.length} tracks similar to "${songLabel}"!`, 5000);
+            showNotice(`✓ Created new playlist with ${processedTracks.length} tracks similar to "${songLabel}"!`, 5000);
         }
     } catch (err) {
         showError(`Failed to unearth similar tracks: ${err.message}`);

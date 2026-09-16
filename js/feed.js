@@ -117,13 +117,19 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
         : 'text-[#aaa] border-[#333] bg-[#111] hover:text-[#ffcc00] hover:border-[#ffcc00]';
     const starTitle = inStash ? 'In Download Stash (Click to remove)' : 'Save to Download Stash';
 
+    const isDug = isObj && !!(track.isDigDeeper || track.dug || track._dug || track.source === 'dig-deeper');
+    const numClass = isDug
+        ? 'bg-[#001428] border border-[#003366] text-[#3399ff] group-hover:border-[#3399ff] group-hover:text-[#3399ff] shadow-[0_0_5px_rgba(51,153,255,0.35)]'
+        : 'bg-[#111] border border-[#333] text-white group-hover:border-[#39ff14] group-hover:text-[#39ff14]';
+    const numTitle = isDug ? ' title="Discovered via Dig Deeper"' : '';
+
     return `<li id="track-${ts}-${index}" class="track-row flex items-center gap-1.5 py-[3px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500 overflow-hidden" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
         <!-- Track Prune Button -->
         <button onclick="event.stopPropagation();removeTrackFromMix('${ts}', ${index}, this)" title="Remove track from list" aria-label="Remove track" class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#333] text-[#aaa] hover:border-[#ff3333] hover:text-[#ff3333] hover:bg-[#220000] text-[9px] font-bold transition-all cursor-pointer">
             <i class="fas fa-times"></i>
         </button>
 
-        <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#333] text-white text-[10px] font-bold group-hover:border-[#39ff14] group-hover:text-[#39ff14] transition-colors">${num}</span>
+        <span class="shrink-0 w-6 h-6 flex items-center justify-center ${numClass} text-[10px] font-bold transition-colors"${numTitle}>${num}</span>
 
         <!-- Track Title -->
         <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy: ${trackEscaped}" class="track-title-wrapper text-white text-[15px] leading-tight cursor-pointer select-none flex items-center min-w-0 flex-1 overflow-hidden mr-1">
