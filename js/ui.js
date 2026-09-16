@@ -32,7 +32,11 @@ function initScrollToTop() {
 // ── App Initialisation ──
 window.addEventListener('DOMContentLoaded', () => {
     initScrollToTop();
-    document.body.classList.add(getTextSize());
+    if (typeof applyTextSize === 'function') {
+        applyTextSize(getTextSize());
+    } else {
+        document.body.className = getTextSize();
+    }
 
     const history = getHistory();
     if (history.length > 0) {

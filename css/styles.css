@@ -550,11 +550,31 @@ body.merge-active [data-ts]:active {
 }
 
 .stash-star-btn {
+    color: #888;
+    border-color: #333;
+    background-color: #111;
     transition: transform 0.12s ease, border-color 0.2s, background-color 0.2s, box-shadow 0.2s, color 0.2s;
+}
+
+.stash-star-btn:hover {
+    color: #ffcc00;
+    border-color: #ffcc00;
 }
 
 .stash-star-btn:active {
     transform: scale(0.82) !important;
+}
+
+.stash-star-btn.is-stashed {
+    color: #ffcc00 !important;
+    border-color: #ffcc00 !important;
+    background-color: #2a2200 !important;
+    box-shadow: 0 0 8px rgba(255, 204, 0, 0.5) !important;
+}
+
+.stash-star-btn.is-stashed i {
+    color: #ffcc00 !important;
+    text-shadow: 0 0 6px rgba(255, 204, 0, 0.8);
 }
 
 .star-pop-animate {

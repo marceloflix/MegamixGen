@@ -6,6 +6,22 @@
 
 ![SoundHunt Discovery Console](assets/screenshots/main_view.png)
 
+<div align="center">
+
+<br>
+
+[![Launch SoundHunt on Vercel](https://img.shields.io/badge/▶_LAUNCH_LIVE_APP-SoundHunt_on_Vercel-39ff14?style=for-the-badge&logo=vercel&logoColor=white&labelColor=0a0a0a)](https://sound-hunt.vercel.app)
+
+<br>
+
+**[⚡ Click here to launch SoundHunt in your browser — zero installation, instant crate digging!](https://sound-hunt.vercel.app)**
+
+*(Works on Windows, Mac, Linux & mobile • 1-click install as a standalone desktop app)*
+
+<br>
+
+</div>
+
 ---
 
 ## What Can SoundHunt Do?
@@ -24,7 +40,7 @@
 ## Quick Start
 
 ### Option A: Launch Instantly in Browser or Desktop (Zero Install)
-1. Open the live app: **[SoundHunt on Vercel](https://soundhunt.vercel.app)** *(or your deployment URL)*.
+1. Open the live app: **[SoundHunt on Vercel](https://sound-hunt.vercel.app)**.
 2. Click **Install App** in the top bar (or the ⊕ icon in your browser's address bar) to install SoundHunt as a standalone desktop app on **Windows 10/11, macOS, or Linux**.
 3. No terminal, no Python, no downloads required!
 

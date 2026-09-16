@@ -292,9 +292,7 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
     const titleEscaped = (isObj && track.title ? track.title : (trackStr.includes(' - ') ? trackStr.split(' - ').slice(1).join(' - ') : trackStr)).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     const inStash = typeof isStashed === 'function' ? isStashed(artistEscaped, titleEscaped) : false;
-    const starClass = inStash
-        ? 'text-[#ffcc00] border-[#ffcc00] bg-[#2a2200] shadow-[0_0_8px_rgba(255,204,0,0.5)]'
-        : 'text-[#aaa] border-[#333] bg-[#111] hover:text-[#ffcc00] hover:border-[#ffcc00]';
+    const starClass = inStash ? 'is-stashed' : '';
     const starTitle = inStash ? 'In Download Stash (Click to remove)' : 'Save to Download Stash';
 
     const isDug = isObj && !!(track.isDigDeeper || track.dug || track._dug || track.source === 'dig-deeper');

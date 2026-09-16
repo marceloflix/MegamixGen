@@ -83,12 +83,10 @@ function toggleStashTrack(track, btn) {
 function updateStarButtonUI(btn, active) {
     if (!btn) return;
     if (active) {
-        btn.classList.add('text-[#ffcc00]', 'border-[#ffcc00]', 'bg-[#2a2200]', 'shadow-[0_0_8px_rgba(255,204,0,0.5)]');
-        btn.classList.remove('text-[#555]', 'border-[#2a2a2a]', 'bg-[#111]');
+        btn.classList.add('is-stashed');
         btn.title = 'In Download Stash (Click to remove)';
     } else {
-        btn.classList.remove('text-[#ffcc00]', 'border-[#ffcc00]', 'bg-[#2a2200]', 'shadow-[0_0_8px_rgba(255,204,0,0.5)]');
-        btn.classList.add('text-[#555]', 'border-[#2a2a2a]', 'bg-[#111]');
+        btn.classList.remove('is-stashed');
         btn.title = 'Save to Download Stash';
     }
 }
