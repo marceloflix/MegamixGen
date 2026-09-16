@@ -78,6 +78,7 @@ window.addEventListener('DOMContentLoaded', () => {
             closeStats();
             if (typeof closeDigDeeperModal === 'function') closeDigDeeperModal();
             if (typeof closeStashDrawer === 'function') closeStashDrawer();
+            if (typeof exitAllSelectionModes === 'function') exitAllSelectionModes();
         }
         if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('ai-vibe').focus(); }
     });

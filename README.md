@@ -15,6 +15,7 @@
 - **Instant 30s Audition**: Hit play to preview 30-second audio clips directly in your browser without leaving the page.
 - **Direct Search & Streaming Links**: Jump straight from any track to search and listen on **Spotify**, **YouTube**, or **Monochrome**.
 - **Ruthless Pruning**: Suggested tracks that miss the mark? Click `✕` to prune them out instantly with smooth animations and dynamic count updates.
+- **Multi-Track Selection & Bulk Pruning**: Click any track's numeration badge to activate multi-select mode, select multiple tracks at once with custom neon checkboxes, and bulk delete unwanted tracks in one go.
 - **Dig Deeper**: Found a track you love? Click the magnifying glass (`🔍`) and choose how many similar tracks (+3, +5, +10, or custom) to hunt down sharing that exact sonic groove and DNA.
 - **One-Click Download via Monochrome**: Star tracks (`★`) to your **Download Stash** drawer and jump straight to [Monochrome](https://monochrome.tf) to download them in high quality.
 

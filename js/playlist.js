@@ -31,6 +31,10 @@ function removeTrackFromMix(ts, trackIndex, btn) {
             if (Array.isArray(mix.tracks) && trackIndex >= 0 && trackIndex < mix.tracks.length) {
                 mix.tracks.splice(trackIndex, 1);
 
+                if (typeof adjustSelectionAfterRemoval === 'function') {
+                    adjustSelectionAfterRemoval(ts, trackIndex);
+                }
+
                 if (mix.tracks.length === 0) {
                     history.splice(mixIndex, 1);
                     saveHistory(history);
@@ -46,6 +50,9 @@ function removeTrackFromMix(ts, trackIndex, btn) {
         } else {
             // For demo card or transient card not yet in history
             if (row) row.remove();
+            if (typeof adjustSelectionAfterRemoval === 'function') {
+                adjustSelectionAfterRemoval(ts, trackIndex);
+            }
             const card = document.querySelector(`[data-ts="${ts}"]`);
             if (card) {
                 const remaining = card.querySelectorAll('.track-row').length;
@@ -118,4 +125,72 @@ function deleteMix(btn, ts) {
             container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-compact-disc mr-2"></i>No playlists yet — enter a prompt above to hunt tracks.</div>';
         }
     }, 200);
+}
+
+// ── Batch Delete Selected Tracks from Playlist ──
+function deleteSelectedTracks(ts, btn) {
+    const selectedIndices = typeof getPlaylistSelection === 'function' ? getPlaylistSelection(ts) : null;
+    if (!selectedIndices || selectedIndices.size === 0) return;
+
+    const count = selectedIndices.size;
+    if (btn) {
+        const confirmHtml = `<i class="fas fa-trash-alt text-[10px] mr-1"></i> Confirm Delete?`;
+        if (typeof armConfirmButton === 'function') {
+            if (armConfirmButton(btn, confirmHtml, `Click again to confirm deleting selected tracks`, typeof DEFAULT_CONFIRM_TIMEOUT_MS !== 'undefined' ? DEFAULT_CONFIRM_TIMEOUT_MS : 8000)) {
+                return;
+            }
+        }
+    }
+
+    // Close audio player if any playing track is among those selected for deletion
+    if (typeof closeAudioPlayer === 'function' && typeof currentPreviewBtn !== 'undefined' && currentPreviewBtn) {
+        const card = document.querySelector(`[data-ts="${ts}"]`);
+        if (card) {
+            selectedIndices.forEach(idx => {
+                const row = document.getElementById(`track-${ts}-${idx}`);
+                if (row && row.contains(currentPreviewBtn)) {
+                    closeAudioPlayer();
+                }
+            });
+        }
+    }
+
+    const history = typeof getHistory === 'function' ? getHistory() : [];
+    const mixIndex = history.findIndex(m => String(m._timestamp) === String(ts));
+
+    if (mixIndex !== -1) {
+        const mix = history[mixIndex];
+        if (Array.isArray(mix.tracks)) {
+            mix.tracks = mix.tracks.filter((_, idx) => !selectedIndices.has(idx));
+
+            if (typeof exitSelectionMode === 'function') exitSelectionMode(ts);
+
+            if (mix.tracks.length === 0) {
+                history.splice(mixIndex, 1);
+                saveHistory(history);
+                if (typeof rebuildFeed === 'function') rebuildFeed();
+                if (typeof showNotice === 'function') showNotice('✓ Playlist deleted as all tracks were removed.', 4000);
+                return;
+            }
+
+            saveHistory(history);
+            if (typeof rebuildFeed === 'function') rebuildFeed();
+            if (typeof showNotice === 'function') showNotice(`✓ Successfully removed ${count} tracks from playlist.`, 4000);
+        }
+    } else {
+        // Fallback for transient or unpersisted demo card
+        const card = document.querySelector(`[data-ts="${ts}"]`);
+        if (card) {
+            selectedIndices.forEach(idx => {
+                const row = document.getElementById(`track-${ts}-${idx}`);
+                if (row) row.remove();
+            });
+            const remaining = card.querySelectorAll('.track-row').length;
+            const countSpan = card.querySelector('.diag-track-count') || card.querySelectorAll('span.font-bold.text-\\[11px\\]')[0];
+            if (countSpan) countSpan.textContent = remaining;
+            if (remaining === 0) card.remove();
+        }
+        if (typeof exitSelectionMode === 'function') exitSelectionMode(ts);
+        if (typeof showNotice === 'function') showNotice(`✓ Successfully removed ${count} tracks.`, 4000);
+    }
 }

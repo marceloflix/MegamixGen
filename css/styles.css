@@ -481,4 +481,32 @@ body.merge-active [data-ts]:active {
     background-color: rgba(57, 255, 20, 0.04) !important;
 }
 
+/* ── Track Number Buttons & Selection States ── */
+.track-num-btn {
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.track-num-btn:hover {
+    transform: scale(1.08);
+}
+
+.track-row.track-row-selected {
+    background-color: rgba(57, 255, 20, 0.07) !important;
+    box-shadow: inset 2px 0 0 #39ff14, inset 0 -1px 0 rgba(57, 255, 20, 0.12) !important;
+}
+
+.track-row.track-row-selected.track-row-dug {
+    background-color: rgba(51, 153, 255, 0.07) !important;
+    box-shadow: inset 2px 0 0 #3399ff, inset 0 -1px 0 rgba(51, 153, 255, 0.12) !important;
+}
+
+/* ── Selection Action Bar ── */
+.selection-bar {
+    background: linear-gradient(180deg, #0e1c0e 0%, #071207 100%);
+    border: 1px solid #1a5e1a;
+    box-shadow: 0 0 12px rgba(57, 255, 20, 0.15);
+}
+
 

@@ -98,6 +98,184 @@ function getTrackString(t) {
     return typeof t === 'string' ? t : `${t.artist} - ${t.title}`;
 }
 
+// ── Track Multi-Selection State (Per Playlist) ──
+const playlistSelectionState = {}; // { [ts]: Set<number> }
+
+function getPlaylistSelection(ts) {
+    return playlistSelectionState[ts] || null;
+}
+
+function isPlaylistSelecting(ts) {
+    return !!(playlistSelectionState[ts] && playlistSelectionState[ts] instanceof Set);
+}
+
+function handleTrackNumClick(ts, index) {
+    if (!playlistSelectionState[ts]) {
+        playlistSelectionState[ts] = new Set([index]);
+    } else {
+        if (playlistSelectionState[ts].has(index)) {
+            playlistSelectionState[ts].delete(index);
+        } else {
+            playlistSelectionState[ts].add(index);
+        }
+    }
+    updateSelectionUI(ts);
+}
+
+function selectAllTracks(ts) {
+    const card = document.querySelector(`[data-ts="${ts}"]`);
+    if (!card) return;
+    const rows = card.querySelectorAll('.track-row');
+    playlistSelectionState[ts] = new Set(Array.from({ length: rows.length }, (_, i) => i));
+    updateSelectionUI(ts);
+}
+
+function deselectAllTracks(ts) {
+    if (playlistSelectionState[ts]) {
+        playlistSelectionState[ts].clear();
+    }
+    updateSelectionUI(ts);
+}
+
+function exitSelectionMode(ts) {
+    if (playlistSelectionState[ts]) {
+        delete playlistSelectionState[ts];
+    }
+    updateSelectionUI(ts);
+}
+
+function exitAllSelectionModes() {
+    Object.keys(playlistSelectionState).forEach(ts => {
+        exitSelectionMode(ts);
+    });
+}
+
+function adjustSelectionAfterRemoval(ts, removedIndex) {
+    if (!playlistSelectionState[ts] || !(playlistSelectionState[ts] instanceof Set)) return;
+    const currentSet = playlistSelectionState[ts];
+    const newSet = new Set();
+    currentSet.forEach(idx => {
+        if (idx === removedIndex) {
+            // Track was deleted, remove from selection
+        } else if (idx > removedIndex) {
+            // Shift index down by 1 because preceding track was deleted
+            newSet.add(idx - 1);
+        } else {
+            // Index stays unchanged
+            newSet.add(idx);
+        }
+    });
+    playlistSelectionState[ts] = newSet;
+}
+
+function renderSelectionBarHTML(ts) {
+    const isSelecting = isPlaylistSelecting(ts);
+    const count = isSelecting ? (playlistSelectionState[ts]?.size || 0) : 0;
+    return `
+        <div id="selection-bar-${ts}" class="selection-bar ${isSelecting ? 'flex' : 'hidden'} items-center justify-between flex-wrap gap-2 mb-2 px-3 py-1.5 rounded text-xs transition-all">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="flex items-center gap-1.5 text-xs text-white font-bold">
+                    <i class="fas fa-check-square text-[#39ff14]"></i>
+                    <span id="selection-count-${ts}" class="text-[#39ff14] font-extrabold text-sm">${count}</span>
+                    <span class="text-white text-[10.5px] uppercase font-semibold tracking-wider">selected</span>
+                </span>
+                <span class="w-[1px] h-3.5 bg-[#1a4a1a] mx-1"></span>
+                <button type="button" onclick="selectAllTracks('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#1a2a1a] text-white hover:text-[#39ff14] border border-[#444] hover:border-[#39ff14] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                    Select All
+                </button>
+                <button type="button" onclick="deselectAllTracks('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#222] text-white hover:text-[#ffcc00] border border-[#444] hover:border-[#ffcc00] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                    Deselect
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" id="btn-delete-selected-${ts}" onclick="deleteSelectedTracks('${ts}', this)" class="px-3 py-1 bg-[#220000] hover:bg-[#330000] text-[#ff3333] border border-[#ff3333] hover:shadow-[0_0_8px_rgba(255,51,51,0.5)] text-[10.5px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${count === 0 ? 'opacity-40 pointer-events-none' : ''}">
+                    <i class="fas fa-trash-alt text-[9.5px]"></i> Delete Selected
+                </button>
+                <button type="button" onclick="exitSelectionMode('${ts}')" class="px-2.5 py-1 bg-[#141414] hover:bg-[#222] text-white hover:text-[#ff3333] border border-[#444] hover:border-[#ff3333] text-[10.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function updateSelectionUI(ts) {
+    const card = document.querySelector(`[data-ts="${ts}"]`);
+    if (!card) return;
+
+    const bar = document.getElementById(`selection-bar-${ts}`);
+    const isSelecting = isPlaylistSelecting(ts);
+    const selectedIndices = playlistSelectionState[ts] || new Set();
+    const count = selectedIndices.size;
+
+    if (bar) {
+        if (isSelecting) {
+            bar.classList.remove('hidden');
+            bar.classList.add('flex');
+            const countSpan = document.getElementById(`selection-count-${ts}`);
+            if (countSpan) countSpan.textContent = count;
+
+            const deleteBtn = document.getElementById(`btn-delete-selected-${ts}`);
+            if (deleteBtn) {
+                // If button was currently armed for confirmation, disarm it so it displays fresh state
+                if (deleteBtn.dataset.confirming && typeof disarmConfirmButton === 'function') {
+                    disarmConfirmButton(deleteBtn);
+                }
+
+                if (count === 0) {
+                    deleteBtn.classList.add('opacity-40', 'pointer-events-none');
+                } else {
+                    deleteBtn.classList.remove('opacity-40', 'pointer-events-none');
+                }
+            }
+        } else {
+            bar.classList.add('hidden');
+            bar.classList.remove('flex');
+        }
+    }
+
+    const rows = card.querySelectorAll('.track-row');
+    rows.forEach((row, index) => {
+        const numBtn = row.querySelector('.track-num-btn');
+        const isSelected = isSelecting && selectedIndices.has(index);
+        const isDug = row.dataset.dug === 'true';
+
+        if (isSelected) {
+            row.classList.add('track-row-selected');
+        } else {
+            row.classList.remove('track-row-selected');
+        }
+
+        if (!numBtn) return;
+
+        if (isSelecting) {
+            if (isSelected) {
+                const checkColor = isDug ? 'text-[#3399ff]' : 'text-[#39ff14]';
+                const checkBg = isDug ? 'bg-[#001f3f] border-[#3399ff]' : 'bg-[#0a2a0a] border-[#39ff14]';
+                const checkShadow = isDug ? 'shadow-[0_0_8px_rgba(51,153,255,0.6)]' : 'shadow-[0_0_8px_rgba(57,255,20,0.6)]';
+                numBtn.className = `track-num-btn shrink-0 w-6 h-6 flex items-center justify-center ${checkBg} border ${checkColor} ${checkShadow} text-[10px] rounded-[2px] transition-all cursor-pointer`;
+                numBtn.innerHTML = '<i class="fas fa-check"></i>';
+                numBtn.title = 'Selected — Click to uncheck';
+            } else {
+                const emptyBorder = isDug ? 'border-[#004080] hover:border-[#3399ff]' : 'border-[#444] hover:border-[#39ff14]';
+                const emptyBg = isDug ? 'bg-[#001428]' : 'bg-[#0a0a0a]';
+                numBtn.className = `track-num-btn shrink-0 w-6 h-6 flex items-center justify-center ${emptyBg} border ${emptyBorder} text-[10px] rounded-[2px] transition-all cursor-pointer`;
+                numBtn.innerHTML = `<span class="w-2.5 h-2.5 rounded-[1px] border ${emptyBorder}"></span>`;
+                numBtn.title = 'Click to select';
+            }
+        } else {
+            const num = index + 1;
+            const numClass = isDug
+                ? 'bg-[#001428] border border-[#003366] text-[#3399ff] group-hover:border-[#3399ff] group-hover:text-[#3399ff] shadow-[0_0_5px_rgba(51,153,255,0.35)]'
+                : 'bg-[#111] border border-[#333] text-white group-hover:border-[#39ff14] group-hover:text-[#39ff14]';
+            const numTitle = isDug ? 'Discovered via Dig Deeper — Click to select multiple tracks' : 'Click to select multiple tracks';
+            numBtn.className = `track-num-btn shrink-0 w-6 h-6 flex items-center justify-center ${numClass} text-[10px] font-bold transition-all cursor-pointer`;
+            numBtn.innerHTML = `${num}`;
+            numBtn.title = numTitle;
+        }
+    });
+}
+
 // ── Build single track row HTML ──
 function buildTrackHTML(track, index, ts, allTracks = []) {
     const isObj = typeof track === 'object' && track !== null;
@@ -118,18 +296,39 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
     const starTitle = inStash ? 'In Download Stash (Click to remove)' : 'Save to Download Stash';
 
     const isDug = isObj && !!(track.isDigDeeper || track.dug || track._dug || track.source === 'dig-deeper');
-    const numClass = isDug
-        ? 'bg-[#001428] border border-[#003366] text-[#3399ff] group-hover:border-[#3399ff] group-hover:text-[#3399ff] shadow-[0_0_5px_rgba(51,153,255,0.35)]'
-        : 'bg-[#111] border border-[#333] text-white group-hover:border-[#39ff14] group-hover:text-[#39ff14]';
-    const numTitle = isDug ? ' title="Discovered via Dig Deeper"' : '';
+    const isSelecting = isPlaylistSelecting(ts);
+    const isSelected = isSelecting && playlistSelectionState[ts].has(index);
 
-    return `<li id="track-${ts}-${index}" class="track-row flex items-center gap-1.5 py-[3px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500 overflow-hidden" style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
+    let numButtonHTML = '';
+    if (isSelecting) {
+        if (isSelected) {
+            const checkColor = isDug ? 'text-[#3399ff]' : 'text-[#39ff14]';
+            const checkBg = isDug ? 'bg-[#001f3f] border-[#3399ff]' : 'bg-[#0a2a0a] border-[#39ff14]';
+            const checkShadow = isDug ? 'shadow-[0_0_8px_rgba(51,153,255,0.6)]' : 'shadow-[0_0_8px_rgba(57,255,20,0.6)]';
+            numButtonHTML = `<button type="button" onclick="event.stopPropagation();handleTrackNumClick('${ts}', ${index})" class="track-num-btn shrink-0 w-6 h-6 flex items-center justify-center ${checkBg} border ${checkColor} ${checkShadow} text-[10px] rounded-[2px] transition-all cursor-pointer" title="Selected — Click to uncheck"><i class="fas fa-check"></i></button>`;
+        } else {
+            const emptyBorder = isDug ? 'border-[#004080] hover:border-[#3399ff]' : 'border-[#444] hover:border-[#39ff14]';
+            const emptyBg = isDug ? 'bg-[#001428]' : 'bg-[#0a0a0a]';
+            numButtonHTML = `<button type="button" onclick="event.stopPropagation();handleTrackNumClick('${ts}', ${index})" class="track-num-btn shrink-0 w-6 h-6 flex items-center justify-center ${emptyBg} border ${emptyBorder} text-[10px] rounded-[2px] transition-all cursor-pointer" title="Click to select"><span class="w-2.5 h-2.5 rounded-[1px] border ${emptyBorder}"></span></button>`;
+        }
+    } else {
+        const numClass = isDug
+            ? 'bg-[#001428] border border-[#003366] text-[#3399ff] group-hover:border-[#3399ff] group-hover:text-[#3399ff] shadow-[0_0_5px_rgba(51,153,255,0.35)]'
+            : 'bg-[#111] border border-[#333] text-white group-hover:border-[#39ff14] group-hover:text-[#39ff14]';
+        const numTitle = isDug ? 'Discovered via Dig Deeper — Click to select multiple tracks' : 'Click to select multiple tracks';
+        numButtonHTML = `<button type="button" onclick="event.stopPropagation();handleTrackNumClick('${ts}', ${index})" class="track-num-btn shrink-0 w-6 h-6 flex items-center justify-center ${numClass} text-[10px] font-bold transition-all cursor-pointer" title="${numTitle}">${num}</button>`;
+    }
+
+    const rowSelectedClass = isSelected ? ` track-row-selected${isDug ? ' track-row-dug' : ''}` : (isDug ? ' track-row-dug' : '');
+    const rowClickAction = `onclick="if(isPlaylistSelecting('${ts}')){handleTrackNumClick('${ts}', ${index});}"`;
+
+    return `<li id="track-${ts}-${index}" data-dug="${isDug ? 'true' : 'false'}" class="track-row flex items-center gap-1.5 py-[3px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500 overflow-hidden${rowSelectedClass}" ${rowClickAction} style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
         <!-- Track Prune Button -->
         <button onclick="event.stopPropagation();removeTrackFromMix('${ts}', ${index}, this)" title="Remove track from list" aria-label="Remove track" class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#333] text-[#aaa] hover:border-[#ff3333] hover:text-[#ff3333] hover:bg-[#220000] text-[9px] font-bold transition-all cursor-pointer">
             <i class="fas fa-times"></i>
         </button>
 
-        <span class="shrink-0 w-6 h-6 flex items-center justify-center ${numClass} text-[10px] font-bold transition-colors"${numTitle}>${num}</span>
+        ${numButtonHTML}
 
         <!-- Track Title -->
         <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy: ${trackEscaped}" class="track-title-wrapper text-white text-[15px] leading-tight cursor-pointer select-none flex items-center min-w-0 flex-1 overflow-hidden mr-1">
@@ -241,7 +440,10 @@ function renderNewMix(data, persist = false) {
                         ${data._prompt ? `<p class="mb-2 flex items-start gap-2 text-[11px]"><span class="shrink-0 text-[#39ff14] uppercase font-bold tracking-wider mt-[1px]">Prompt</span><span class="text-white">${data._prompt}</span></p>` : ''}
                         ${data.description ? `<p class="mb-3 text-[11px] text-white italic border-l-2 border-[#1a4a1a] pl-2">${data.description}</p>` : ''}
                         <div class="bg-[#050505] border border-[#1a4a1a] p-2">
-                            ${renderTracklistBlocks(data.tracks, ts)}
+                            ${renderSelectionBarHTML(ts)}
+                            <div id="tracklist-container-${ts}">
+                                ${renderTracklistBlocks(data.tracks, ts)}
+                            </div>
                             <div class="mt-3 pt-2 border-t border-[#111] flex flex-wrap justify-end gap-2 items-center">
                                 <button onclick="refineMix('${ts}')" title="Refine this playlist with AI"
                                         class="bg-[#111] hover:bg-[#1a1a00] text-[#ffcc00] border border-[#554400] px-3 py-1 rounded text-[10px] uppercase font-bold transition-colors shadow-[0_0_5px_rgba(255,204,0,0.15)] flex items-center cursor-pointer">
