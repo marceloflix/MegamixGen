@@ -10,11 +10,9 @@
 
 <br>
 
-[![Launch SoundHunt on Vercel](https://img.shields.io/badge/▶_LAUNCH_LIVE_APP-SoundHunt_on_Vercel-39ff14?style=for-the-badge&logo=vercel&logoColor=white&labelColor=0a0a0a)](https://sound-hunt.vercel.app)
+[![Launch SoundHunt on Vercel](https://img.shields.io/badge/▶_LAUNCH_LIVE_APP-SoundHunt_on_Vercel-1db954?style=for-the-badge&logo=vercel&logoColor=white&labelColor=0a0a0a)](https://sound-hunt.vercel.app)
 
-<br>
-
-**[⚡ Click here to launch SoundHunt in your browser — zero installation, instant crate digging!](https://sound-hunt.vercel.app)**
+<br><br>
 
 *(Works on Windows, Mac, Linux & mobile • 1-click install as a standalone desktop app)*
 
