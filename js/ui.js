@@ -66,6 +66,17 @@ window.addEventListener('DOMContentLoaded', () => {
         setDiscoveryChip(savedChip);
     }
 
+    // Auto-prompt settings for first-time visitors who don't have an API key configured
+    if (typeof getApiKey === 'function' && !getApiKey()) {
+        setTimeout(() => {
+            const notice = document.getElementById('first-time-api-notice');
+            if (notice) notice.classList.remove('hidden');
+            openSettings();
+            const input = document.getElementById('api-key-input');
+            if (input) input.focus();
+        }, 550);
+    }
+
     // Enter key triggers generation
     document.getElementById('ai-vibe').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') generateMix();

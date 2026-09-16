@@ -92,12 +92,19 @@
                 </button>
             </div>
             <div class="modal-body-scrollable space-y-3.5">
+                <div id="first-time-api-notice" class="hidden bg-[#001a08] border border-[#39ff14] text-white p-2.5 shadow-[0_0_8px_rgba(57,255,20,0.2)] flex items-start gap-2">
+                    <i class="fas fa-key text-[#39ff14] text-xs mt-0.5 shrink-0"></i>
+                    <div class="text-[10px] leading-tight">
+                        <span class="font-bold text-[#39ff14] uppercase tracking-wider block mb-0.5">Welcome! API Key Required</span>
+                        <span class="text-white">Paste your free Gemini API key below to unlock AI music discovery.</span>
+                    </div>
+                </div>
                 <div>
                     <label class="block text-[#669966] text-[10px] uppercase font-bold mb-1">Gemini API Key</label>
                     <input type="password" id="api-key-input" placeholder="Paste your API key here..."
                            class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-2.5 py-1.5 outline-none font-bold placeholder-[#333] key-input-vis text-[11px]">
                     <div id="api-key-status" class="hidden text-[10px] mt-1 font-bold uppercase tracking-wider"></div>
-                    <p class="text-[#555] text-[9px] mt-1">Get a key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[#3399ff] underline">Google AI Studio</a>. Stored locally in your browser only.</p>
+                    <p class="text-white text-[9.5px] mt-1">Get a key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[#3399ff] underline font-bold">Google AI Studio</a>. Stored locally in your browser only.</p>
                 </div>
                 <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
                     <span class="text-[#888] text-[10px] uppercase font-bold">AI Model</span>
@@ -143,7 +150,7 @@
                     <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
                         <div>
                             <span class="text-white text-[11px] font-bold block">Standalone PWA</span>
-                            <span id="pwa-status-text" class="text-[#666] text-[9.5px]">Run SoundHunt in a dedicated desktop window</span>
+                            <span id="pwa-status-text" class="text-white text-[9.5px]">Run SoundHunt in a dedicated desktop window</span>
                         </div>
                         <button type="button" id="settings-pwa-install-btn" onclick="triggerPwaInstall()"
                                 class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer">

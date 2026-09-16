@@ -1,8 +1,14 @@
 // ── Settings Modal ──
 function openSettings() {
-    document.getElementById('api-key-input').value = getApiKey();
+    const key = getApiKey();
+    document.getElementById('api-key-input').value = key;
     const statusEl = document.getElementById('api-key-status');
     if (statusEl) statusEl.classList.add('hidden');
+
+    const firstTimeNotice = document.getElementById('first-time-api-notice');
+    if (firstTimeNotice && key) {
+        firstTimeNotice.classList.add('hidden');
+    }
     
     document.getElementById('text-size-select').value = getTextSize();
     document.getElementById('auto-scroll-toggle').checked = getAutoScroll();
@@ -10,7 +16,6 @@ function openSettings() {
     document.getElementById('prompt-constraints-input').value = getPromptConstraints();
     document.getElementById('prompt-explicit-input').value = getPromptExplicit();
 
-    
     document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -123,6 +128,10 @@ async function saveSettings() {
 
     // Save preferences
     localStorage.setItem(STORAGE_KEYS.apiKey, key);
+    if (key) {
+        const firstTimeNotice = document.getElementById('first-time-api-notice');
+        if (firstTimeNotice) firstTimeNotice.classList.add('hidden');
+    }
     localStorage.setItem(STORAGE_KEYS.model, GEMINI_MODEL);
     localStorage.setItem(STORAGE_KEYS.textSize, textSize);
     localStorage.setItem(STORAGE_KEYS.autoScroll, autoScroll);
