@@ -82,4 +82,77 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('ai-vibe').focus(); }
     });
+
+    // Initialize PWA Installation & Service Worker
+    initPwa();
 });
+
+// ── PWA Installation & Service Worker ──
+let deferredPwaPrompt = null;
+
+function initPwa() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const headerBtn = document.getElementById('pwa-install-btn');
+    const settingsBtn = document.getElementById('settings-pwa-install-btn');
+    const statusText = document.getElementById('pwa-status-text');
+
+    if (isStandalone) {
+        if (headerBtn) headerBtn.classList.add('hidden');
+        if (settingsBtn) {
+            settingsBtn.textContent = 'Installed ✓';
+            settingsBtn.disabled = true;
+            settingsBtn.classList.replace('text-[#39ff14]', 'text-[#888]');
+            settingsBtn.classList.replace('border-[#1a7b1a]', 'border-[#333]');
+            settingsBtn.classList.replace('bg-[#0a2a0a]', 'bg-[#111]');
+        }
+        if (statusText) statusText.textContent = 'Running in dedicated standalone mode';
+        return;
+    }
+
+    // Capture install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPwaPrompt = e;
+        if (headerBtn) headerBtn.classList.remove('hidden');
+        if (settingsBtn) {
+            settingsBtn.textContent = 'Install App';
+            settingsBtn.disabled = false;
+        }
+        if (statusText) statusText.textContent = 'Ready to install on desktop or home screen';
+    });
+
+    // App installed handler
+    window.addEventListener('appinstalled', () => {
+        deferredPwaPrompt = null;
+        if (headerBtn) headerBtn.classList.add('hidden');
+        if (settingsBtn) {
+            settingsBtn.textContent = 'Installed ✓';
+            settingsBtn.disabled = true;
+        }
+        if (statusText) statusText.textContent = 'SoundHunt is installed!';
+    });
+
+    // Register Service Worker on HTTPS or localhost
+    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch((err) => {
+                console.log('SoundHunt SW note:', err);
+            });
+        });
+    }
+}
+
+function triggerPwaInstall() {
+    if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User installed SoundHunt PWA');
+            }
+            deferredPwaPrompt = null;
+        });
+    } else {
+        alert('To install SoundHunt:\n\n• In Chrome/Edge: Click the install icon (⊕) in the right side of the address bar.\n• In Safari on Mac/iOS: Click Share → "Add to Dock" or "Add to Home Screen".');
+    }
+}
+

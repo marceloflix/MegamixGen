@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#141c14"/>
+      <stop offset="60%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#050505"/>
+    </radialGradient>
+    
+    <!-- Iconic Diamond Tri-Gradient -->
+    <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3333"/>
+      <stop offset="48%" stop-color="#3399ff"/>
+      <stop offset="100%" stop-color="#39ff14"/>
+    </linearGradient>
+
+    <!-- Neon Green Glow Filter -->
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle Vinyl Ring Stroke -->
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#39ff14" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#3399ff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#39ff14" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Background Plate -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGlow)"/>
+  <rect width="510" height="510" x="1" y="1" rx="99" fill="none" stroke="#222222" stroke-width="2"/>
+
+  <!-- Concentric Vinyl Grooves -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#ringGrad)" stroke-width="1.5" stroke-dasharray="8 6"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#222" stroke-width="1"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#1f2f1f" stroke-width="1.5" stroke-dasharray="4 8"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#222" stroke-width="1"/>
+
+  <!-- Glowing Radar / Hunting Crosshairs (Subtle) -->
+  <line x1="256" y1="46" x2="256" y2="86" stroke="#39ff14" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <line x1="256" y1="426" x2="256" y2="466" stroke="#39ff14" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <line x1="46" y1="256" x2="86" y2="256" stroke="#39ff14" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <line x1="426" y1="256" x2="466" y2="256" stroke="#39ff14" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Central Rotated Diamond (The SoundHunt Signature) -->
+  <g transform="translate(256, 256) rotate(45)">
+    <!-- Outer Glow Diamond -->
+    <rect x="-70" y="-70" width="140" height="140" rx="16" fill="none" stroke="#39ff14" stroke-width="4" opacity="0.5" filter="url(#neonGlow)"/>
+    <!-- Main Gradient Diamond Body -->
+    <rect x="-64" y="-64" width="128" height="128" rx="12" fill="url(#diamondGrad)"/>
+    <!-- Inner Core Dark Plate -->
+    <rect x="-38" y="-38" width="76" height="76" rx="8" fill="#0a0a0a" opacity="0.92"/>
+  </g>
+
+  <!-- Audio Waveform Center Symbol -->
+  <g fill="#39ff14" filter="url(#neonGlow)">
+    <rect x="226" y="244" width="6" height="24" rx="3"/>
+    <rect x="238" y="234" width="6" height="44" rx="3"/>
+    <rect x="250" y="222" width="6" height="68" rx="3"/>
+    <rect x="262" y="230" width="6" height="52" rx="3"/>
+    <rect x="274" y="242" width="6" height="28" rx="3"/>
+  </g>
+</svg>

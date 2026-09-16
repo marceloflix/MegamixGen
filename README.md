@@ -23,7 +23,15 @@
 
 ## Quick Start
 
-### 1. Clone & Run Locally
+### Option A: Launch Instantly in Browser or Desktop (Zero Install)
+1. Open the live app: **[SoundHunt on Vercel](https://soundhunt.vercel.app)** *(or your deployment URL)*.
+2. Click **Install App** in the top bar (or the ⊕ icon in your browser's address bar) to install SoundHunt as a standalone desktop app on **Windows 10/11, macOS, or Linux**.
+3. No terminal, no Python, no downloads required!
+
+---
+
+### Option B: Run Locally with Python (Offline / Developers)
+If you prefer running SoundHunt completely offline or modifying the source locally:
 ```bash
 git clone https://github.com/marceloflix/SoundHunt.git soundhunt
 cd soundhunt

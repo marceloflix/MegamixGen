@@ -6,12 +6,23 @@
     <meta name="description" content="SoundHunt — Natural-language music discovery and track hunting engine. Dig for hidden gems, deep cuts, and authentic music you don't already own.">
     <title>SoundHunt — Music Discovery & Track Hunting</title>
 
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundHunt">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+    <link rel="alternate icon" type="image/png" href="assets/favicon-64.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+
     <!-- Tailwind (utility classes used throughout) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom styles -->
-    <link rel="stylesheet" href="css/styles.css?v=0.2.1">
+    <link rel="stylesheet" href="css/styles.css?v=0.2.2">
 </head>
 <body class="text-size-normal">
 
@@ -47,6 +58,11 @@
             </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
+            <button id="pwa-install-btn" onclick="triggerPwaInstall()" title="Install SoundHunt App" aria-label="Install SoundHunt App"
+                    class="hidden text-[#39ff14] hover:text-white transition-all text-xs px-2.5 py-1.5 border border-[#1a4a1a] hover:border-[#39ff14] bg-[#051505] flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(57,255,20,0.15)]">
+                <i class="fas fa-download text-[11px]"></i>
+                <span class="font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Install</span>
+            </button>
             <button onclick="openStashDrawer()" title="Download Stash" aria-label="Open download stash"
                     class="text-[#ffcc00] hover:text-white transition-all text-xs px-2.5 py-1.5 border border-[#443300] hover:border-[#ffcc00] bg-[#110d00] flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(255,204,0,0.15)]">
                 <i class="fas fa-star text-[11px]"></i>
@@ -120,6 +136,19 @@
                                 <option value="clean" style="color:#fff">Clean Tracks Only</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+                <div class="border-t border-[#222] pt-2.5 mt-1">
+                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Desktop & Mobile App</label>
+                    <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
+                        <div>
+                            <span class="text-white text-[11px] font-bold block">Standalone PWA</span>
+                            <span id="pwa-status-text" class="text-[#666] text-[9.5px]">Run SoundHunt in a dedicated desktop window</span>
+                        </div>
+                        <button type="button" id="settings-pwa-install-btn" onclick="triggerPwaInstall()"
+                                class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer">
+                            Install App
+                        </button>
                     </div>
                 </div>
             </div>
