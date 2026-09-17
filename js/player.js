@@ -121,10 +121,42 @@ async function previewTrack(trackName, btn) {
         titleEl.textContent   = `${preview.artistName} - ${preview.trackName}`;
 
         const badgesContainer = document.getElementById('audio-track-badges');
-        if (badgesContainer) {
-            const trackRow = btn ? btn.closest('.track-row') : null;
-            const trackBadges = trackRow ? trackRow.querySelector('.track-badges') : null;
-            badgesContainer.innerHTML = trackBadges ? trackBadges.innerHTML : '';
+        const updatePlayerBadges = (analysis) => {
+            if (!badgesContainer) return;
+            if (analysis && analysis.bpm && analysis.camelot) {
+                const safeColor = analysis.color || (typeof CAMELOT_COLORS !== 'undefined' ? CAMELOT_COLORS[analysis.camelot] : '#39ff14');
+                badgesContainer.innerHTML = `
+                    <span class="inline-flex items-center justify-center h-6 px-2.5 rounded-[4px] font-mono font-bold text-[11px] select-none whitespace-nowrap cursor-default shadow-[0_0_6px_rgba(0,0,0,0.8)] transition-all"
+                          style="color: ${safeColor}; border: 1px solid ${safeColor}; background-color: ${safeColor}14; box-shadow: 0 0 6px ${safeColor}33;">
+                        ${analysis.bpm} BPM &bull; ${analysis.camelot}
+                    </span>
+                `;
+            } else {
+                badgesContainer.innerHTML = '';
+            }
+        };
+
+        const cachedAnalysis = typeof getCachedAnalysis === 'function' ? getCachedAnalysis(trackName) : null;
+        if (cachedAnalysis && cachedAnalysis.bpm && cachedAnalysis.camelot) {
+            updatePlayerBadges(cachedAnalysis);
+        } else {
+            badgesContainer.innerHTML = '<span class="inline-flex items-center gap-1.5 h-6 px-2 rounded-[4px] border border-[#1a4a1a] bg-[#051505] text-[#39ff14] text-[10.5px] font-mono font-bold"><i class="fas fa-spinner fa-spin text-[9px]"></i>DSP...</span>';
+            if (typeof analyzeTrackAudio === 'function' && preview.previewUrl) {
+                analyzeTrackAudio(trackName, preview.previewUrl).then(res => {
+                    if (currentAudio && titleEl.textContent === `${preview.artistName} - ${preview.trackName}`) {
+                        updatePlayerBadges(res);
+                    }
+                    if (btn) {
+                        const row = btn.closest('.track-row');
+                        if (row && typeof renderTrackBadgeResult === 'function') {
+                            renderTrackBadgeResult(row, res);
+                            if (typeof evaluateTrackRowLayout === 'function') evaluateTrackRowLayout(row);
+                        }
+                    }
+                }).catch(() => {
+                    if (badgesContainer) badgesContainer.innerHTML = '';
+                });
+            }
         }
 
         currentAudio.addEventListener('play', () => {

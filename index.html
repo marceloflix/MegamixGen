@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SoundHunt — Natural-language music discovery and track hunting engine. Dig for hidden gems, deep cuts, and authentic music you don't already own.">
+    <meta name="description"
+        content="SoundHunt — Natural-language music discovery and track hunting engine. Dig for hidden gems, deep cuts, and authentic music you don't already own.">
     <title>SoundHunt — Music Discovery & Track Hunting</title>
 
     <!-- PWA & Mobile Meta Tags -->
@@ -22,388 +24,461 @@
     <!-- Font Awesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom styles -->
-    <link rel="stylesheet" href="css/styles.css?v=0.2.3">
+    <link rel="stylesheet" href="css/styles.css?v=0.3.6">
 </head>
+
 <body class="text-size-small">
 
-<!-- ── Stash Drawer Overlay & Drawer ── -->
-<div id="stash-overlay" class="hidden" onclick="closeStashDrawer()"></div>
-<div id="stash-drawer" class="translate-x-full">
-    <div class="p-4 bg-gradient-to-b from-[#1a1500] to-[#0a0a0a] border-b border-[#332500] flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-star text-[#ffcc00] text-sm"></i>
-            <span class="text-white font-bold text-sm tracking-wider uppercase">Download Stash</span>
+    <!-- ── Stash Drawer Overlay & Drawer ── -->
+    <div id="stash-overlay" class="hidden" onclick="closeStashDrawer()"></div>
+    <div id="stash-drawer" class="translate-x-full">
+        <div
+            class="p-4 bg-gradient-to-b from-[#1a1500] to-[#0a0a0a] border-b border-[#332500] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-star text-[#ffcc00] text-sm"></i>
+                <span class="text-white font-bold text-sm tracking-wider uppercase">Download Stash</span>
+            </div>
+            <button onclick="closeStashDrawer()"
+                class="text-[#888] hover:text-[#ff3333] transition-colors px-2 py-1 text-xs font-bold cursor-pointer"
+                title="Close Drawer (Esc)">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <button onclick="closeStashDrawer()" class="text-[#888] hover:text-[#ff3333] transition-colors px-2 py-1 text-xs font-bold cursor-pointer" title="Close Drawer (Esc)">
+        <div id="stash-content" class="p-4 flex-1 overflow-y-auto">
+            <!-- Populated by js/stash.js -->
+        </div>
+        <div class="p-3 bg-[#0a0a0a] border-t border-[#222] text-center">
+            <p class="text-[9.5px] text-[#666]">Tracks saved here link directly to <span
+                    class="text-[#bb86fc]">Monochrome</span> for 1-click downloads.</p>
+        </div>
+    </div>
+
+    <div class="container-main">
+
+        <!-- ── Header ── -->
+        <div
+            class="header-bg p-4 md:p-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-2">
+            <div class="flex items-center justify-center md:justify-start w-full">
+                <div class="logo-diamond-blend hidden md:block"></div>
+                <div class="leading-none">
+                    <span class="text-2xl md:text-3xl font-bold text-white tracking-tight">Sound<span
+                            class="text-[#39ff14]">Hunt</span></span>
+                    <span class="text-[10px] text-[#888] block tracking-wider uppercase font-semibold mt-0.5">Music
+                        Discovery & Track Hunting</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="pwa-install-btn" onclick="triggerPwaInstall()" title="Install SoundHunt App"
+                    aria-label="Install SoundHunt App"
+                    class="hidden text-[#39ff14] hover:text-white transition-all text-xs px-2.5 py-1.5 border border-[#1a4a1a] hover:border-[#39ff14] bg-[#051505] flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(57,255,20,0.15)]">
+                    <i class="fas fa-download text-[11px]"></i>
+                    <span class="font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Install</span>
+                </button>
+                <button onclick="openStashDrawer()" title="Download Stash" aria-label="Open download stash"
+                    class="text-[#ffcc00] hover:text-white transition-all text-xs px-2.5 py-1.5 border border-[#443300] hover:border-[#ffcc00] bg-[#110d00] flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(255,204,0,0.15)]">
+                    <i class="fas fa-star text-[11px]"></i>
+                    <span class="font-bold uppercase tracking-wider text-[10px]">Stash</span>
+                    <span id="stash-count-badge"
+                        class="bg-[#333] text-[#888] text-[9px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                </button>
+                <button onclick="openStats()" title="Discovery Stats" aria-label="View stats"
+                    class="text-[#3399ff] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#3399ff] bg-[#0a0a0a] cursor-pointer">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
+                <button onclick="openSettings()" title="Settings" aria-label="Open settings"
+                    class="text-[#39ff14] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#39ff14] bg-[#0a0a0a] cursor-pointer">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Settings Modal ── -->
+        <div id="settings-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeSettings()">
+            <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+                <div class="modal-header">
+                    <div id="settings-modal-title" class="flex items-center">
+                        <i class="fas fa-cog mr-2 text-[#39ff14]"></i> System Configuration
+                    </div>
+                    <button type="button" onclick="closeSettings()"
+                        class="text-[#888] hover:text-[#ff3333] transition-colors px-2 py-0.5 text-[12px] font-bold cursor-pointer"
+                        title="Close (Esc)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body-scrollable space-y-3.5">
+                    <div id="first-time-api-notice"
+                        class="hidden bg-[#001a08] border border-[#39ff14] text-white p-2.5 shadow-[0_0_8px_rgba(57,255,20,0.2)] flex items-start gap-2">
+                        <i class="fas fa-key text-[#39ff14] text-xs mt-0.5 shrink-0"></i>
+                        <div class="text-[10px] leading-tight">
+                            <span class="font-bold text-[#39ff14] uppercase tracking-wider block mb-0.5">Welcome! API
+                                Key Required</span>
+                            <span class="text-white">Paste your free Gemini API key below to unlock AI music
+                                discovery.</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[#669966] text-[10px] uppercase font-bold mb-1">Gemini API Key</label>
+                        <input type="password" id="api-key-input" placeholder="Paste your API key here..."
+                            class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-2.5 py-1.5 outline-none font-bold placeholder-[#333] key-input-vis text-[11px]">
+                        <div id="api-key-status" class="hidden text-[10px] mt-1 font-bold uppercase tracking-wider">
+                        </div>
+                        <p class="text-white text-[9.5px] mt-1">Get a key from <a
+                                href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
+                                class="text-[#3399ff] underline font-bold">Google AI Studio</a>. Stored locally in your
+                            browser only.</p>
+                    </div>
+                    <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
+                        <span class="text-[#888] text-[10px] uppercase font-bold">AI Model</span>
+                        <span class="text-[#39ff14] text-[11px] font-mono font-bold">gemini-3.5-flash-lite</span>
+                    </div>
+                    <div>
+                        <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Text & UI Size</label>
+                        <select id="text-size-select"
+                            class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none font-bold text-[11px] cursor-pointer">
+                            <option value="text-size-small" style="color:#fff" selected>Small ✓</option>
+                            <option value="text-size-normal" style="color:#fff">Normal</option>
+                            <option value="text-size-large" style="color:#fff">Large</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="auto-scroll-toggle" class="cursor-pointer">
+                        <label for="auto-scroll-toggle"
+                            class="text-[#888] text-[10px] uppercase font-bold cursor-pointer">Auto-scroll to new
+                            playlists</label>
+                    </div>
+                    <div class="border-t border-[#222] pt-2.5 mt-1">
+                        <label
+                            class="block text-[#39ff14] text-[10.5px] uppercase font-bold mb-2 flex justify-between items-center border-b border-[#111] pb-1">
+                            <span>Advanced Prompt Configuration</span>
+                            <button type="button" onclick="resetStructuredPrompt(this)"
+                                class="text-[#3399ff] hover:text-white transition-colors text-[9px] uppercase cursor-pointer">Reset
+                                to Default</button>
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                            <div class="col-span-1 md:col-span-2">
+                                <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">AI Persona
+                                    (Role)</label>
+                                <input type="text" id="prompt-persona-input"
+                                    class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none text-[11px]">
+                            </div>
+                            <div class="col-span-1 md:col-span-2">
+                                <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">Additional
+                                    Selection Rules / Constraints</label>
+                                <textarea id="prompt-constraints-input" rows="2"
+                                    class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none text-[11px] resize-y"></textarea>
+                            </div>
+                            <div class="col-span-1 md:col-span-2">
+                                <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">Explicit
+                                    Content</label>
+                                <select id="prompt-explicit-input"
+                                    class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none text-[11px] cursor-pointer">
+                                    <option value="allow" style="color:#fff">Allow Explicit Tracks</option>
+                                    <option value="clean" style="color:#fff">Clean Tracks Only</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-[#222] pt-2.5 mt-1">
+                        <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Desktop & Mobile
+                            App</label>
+                        <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
+                            <div>
+                                <span class="text-white text-[11px] font-bold block">Standalone PWA</span>
+                                <span id="pwa-status-text" class="text-white text-[9.5px]">Run SoundHunt in a dedicated
+                                    desktop window</span>
+                            </div>
+                            <button type="button" id="settings-pwa-install-btn" onclick="triggerPwaInstall()"
+                                class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer">
+                                Install App
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="settings-save-btn" onclick="saveSettings()"
+                        class="flex-1 bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">
+                        <i class="fas fa-save mr-1"></i> Save
+                    </button>
+                    <button type="button" onclick="closeSettings()"
+                        class="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white border border-[#333] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Stats Modal ── -->
+        <div id="stats-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeStats()">
+            <div class="modal-box" style="max-width:500px" role="dialog" aria-modal="true"
+                aria-labelledby="stats-modal-title">
+                <div class="modal-header">
+                    <div id="stats-modal-title" class="flex items-center">
+                        <i class="fas fa-chart-bar mr-2 text-[#3399ff]"></i> Discovery Analytics
+                    </div>
+                    <button type="button" onclick="closeStats()"
+                        class="text-[#888] hover:text-[#ff3333] transition-colors px-2 py-0.5 text-[12px] font-bold cursor-pointer"
+                        title="Close (Esc)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="stats-content" class="modal-body-scrollable"></div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeStats()"
+                        class="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white border border-[#333] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Dig Deeper Modal (Magnifying Glass) ── -->
+        <div id="dig-deeper-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeDigDeeperModal()">
+            <div class="modal-box border border-[#3399ff] shadow-[0_0_25px_rgba(51,153,255,0.25)]"
+                style="max-width:480px" role="dialog" aria-modal="true" aria-labelledby="dig-deeper-title">
+                <div
+                    class="modal-header bg-gradient-to-b from-[#002244] to-[#001428] border-[#003366] flex items-center justify-between">
+                    <div id="dig-deeper-title"
+                        class="flex items-center text-[#3399ff] font-bold text-sm uppercase tracking-wider">
+                        <i class="fas fa-search mr-2"></i> Dig Deeper: Similar Tracks
+                    </div>
+                    <button type="button" onclick="closeDigDeeperModal()"
+                        class="text-white hover:text-[#ff3333] transition-colors px-2 py-0.5 text-xs font-bold cursor-pointer"
+                        title="Close (Esc)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4 bg-[#050505] text-white flex flex-col gap-3">
+                    <div>
+                        <span class="text-[10px] text-white uppercase font-bold tracking-widest block mb-1">Seed
+                            Song</span>
+                        <div id="dig-deeper-seed"
+                            class="p-2.5 bg-[#001428] border border-[#003366] text-[#3399ff] font-bold text-xs rounded truncate">
+                            <!-- Seed Track Title -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-[10px] text-white uppercase font-bold tracking-widest block mb-1.5">How many
+                            similar tracks to add?</span>
+                        <div class="flex gap-2 mb-2">
+                            <button type="button" onclick="setDigDeeperCount(3)"
+                                class="dig-count-btn px-3 py-1.5 border border-[#444] bg-[#111] text-white hover:border-[#3399ff] text-xs font-bold transition-all flex-1 cursor-pointer"
+                                data-count="3">+3 Tracks</button>
+                            <button type="button" onclick="setDigDeeperCount(5)"
+                                class="dig-count-btn active px-3 py-1.5 border border-[#3399ff] bg-[#002244] text-[#3399ff] shadow-[0_0_8px_rgba(51,153,255,0.3)] text-xs font-bold transition-all flex-1 cursor-pointer"
+                                data-count="5">+5 Tracks</button>
+                            <button type="button" onclick="setDigDeeperCount(10)"
+                                class="dig-count-btn px-3 py-1.5 border border-[#444] bg-[#111] text-white hover:border-[#3399ff] text-xs font-bold transition-all flex-1 cursor-pointer"
+                                data-count="10">+10 Tracks</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-white font-bold">Custom quantity:</span>
+                            <input type="number" id="dig-deeper-custom-count" min="1" max="25" value="5"
+                                oninput="onDigCustomCountChange(this.value)"
+                                class="w-16 bg-[#111] border border-[#333] focus:border-[#3399ff] text-white font-bold px-2 py-1 text-xs text-center outline-none">
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-[#ddd] leading-relaxed">
+                        SoundHunt will dig through crate archives for genuine songs sharing this track's groove, tempo,
+                        era, and energy, then append them directly to this playlist.
+                    </p>
+                </div>
+                <div class="modal-footer p-3 bg-[#0a0a0a] border-t border-[#222] flex justify-end gap-2">
+                    <button type="button" onclick="closeDigDeeperModal()"
+                        class="px-4 py-2 border border-[#444] bg-[#111] hover:bg-[#222] text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="button" id="dig-deeper-submit-btn" onclick="executeDigDeeper()"
+                        class="px-5 py-2 border border-[#0055aa] bg-[#002244] hover:bg-[#003366] text-[#3399ff] text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_10px_rgba(51,153,255,0.3)] cursor-pointer flex items-center gap-1.5">
+                        <i class="fas fa-search"></i> Hunt & Add Tracks
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Main Content ── -->
+        <div class="p-2 md:p-4">
+
+            <!-- Input Panel -->
+            <div class="panel border-[#39ff14] mb-6 shadow-[0_0_15px_rgba(57,255,20,0.15)]">
+                <div class="panel-header text-sm flex items-center justify-between">
+                    <div><i class="fas fa-compass mr-2 text-[#39ff14]"></i> Music Discovery Console</div>
+                </div>
+                <div class="panel-content text-[12px] bg-[#050505]">
+                    <p class="text-white mb-2">Type any vibe, era, or genre in any language.</p>
+
+                    <!-- Discovery Popularity Chips -->
+                    <div class="discovery-focus-wrapper mb-3">
+                        <span class="discovery-focus-label shrink-0">Discovery Focus:</span>
+                        <button type="button" onclick="setDiscoveryChip('deep-cuts')" data-mode="deep-cuts"
+                            class="discovery-chip">
+                            <i class="fas fa-bolt text-[#ffcc00]"></i> Deep Cuts & Obscure
+                        </button>
+                        <button type="button" onclick="setDiscoveryChip('balanced')" data-mode="balanced"
+                            class="discovery-chip active">
+                            <i class="fas fa-sparkles text-[#39ff14]"></i> Balanced
+                        </button>
+                        <button type="button" onclick="setDiscoveryChip('mainstream')" data-mode="mainstream"
+                            class="discovery-chip">
+                            <i class="fas fa-fire text-[#ff4444]"></i> Mainstream Hits
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-2">
+                        <div class="flex-1 relative">
+                            <div class="flex">
+                                <input type="text" id="ai-vibe"
+                                    placeholder="e.g., 90s underground progressive house, obscure Japanese city pop, dark 80s synthwave..."
+                                    class="flex-1 bg-[#111] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#444] transition-colors w-full">
+                                <button id="prompt-history-btn" onclick="togglePromptHistory()" type="button"
+                                    title="Prompt history"
+                                    class="bg-[#111] border border-l-0 border-[#333] hover:border-[#39ff14] text-[#555] hover:text-[#39ff14] px-2 transition-colors flex items-center">
+                                    <i class="fas fa-chevron-down text-[10px]"></i>
+                                </button>
+                            </div>
+                            <div id="prompt-history-dropdown"
+                                class="hidden absolute left-0 right-0 top-full z-50 bg-[#0a0a0a] border border-[#39ff14] border-t-0 max-h-48 overflow-y-auto shadow-[0_8px_20px_rgba(0,0,0,0.8)]">
+                                <!-- populated by JS -->
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 items-stretch">
+                            <!-- Stage stepper -->
+                            <button id="stage-btn" onclick="advanceStage()" title="Click to change track count"
+                                class="w-20 bg-[#0a0a0a] border border-[#333] hover:border-[#39ff14] text-[#39ff14] font-bold text-[13px] flex flex-col items-center justify-center py-1 transition-all cursor-pointer select-none"
+                                style="line-height:1">
+                                <span class="text-[8px] text-white uppercase tracking-widest">Tracks</span>
+                                <span id="stage-num" class="stage-anim text-[20px] font-bold">10</span>
+                                <span id="stage-dots" class="flex gap-[3px] mt-[2px]">
+                                    <span class="w-[6px] h-[6px] rounded-full bg-[#39ff14]"></span>
+                                    <span class="w-[6px] h-[6px] rounded-full bg-[#222]"></span>
+                                    <span class="w-[6px] h-[6px] rounded-full bg-[#222]"></span>
+                                    <span class="w-[6px] h-[6px] rounded-full bg-[#222]"></span>
+                                </span>
+                            </button>
+
+                            <button onclick="generateMix()" id="generate-btn"
+                                class="flex-1 md:flex-none bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-6 py-2 cursor-pointer font-bold uppercase tracking-wider transition-all whitespace-nowrap">
+                                Hunt Tracks 🔍
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="ai-loading" class="hidden text-center text-[#39ff14] mt-4 flex flex-col items-center">
+                        <i class="fas fa-compact-disc animate-spin-slow mb-2 text-2xl"></i>
+                        <span id="loading-msg" class="italic text-[10px] tracking-widest loading-pulse">HUNTING FOR
+                            TRACKS...</span>
+                    </div>
+
+                    <div id="ai-error"
+                        class="hidden text-center text-[#ff3333] mt-4 border border-[#ff3333] bg-[#330000] p-2 font-bold uppercase">
+                        Connection lost. Diagnostics failed. Try again.
+                    </div>
+
+                    <div id="ai-notice"
+                        class="hidden text-center text-[#ffcc00] mt-3 border border-[#665200] bg-[#1a1500] p-2 font-bold uppercase text-[10px] tracking-wider">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feed Controls -->
+            <div id="history-controls" class="hidden mb-3">
+                <div
+                    class="history-controls-container flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <!-- Row 1: All, Favorites, Merge -->
+                    <div class="history-row-1 flex items-center justify-center sm:justify-start gap-1.5 flex-wrap">
+                        <button id="btn-filter-all" onclick="setFilter('all')"
+                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a2a0a] border-[#1a7b1a] text-[#39ff14]">
+                            <i class="fas fa-list mr-1"></i>All
+                        </button>
+                        <button id="btn-filter-fav" onclick="setFilter('favorites')"
+                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white">
+                            <i class="fas fa-star mr-1 text-[#ffcc00]"></i>Favorites
+                        </button>
+                        <button id="btn-merge" onclick="toggleMergeMode()" title="Merge playlists"
+                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white">
+                            <i class="fas fa-layer-group mr-1"></i>Merge
+                        </button>
+                        <button id="merge-go" onclick="executeMerge()"
+                            class="hidden px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a2a0a] border-[#39ff14] text-[#39ff14]">
+                            <i class="fas fa-check mr-1"></i>Merge Selected
+                        </button>
+                    </div>
+                    <!-- Row 2: Full, Compact, Clear All -->
+                    <div
+                        class="history-row-2 flex items-center justify-center sm:justify-end gap-1.5 flex-wrap sm:ml-auto">
+                        <button id="btn-view-normal" onclick="setView('normal')" title="Normal view"
+                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a1a2a] border-[#3399ff] text-[#3399ff]">
+                            <i class="fas fa-th-list mr-1"></i>Full
+                        </button>
+                        <button id="btn-view-compact" onclick="setView('compact')" title="Compact view"
+                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white">
+                            <i class="fas fa-bars mr-1"></i>Compact
+                        </button>
+                        <button onclick="clearHistory(this)" title="Clear all"
+                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white hover:border-[#ff3333] hover:text-[#ff3333]">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <input type="text" id="history-search" placeholder="Search playlists..." oninput="filterHistory()"
+                        class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-1.5 outline-none text-[11px] placeholder-[#666] transition-colors">
+                </div>
+            </div>
+
+            <!-- Mix Feed -->
+            <div id="mixes-container" class="gap-3">
+                <!-- Cards prepended here by renderNewMix() -->
+            </div>
+
+        </div><!-- /p-2 -->
+
+        <!-- ── Footer ── -->
+        <div
+            class="bg-black text-white text-[10px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
+            <div>SoundHunt &bull; Hunt down songs you didn't know you needed &bull; Pure Music Discovery & Crate Digging
+            </div>
+            <div class="italic text-[#ddd]">made by MFlix</div>
+        </div>
+
+    </div><!-- /container-main -->
+
+    <!-- ── Audio Player Bar ── -->
+    <div id="audio-player-bar">
+        <button id="audio-play-pause" onclick="toggleAudioPlayback()"
+            class="text-[#39ff14] text-lg w-8 h-8 flex items-center justify-center shrink-0">
+            <i class="fas fa-play"></i>
+        </button>
+        <span id="audio-track-title" class="text-white text-[11px] truncate min-w-0 flex-shrink">—</span>
+        <span id="audio-track-badges" class="flex items-center gap-1 shrink-0"></span>
+        <div id="audio-progress">
+            <div id="audio-progress-fill"></div>
+        </div>
+        <button onclick="closeAudioPlayer()"
+            class="text-[#555] hover:text-[#ff3333] text-sm shrink-0 transition-colors px-1">
             <i class="fas fa-times"></i>
         </button>
     </div>
-    <div id="stash-content" class="p-4 flex-1 overflow-y-auto">
-        <!-- Populated by js/stash.js -->
-    </div>
-    <div class="p-3 bg-[#0a0a0a] border-t border-[#222] text-center">
-        <p class="text-[9.5px] text-[#666]">Tracks saved here link directly to <span class="text-[#bb86fc]">Monochrome</span> for 1-click downloads.</p>
-    </div>
-</div>
 
-<div class="container-main">
-
-    <!-- ── Header ── -->
-    <div class="header-bg p-4 md:p-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-2">
-        <div class="flex items-center justify-center md:justify-start w-full">
-            <div class="logo-diamond-blend hidden md:block"></div>
-            <div class="leading-none">
-                <span class="text-2xl md:text-3xl font-bold text-white tracking-tight">Sound<span class="text-[#39ff14]">Hunt</span></span>
-                <span class="text-[10px] text-[#888] block tracking-wider uppercase font-semibold mt-0.5">Music Discovery & Track Hunting</span>
-            </div>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-            <button id="pwa-install-btn" onclick="triggerPwaInstall()" title="Install SoundHunt App" aria-label="Install SoundHunt App"
-                    class="hidden text-[#39ff14] hover:text-white transition-all text-xs px-2.5 py-1.5 border border-[#1a4a1a] hover:border-[#39ff14] bg-[#051505] flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(57,255,20,0.15)]">
-                <i class="fas fa-download text-[11px]"></i>
-                <span class="font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Install</span>
-            </button>
-            <button onclick="openStashDrawer()" title="Download Stash" aria-label="Open download stash"
-                    class="text-[#ffcc00] hover:text-white transition-all text-xs px-2.5 py-1.5 border border-[#443300] hover:border-[#ffcc00] bg-[#110d00] flex items-center gap-1.5 cursor-pointer shadow-[0_0_8px_rgba(255,204,0,0.15)]">
-                <i class="fas fa-star text-[11px]"></i>
-                <span class="font-bold uppercase tracking-wider text-[10px]">Stash</span>
-                <span id="stash-count-badge" class="bg-[#333] text-[#888] text-[9px] px-1.5 py-0.2 rounded-full font-bold">0</span>
-            </button>
-            <button onclick="openStats()" title="Discovery Stats" aria-label="View stats"
-                    class="text-[#3399ff] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#3399ff] bg-[#0a0a0a] cursor-pointer">
-                <i class="fas fa-chart-bar"></i>
-            </button>
-            <button onclick="openSettings()" title="Settings" aria-label="Open settings"
-                    class="text-[#39ff14] hover:text-white transition-colors text-lg px-2 py-1 border border-[#333] hover:border-[#39ff14] bg-[#0a0a0a] cursor-pointer">
-                <i class="fas fa-cog"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- ── Settings Modal ── -->
-    <div id="settings-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeSettings()">
-        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
-            <div class="modal-header">
-                <div id="settings-modal-title" class="flex items-center">
-                    <i class="fas fa-cog mr-2 text-[#39ff14]"></i> System Configuration
-                </div>
-                <button type="button" onclick="closeSettings()" class="text-[#888] hover:text-[#ff3333] transition-colors px-2 py-0.5 text-[12px] font-bold cursor-pointer" title="Close (Esc)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body-scrollable space-y-3.5">
-                <div id="first-time-api-notice" class="hidden bg-[#001a08] border border-[#39ff14] text-white p-2.5 shadow-[0_0_8px_rgba(57,255,20,0.2)] flex items-start gap-2">
-                    <i class="fas fa-key text-[#39ff14] text-xs mt-0.5 shrink-0"></i>
-                    <div class="text-[10px] leading-tight">
-                        <span class="font-bold text-[#39ff14] uppercase tracking-wider block mb-0.5">Welcome! API Key Required</span>
-                        <span class="text-white">Paste your free Gemini API key below to unlock AI music discovery.</span>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[#669966] text-[10px] uppercase font-bold mb-1">Gemini API Key</label>
-                    <input type="password" id="api-key-input" placeholder="Paste your API key here..."
-                           class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-2.5 py-1.5 outline-none font-bold placeholder-[#333] key-input-vis text-[11px]">
-                    <div id="api-key-status" class="hidden text-[10px] mt-1 font-bold uppercase tracking-wider"></div>
-                    <p class="text-white text-[9.5px] mt-1">Get a key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[#3399ff] underline font-bold">Google AI Studio</a>. Stored locally in your browser only.</p>
-                </div>
-                <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
-                    <span class="text-[#888] text-[10px] uppercase font-bold">AI Model</span>
-                    <span class="text-[#39ff14] text-[11px] font-mono font-bold">gemini-3.5-flash-lite</span>
-                </div>
-                <div>
-                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Text & UI Size</label>
-                    <select id="text-size-select" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none font-bold text-[11px] cursor-pointer">
-                        <option value="text-size-small" style="color:#fff" selected>Small ✓</option>
-                        <option value="text-size-normal" style="color:#fff">Normal</option>
-                        <option value="text-size-large" style="color:#fff">Large</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="auto-scroll-toggle" class="cursor-pointer">
-                    <label for="auto-scroll-toggle" class="text-[#888] text-[10px] uppercase font-bold cursor-pointer">Auto-scroll to new playlists</label>
-                </div>
-                <div class="border-t border-[#222] pt-2.5 mt-1">
-                    <label class="block text-[#39ff14] text-[10.5px] uppercase font-bold mb-2 flex justify-between items-center border-b border-[#111] pb-1">
-                        <span>Advanced Prompt Configuration</span>
-                        <button type="button" onclick="resetStructuredPrompt(this)" class="text-[#3399ff] hover:text-white transition-colors text-[9px] uppercase cursor-pointer">Reset to Default</button>
-                    </label>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                        <div class="col-span-1 md:col-span-2">
-                            <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">AI Persona (Role)</label>
-                            <input type="text" id="prompt-persona-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none text-[11px]">
-                        </div>
-                        <div class="col-span-1 md:col-span-2">
-                            <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">Additional Selection Rules / Constraints</label>
-                            <textarea id="prompt-constraints-input" rows="2" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none text-[11px] resize-y"></textarea>
-                        </div>
-                        <div class="col-span-1 md:col-span-2">
-                            <label class="block text-[#888] text-[9px] uppercase font-bold mb-1">Explicit Content</label>
-                            <select id="prompt-explicit-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-2.5 py-1.5 outline-none text-[11px] cursor-pointer">
-                                <option value="allow" style="color:#fff">Allow Explicit Tracks</option>
-                                <option value="clean" style="color:#fff">Clean Tracks Only</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="border-t border-[#222] pt-2.5 mt-1">
-                    <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Desktop & Mobile App</label>
-                    <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
-                        <div>
-                            <span class="text-white text-[11px] font-bold block">Standalone PWA</span>
-                            <span id="pwa-status-text" class="text-white text-[9.5px]">Run SoundHunt in a dedicated desktop window</span>
-                        </div>
-                        <button type="button" id="settings-pwa-install-btn" onclick="triggerPwaInstall()"
-                                class="bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer">
-                            Install App
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="settings-save-btn" onclick="saveSettings()" class="flex-1 bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">
-                    <i class="fas fa-save mr-1"></i> Save
-                </button>
-                <button type="button" onclick="closeSettings()" class="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white border border-[#333] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Stats Modal ── -->
-    <div id="stats-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeStats()">
-        <div class="modal-box" style="max-width:500px" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title">
-            <div class="modal-header">
-                <div id="stats-modal-title" class="flex items-center">
-                    <i class="fas fa-chart-bar mr-2 text-[#3399ff]"></i> Discovery Analytics
-                </div>
-                <button type="button" onclick="closeStats()" class="text-[#888] hover:text-[#ff3333] transition-colors px-2 py-0.5 text-[12px] font-bold cursor-pointer" title="Close (Esc)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="stats-content" class="modal-body-scrollable"></div>
-            <div class="modal-footer">
-                <button type="button" onclick="closeStats()" class="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white border border-[#333] px-4 py-2 font-bold uppercase text-[11px] tracking-wider transition-all cursor-pointer">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Dig Deeper Modal (Magnifying Glass) ── -->
-    <div id="dig-deeper-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeDigDeeperModal()">
-        <div class="modal-box border border-[#3399ff] shadow-[0_0_25px_rgba(51,153,255,0.25)]" style="max-width:480px" role="dialog" aria-modal="true" aria-labelledby="dig-deeper-title">
-            <div class="modal-header bg-gradient-to-b from-[#002244] to-[#001428] border-[#003366] flex items-center justify-between">
-                <div id="dig-deeper-title" class="flex items-center text-[#3399ff] font-bold text-sm uppercase tracking-wider">
-                    <i class="fas fa-search mr-2"></i> Dig Deeper: Similar Tracks
-                </div>
-                <button type="button" onclick="closeDigDeeperModal()" class="text-white hover:text-[#ff3333] transition-colors px-2 py-0.5 text-xs font-bold cursor-pointer" title="Close (Esc)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-4 bg-[#050505] text-white flex flex-col gap-3">
-                <div>
-                    <span class="text-[10px] text-white uppercase font-bold tracking-widest block mb-1">Seed Song</span>
-                    <div id="dig-deeper-seed" class="p-2.5 bg-[#001428] border border-[#003366] text-[#3399ff] font-bold text-xs rounded truncate">
-                        <!-- Seed Track Title -->
-                    </div>
-                </div>
-
-                <div>
-                    <span class="text-[10px] text-white uppercase font-bold tracking-widest block mb-1.5">How many similar tracks to add?</span>
-                    <div class="flex gap-2 mb-2">
-                        <button type="button" onclick="setDigDeeperCount(3)" class="dig-count-btn px-3 py-1.5 border border-[#444] bg-[#111] text-white hover:border-[#3399ff] text-xs font-bold transition-all flex-1 cursor-pointer" data-count="3">+3 Tracks</button>
-                        <button type="button" onclick="setDigDeeperCount(5)" class="dig-count-btn active px-3 py-1.5 border border-[#3399ff] bg-[#002244] text-[#3399ff] shadow-[0_0_8px_rgba(51,153,255,0.3)] text-xs font-bold transition-all flex-1 cursor-pointer" data-count="5">+5 Tracks</button>
-                        <button type="button" onclick="setDigDeeperCount(10)" class="dig-count-btn px-3 py-1.5 border border-[#444] bg-[#111] text-white hover:border-[#3399ff] text-xs font-bold transition-all flex-1 cursor-pointer" data-count="10">+10 Tracks</button>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[11px] text-white font-bold">Custom quantity:</span>
-                        <input type="number" id="dig-deeper-custom-count" min="1" max="25" value="5" oninput="onDigCustomCountChange(this.value)" class="w-16 bg-[#111] border border-[#333] focus:border-[#3399ff] text-white font-bold px-2 py-1 text-xs text-center outline-none">
-                    </div>
-                </div>
-
-                <p class="text-[11px] text-[#ddd] leading-relaxed">
-                    SoundHunt will dig through crate archives for genuine songs sharing this track's groove, tempo, era, and energy, then append them directly to this playlist.
-                </p>
-            </div>
-            <div class="modal-footer p-3 bg-[#0a0a0a] border-t border-[#222] flex justify-end gap-2">
-                <button type="button" onclick="closeDigDeeperModal()" class="px-4 py-2 border border-[#444] bg-[#111] hover:bg-[#222] text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                    Cancel
-                </button>
-                <button type="button" id="dig-deeper-submit-btn" onclick="executeDigDeeper()" class="px-5 py-2 border border-[#0055aa] bg-[#002244] hover:bg-[#003366] text-[#3399ff] text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_10px_rgba(51,153,255,0.3)] cursor-pointer flex items-center gap-1.5">
-                    <i class="fas fa-search"></i> Hunt & Add Tracks
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Main Content ── -->
-    <div class="p-2 md:p-4">
-
-        <!-- Input Panel -->
-        <div class="panel border-[#39ff14] mb-6 shadow-[0_0_15px_rgba(57,255,20,0.15)]">
-            <div class="panel-header text-sm flex items-center justify-between">
-                <div><i class="fas fa-compass mr-2 text-[#39ff14]"></i> Music Discovery Console</div>
-            </div>
-            <div class="panel-content text-[12px] bg-[#050505]">
-                <p class="text-white mb-2">Type any vibe, era, or genre in plain English to uncover deep cuts and hidden gems.</p>
-
-                <!-- Discovery Popularity Chips -->
-                <div class="flex flex-wrap items-center gap-1.5 mb-3">
-                    <span class="text-white text-[10px] uppercase font-bold tracking-wider mr-1">Discovery Focus:</span>
-                    <button type="button" onclick="setDiscoveryChip('deep-cuts')" data-mode="deep-cuts" class="discovery-chip px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider border border-[#444] text-white bg-[#0a0a0a] rounded flex items-center gap-1">
-                        <i class="fas fa-bolt text-[8px] text-[#ffcc00]"></i> Deep Cuts & Obscure
-                    </button>
-                    <button type="button" onclick="setDiscoveryChip('balanced')" data-mode="balanced" class="discovery-chip active px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider border border-[#39ff14] text-[#39ff14] bg-[#0a2a0a] rounded flex items-center gap-1 shadow-[0_0_8px_rgba(57,255,20,0.3)]">
-                        <i class="fas fa-sparkles text-[8px] text-[#39ff14]"></i> Balanced
-                    </button>
-                    <button type="button" onclick="setDiscoveryChip('mainstream')" data-mode="mainstream" class="discovery-chip px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider border border-[#444] text-white bg-[#0a0a0a] rounded flex items-center gap-1">
-                        <i class="fas fa-fire text-[8px] text-[#ff4444]"></i> Mainstream Hits
-                    </button>
-                </div>
-
-                <div class="flex flex-col md:flex-row gap-2">
-                    <div class="flex-1 relative">
-                        <div class="flex">
-                            <input type="text" id="ai-vibe"
-                                   placeholder="e.g., 90s underground progressive house, obscure Japanese city pop, dark 80s synthwave..."
-                                   class="flex-1 bg-[#111] border border-[#333] focus:border-[#39ff14] text-[#39ff14] px-3 py-2 outline-none font-bold placeholder-[#444] transition-colors w-full">
-                            <button id="prompt-history-btn" onclick="togglePromptHistory()" type="button" title="Prompt history"
-                                    class="bg-[#111] border border-l-0 border-[#333] hover:border-[#39ff14] text-[#555] hover:text-[#39ff14] px-2 transition-colors flex items-center">
-                                <i class="fas fa-chevron-down text-[10px]"></i>
-                            </button>
-                        </div>
-                        <div id="prompt-history-dropdown" class="hidden absolute left-0 right-0 top-full z-50 bg-[#0a0a0a] border border-[#39ff14] border-t-0 max-h-48 overflow-y-auto shadow-[0_8px_20px_rgba(0,0,0,0.8)]">
-                            <!-- populated by JS -->
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 items-stretch">
-                        <!-- Stage stepper -->
-                        <button id="stage-btn" onclick="advanceStage()" title="Click to change track count"
-                                class="w-20 bg-[#0a0a0a] border border-[#333] hover:border-[#39ff14] text-[#39ff14] font-bold text-[13px] flex flex-col items-center justify-center py-1 transition-all cursor-pointer select-none" style="line-height:1">
-                            <span class="text-[8px] text-white uppercase tracking-widest">Tracks</span>
-                            <span id="stage-num" class="stage-anim text-[20px] font-bold">10</span>
-                            <span id="stage-dots" class="flex gap-[3px] mt-[2px]">
-                                <span class="w-[6px] h-[6px] rounded-full bg-[#39ff14]"></span>
-                                <span class="w-[6px] h-[6px] rounded-full bg-[#222]"></span>
-                                <span class="w-[6px] h-[6px] rounded-full bg-[#222]"></span>
-                                <span class="w-[6px] h-[6px] rounded-full bg-[#222]"></span>
-                            </span>
-                        </button>
-
-                        <button onclick="generateMix()" id="generate-btn"
-                                class="flex-1 md:flex-none bg-[#0a2a0a] hover:bg-[#1a4a1a] text-[#39ff14] border border-[#1a7b1a] px-6 py-2 cursor-pointer font-bold uppercase tracking-wider transition-all whitespace-nowrap">
-                            Hunt Tracks 🔍
-                        </button>
-                    </div>
-                </div>
-
-                <div id="ai-loading" class="hidden text-center text-[#39ff14] mt-4 flex flex-col items-center">
-                    <i class="fas fa-compact-disc animate-spin-slow mb-2 text-2xl"></i>
-                    <span id="loading-msg" class="italic text-[10px] tracking-widest loading-pulse">HUNTING FOR TRACKS...</span>
-                </div>
-
-                <div id="ai-error" class="hidden text-center text-[#ff3333] mt-4 border border-[#ff3333] bg-[#330000] p-2 font-bold uppercase">
-                    Connection lost. Diagnostics failed. Try again.
-                </div>
-
-                <div id="ai-notice" class="hidden text-center text-[#ffcc00] mt-3 border border-[#665200] bg-[#1a1500] p-2 font-bold uppercase text-[10px] tracking-wider">
-                </div>
-            </div>
-        </div>
-
-        <!-- Feed Controls -->
-        <div id="history-controls" class="hidden mb-3">
-            <div class="flex flex-wrap items-center gap-2">
-                <!-- Filter -->
-                <div class="flex gap-1">
-                    <button id="btn-filter-all" onclick="setFilter('all')"
-                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a2a0a] border-[#1a7b1a] text-[#39ff14]">
-                        <i class="fas fa-list mr-1"></i>All
-                    </button>
-                    <button id="btn-filter-fav" onclick="setFilter('favorites')"
-                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white">
-                        <i class="fas fa-star mr-1 text-[#ffcc00]"></i>Favorites
-                    </button>
-                </div>
-                <!-- View & actions -->
-                <div class="flex gap-1 ml-auto">
-                    <button id="btn-merge" onclick="toggleMergeMode()" title="Merge playlists"
-                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white">
-                        <i class="fas fa-layer-group mr-1"></i>Merge
-                    </button>
-                    <button id="merge-go" onclick="executeMerge()"
-                            class="hidden px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a2a0a] border-[#39ff14] text-[#39ff14]">
-                        <i class="fas fa-check mr-1"></i>Merge Selected
-                    </button>
-                    <button id="btn-view-normal" onclick="setView('normal')" title="Normal view"
-                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a1a2a] border-[#3399ff] text-[#3399ff]">
-                        <i class="fas fa-th-list mr-1"></i>Full
-                    </button>
-                    <button id="btn-view-compact" onclick="setView('compact')" title="Compact view"
-                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white">
-                        <i class="fas fa-bars mr-1"></i>Compact
-                    </button>
-                    <button onclick="clearHistory(this)" title="Clear all"
-                            class="px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white hover:border-[#ff3333] hover:text-[#ff3333]">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="mt-2">
-                <input type="text" id="history-search" placeholder="Search playlists..." oninput="filterHistory()"
-                       class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#39ff14] text-white px-3 py-1.5 outline-none text-[11px] placeholder-[#666] transition-colors">
-            </div>
-        </div>
-
-        <!-- Mix Feed -->
-        <div id="mixes-container" class="gap-3">
-            <!-- Cards prepended here by renderNewMix() -->
-        </div>
-
-    </div><!-- /p-2 -->
-
-    <!-- ── Footer ── -->
-    <div class="bg-black text-white text-[10px] flex flex-col md:flex-row justify-between items-center px-4 py-3 border-t border-[#333] text-center gap-1">
-        <div>SoundHunt &bull; Hunt down songs you didn't know you needed &bull; Pure Music Discovery & Crate Digging</div>
-        <div class="italic text-[#ddd]">made by MFlix</div>
-    </div>
-
-</div><!-- /container-main -->
-
-<!-- ── Audio Player Bar ── -->
-<div id="audio-player-bar">
-    <button id="audio-play-pause" onclick="toggleAudioPlayback()"
-            class="text-[#39ff14] text-lg w-8 h-8 flex items-center justify-center shrink-0">
-        <i class="fas fa-play"></i>
-    </button>
-    <span id="audio-track-title" class="text-white text-[11px] truncate min-w-0 flex-shrink">—</span>
-    <span id="audio-track-badges" class="flex items-center gap-1 shrink-0"></span>
-    <div id="audio-progress">
-        <div id="audio-progress-fill"></div>
-    </div>
-    <button onclick="closeAudioPlayer()"
-            class="text-[#555] hover:text-[#ff3333] text-sm shrink-0 transition-colors px-1">
-        <i class="fas fa-times"></i>
-    </button>
-</div>
-
-<!-- ── Scroll-to-Top ── -->
-<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top"
+    <!-- ── Scroll-to-Top ── -->
+    <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top"
         style="position:fixed;bottom:60px;right:24px;width:36px;height:36px;background:#0a0a0a;border:1px solid #333;color:#39ff14;font-size:16px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 0.3s,border-color 0.3s;display:flex;align-items:center;justify-content:center;z-index:998">
-    <i class="fas fa-chevron-up"></i>
-</button>
+        <i class="fas fa-chevron-up"></i>
+    </button>
 
-<!-- ── JavaScript Modules (load order matters) ── -->
-<script src="js/storage.js?v=0.2.1"></script>
-<script src="js/stash.js?v=0.2.1"></script>
-<script src="js/settings.js?v=0.2.1"></script>
-<script src="js/stats.js?v=0.2.1"></script>
-<script src="js/player.js?v=0.2.1"></script>
-<script src="js/playlist.js?v=0.2.1"></script>
-<script src="js/merge.js?v=0.2.1"></script>
-<script src="js/feed.js?v=0.2.1"></script>
-<script src="js/api.js?v=0.2.1"></script>
-<script src="js/ui.js?v=0.2.1"></script>
+    <!-- ── JavaScript Modules (load order matters) ── -->
+    <script src="js/storage.js?v=0.3.6"></script>
+    <script src="js/stash.js?v=0.3.6"></script>
+    <script src="js/settings.js?v=0.3.6"></script>
+    <script src="js/stats.js?v=0.3.6"></script>
+    <script src="js/player.js?v=0.3.6"></script>
+    <script src="js/audio-dsp-engine.js?v=0.3.6"></script>
+    <script src="js/playlist.js?v=0.3.6"></script>
+    <script src="js/merge.js?v=0.3.6"></script>
+    <script src="js/feed.js?v=0.3.6"></script>
+    <script src="js/api.js?v=0.3.6"></script>
+    <script src="js/ui.js?v=0.3.6"></script>
 
 </body>
+
 </html>

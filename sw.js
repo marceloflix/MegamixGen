@@ -4,7 +4,7 @@
  * Guarantees fresh updates when connected, full offline capability when offline.
  */
 
-const CACHE_NAME = 'soundhunt-v0.2.2';
+const CACHE_NAME = 'soundhunt-v0.3.6';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -15,6 +15,7 @@ const STATIC_ASSETS = [
     './js/settings.js',
     './js/stats.js',
     './js/player.js',
+    './js/audio-dsp-engine.js',
     './js/playlist.js',
     './js/merge.js',
     './js/feed.js',

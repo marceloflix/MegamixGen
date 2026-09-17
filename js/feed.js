@@ -63,6 +63,10 @@ function rebuildFeed() {
     if (typeof mergeMode !== 'undefined' && mergeMode && typeof applyMergeHighlights === 'function') {
         applyMergeHighlights();
     }
+
+    setTimeout(() => {
+        if (typeof observeAllTrackRows === 'function') observeAllTrackRows();
+    }, 50);
 }
 
 function filterHistory() { rebuildFeed(); }
@@ -322,77 +326,77 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
     const rowSelectedClass = isSelected ? ` track-row-selected${isDug ? ' track-row-dug' : ''}` : (isDug ? ' track-row-dug' : '');
     const rowClickAction = `onclick="if(isPlaylistSelecting('${ts}')){handleTrackNumClick('${ts}', ${index});}"`;
 
-    return `<li id="track-${ts}-${index}" data-dug="${isDug ? 'true' : 'false'}" class="track-row flex items-center gap-1.5 py-[3px] border-b border-[#0f1f0f] last:border-0 group transition-colors duration-500 overflow-hidden${rowSelectedClass}" ${rowClickAction} style="box-shadow:inset 0 -1px 0 rgba(57,255,20,0.06); background-color: transparent;">
-        <!-- Track Prune Button -->
-        <button onclick="event.stopPropagation();removeTrackFromMix('${ts}', ${index}, this)" title="Remove track from list" aria-label="Remove track" class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#333] text-[#aaa] hover:border-[#ff3333] hover:text-[#ff3333] hover:bg-[#220000] text-[9px] font-bold transition-all cursor-pointer">
-            <i class="fas fa-times"></i>
-        </button>
+    const cachedAnalysis = typeof getCachedAnalysis === 'function' ? getCachedAnalysis(trackStr) : null;
+    const badgeHTML = typeof getBadgeHTML === 'function' ? getBadgeHTML(cachedAnalysis) : '';
 
-        ${numButtonHTML}
-
-        <!-- Track Title -->
-        <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy: ${trackEscaped}" class="track-title-wrapper text-white text-[15px] leading-tight cursor-pointer select-none flex items-center min-w-0 flex-1 overflow-hidden mr-1">
-            <span class="track-name truncate group-hover/track:text-[#ccc] transition-colors">${trackStr}</span>
-            <i class="fas fa-clipboard text-[#333] text-[9px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0 ml-1" aria-hidden="true"></i>
-        </span>
-
-        <!-- Track Actions Line -->
-        <div class="track-actions flex gap-1 shrink-0 ml-1 items-center">
-            <!-- 1. Preview 30s (First) -->
-            <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${trackStr}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#39ff14] hover:bg-[#0a2a0a] hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all cursor-pointer"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
-
-            <!-- 2. Streaming & Download Links -->
-            <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer" title="Search YouTube" aria-label="Search ${trackStr} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#ff4444] hover:bg-[#330000] hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
-            <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Search Spotify" aria-label="Search ${trackStr} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#1db954] hover:bg-[#003300] hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
-            <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Download on Monochrome" aria-label="Search ${trackStr} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-75 group-hover:opacity-100 hover:border-[#bb86fc] hover:bg-[#1a0033] hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
-
-            <!-- Spacing divider -->
-            <span class="w-[1px] h-3.5 bg-[#222] mx-1 shrink-0"></span>
-
-            <!-- 3. Dig Deeper (Magnifying Glass) -->
-            <button onclick="event.stopPropagation();openDigDeeperModal('${ts}', ${index}, '${artistEscaped}','${titleEscaped}')" title="Dig Deeper: Find tracks similar to ${trackStr}" aria-label="Find tracks similar to ${trackStr}" class="shrink-0 flex items-center justify-center w-6 h-6 bg-[#001428] border border-[#003366] text-[#3399ff] hover:border-[#3399ff] hover:bg-[#002244] hover:shadow-[0_0_6px_rgba(51,153,255,0.4)] text-[10px] transition-all cursor-pointer">
-                <i class="fas fa-search"></i>
+    return `<li id="track-${ts}-${index}" data-dug="${isDug ? 'true' : 'false'}" class="track-row last:border-0 group transition-colors duration-500${rowSelectedClass}" ${rowClickAction}>
+        <!-- Row 1: Left Container (Prune, Number, Title) -->
+        <div class="track-left flex items-center gap-1.5 min-w-0">
+            <!-- Track Prune Button -->
+            <button onclick="event.stopPropagation();removeTrackFromMix('${ts}', ${index}, this)" title="Remove track from list" aria-label="Remove track" class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#111] border border-[#333] text-[#aaa] hover:border-[#ff3333] hover:text-[#ff3333] hover:bg-[#220000] text-[9px] font-bold transition-all cursor-pointer">
+                <i class="fas fa-times"></i>
             </button>
 
-            <!-- 4. Save to Download Stash (End) -->
-            <button onclick="event.stopPropagation();toggleStashTrack({ artist: '${artistEscaped}', title: '${titleEscaped}' }, this)" data-artist="${artistEscaped}" data-title="${titleEscaped}" title="${starTitle}" aria-label="${starTitle}" class="stash-star-btn shrink-0 flex items-center justify-center w-6 h-6 border ${starClass} text-[11px] transition-all cursor-pointer">
-                <i class="fas fa-star"></i>
-            </button>
+            ${numButtonHTML}
+
+            <!-- Track Title -->
+            <span onclick="copyTrackName(this)" data-track="${trackEscaped}" title="Click to copy: ${trackEscaped}" class="track-title-wrapper text-white text-[15px] leading-tight cursor-pointer select-none flex items-center min-w-0 flex-1 overflow-hidden mr-1">
+                <span class="track-name truncate group-hover/track:text-[#ccc] transition-colors">${trackStr}</span>
+                <i class="fas fa-clipboard text-[#333] text-[9px] opacity-0 group-hover/track:opacity-100 transition-opacity shrink-0 ml-1" aria-hidden="true"></i>
+            </span>
+        </div>
+
+        <!-- Row 2 / Right Container (Badges + Actions) -->
+        <div class="track-right flex items-center gap-1.5 shrink-0">
+            <!-- BPM & Serato Camelot Key Badge Container -->
+            <span class="track-badges">${badgeHTML}</span>
+
+            <!-- Track Actions Line -->
+            <div class="track-actions flex gap-1 shrink-0 items-center">
+                <!-- 1. Preview 30s (First) -->
+                <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${trackStr}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#39ff14] hover:bg-[#0a2a0a] hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all cursor-pointer"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
+
+                <!-- 2. Streaming & Download Links -->
+                <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer" title="Search YouTube" aria-label="Search ${trackStr} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#ff4444] hover:bg-[#330000] hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+                <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Search Spotify" aria-label="Search ${trackStr} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#1db954] hover:bg-[#003300] hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
+                <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Download on Monochrome" aria-label="Search ${trackStr} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-75 group-hover:opacity-100 hover:border-[#bb86fc] hover:bg-[#1a0033] hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
+
+                <!-- Spacing divider -->
+                <span class="w-[1px] h-3.5 bg-[#222] mx-1 shrink-0"></span>
+
+                <!-- 3. Dig Deeper (Magnifying Glass) -->
+                <button onclick="event.stopPropagation();openDigDeeperModal('${ts}', ${index}, '${artistEscaped}','${titleEscaped}')" title="Dig Deeper: Find tracks similar to ${trackStr}" aria-label="Find tracks similar to ${trackStr}" class="shrink-0 flex items-center justify-center w-6 h-6 bg-[#001428] border border-[#003366] text-[#3399ff] hover:border-[#3399ff] hover:bg-[#002244] hover:shadow-[0_0_6px_rgba(51,153,255,0.4)] text-[10px] transition-all cursor-pointer">
+                    <i class="fas fa-search"></i>
+                </button>
+
+                <!-- 4. Save to Download Stash (End) -->
+                <button onclick="event.stopPropagation();toggleStashTrack({ artist: '${artistEscaped}', title: '${titleEscaped}' }, this)" data-artist="${artistEscaped}" data-title="${titleEscaped}" title="${starTitle}" aria-label="${starTitle}" class="stash-star-btn shrink-0 flex items-center justify-center w-6 h-6 border ${starClass} text-[11px] transition-all cursor-pointer">
+                    <i class="fas fa-star"></i>
+                </button>
+            </div>
         </div>
     </li>`;
 }
 
-// ── Render Tracklist in 10-Track Columns / Blocks ──
+// ── Render Tracklist in 2 Balanced Columns (First Half Left, Second Half Right) ──
 function renderTracklistBlocks(tracks, ts) {
     if (!Array.isArray(tracks) || tracks.length === 0) return '';
 
-    const blockSize = 20;
-    const blocks = [];
+    // Balanced 2-column split across entire tracklist
+    const half = Math.ceil(tracks.length / 2);
+    const leftTracks = tracks.slice(0, half);
+    const rightTracks = tracks.slice(half);
 
-    for (let b = 0; b < tracks.length; b += blockSize) {
-        const chunk = tracks.slice(b, b + blockSize);
-        // For 10 or fewer tracks, split evenly
-        // For more than 10 tracks, first 10 go to left column, remaining up to 10 go to right column
-        const half = chunk.length <= 10 ? Math.ceil(chunk.length / 2) : 10;
-        const leftTracks = chunk.slice(0, half);
-        const rightTracks = chunk.slice(half);
-
-        blocks.push({
-            left: leftTracks.map((t, i) => ({ track: t, index: b + i })),
-            right: rightTracks.map((t, i) => ({ track: t, index: b + half + i }))
-        });
-    }
-
-    return blocks.map((block, bIdx) => `
-        <div class="tracklist-block grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0 ${bIdx > 0 ? 'mt-2 pt-2 border-t border-[#111]' : ''}">
+    return `
+        <div class="tracklist-block grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0">
             <ul class="tracklist-col flex flex-col list-none p-0 m-0">
-                ${block.left.map(item => buildTrackHTML(item.track, item.index, ts, tracks)).join('')}
+                ${leftTracks.map((t, i) => buildTrackHTML(t, i, ts, tracks)).join('')}
             </ul>
             <ul class="tracklist-col flex flex-col list-none p-0 m-0">
-                ${block.right.map(item => buildTrackHTML(item.track, item.index, ts, tracks)).join('')}
+                ${rightTracks.map((t, i) => buildTrackHTML(t, half + i, ts, tracks)).join('')}
             </ul>
         </div>
-    `).join('');
+    `;
 }
 
 // ── Render a Mix Card ──
@@ -425,13 +429,16 @@ function renderNewMix(data, persist = false) {
         </div>
         <div class="mix-body panel-content flex flex-col gap-4">
             <div class="details-box">
-                <div class="flex items-center justify-between flex-wrap gap-x-4 gap-y-1">
-                    <span class="flex items-center gap-3.5 flex-wrap py-1">
+                <div class="details-box-row flex items-center justify-between flex-wrap gap-x-3 gap-y-2">
+                    <span class="details-stats flex items-center gap-2.5 sm:gap-3 flex-wrap py-0.5 whitespace-nowrap">
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px] diag-track-count">${data.tracks.length}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Est.</span><span class="text-white text-[11px]">~${data.tracks.length * 4}m</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px]">${data.genre || 'Music Discovery'}</span></span>
+                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px] truncate max-w-[120px] sm:max-w-none inline-block align-bottom" title="${data.genre || 'Music Discovery'}">${data.genre || 'Music Discovery'}</span></span>
                     </span>
+                    <button id="btn-analyze-${ts}" onclick="event.stopPropagation();triggerPlaylistAnalysis('${ts}', this, this.classList.contains('has-analyzed'))" class="btn-analyze-playlist shrink-0" title="Re-analyze BPM tempo and Serato Camelot keys">
+                        <i class="fas fa-redo text-[#39ff14]"></i>
+                        <span>RE-ANALYZE BPM & KEY</span>
+                    </button>
                 </div>
             </div>
             <div class="flex flex-col gap-4">
@@ -476,6 +483,20 @@ function renderNewMix(data, persist = false) {
     const template = document.createElement('template');
     template.innerHTML = mixHTML.trim();
     container.insertBefore(template.content.firstChild, container.firstChild);
+
+    // Observe newly rendered track rows and start sequential background analysis
+    setTimeout(() => {
+        const card = container.querySelector(`[data-ts="${ts}"]`);
+        if (card) {
+            const rows = card.querySelectorAll('.track-row');
+            rows.forEach(r => {
+                if (typeof observeTrackRow === 'function') observeTrackRow(r);
+            });
+        }
+        if (!isCompact && typeof dspQueue !== 'undefined' && Array.isArray(data.tracks) && data.tracks.length > 0) {
+            dspQueue.startPlaylist(ts, data.tracks, false);
+        }
+    }, 40);
 
     if (persist) {
         const history    = getHistory();

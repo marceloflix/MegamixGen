@@ -489,6 +489,18 @@ Output:
             saveHistory(history);
             rebuildFeed();
 
+            // Automatically queue sequential BPM/Key analysis for only the newly appended tracks
+            if (typeof dspQueue !== 'undefined') {
+                uniqueProcessedTracks.forEach((t, i) => {
+                    dspQueue.enqueue({
+                        ts: ts,
+                        index: firstNewIndex + i,
+                        track: t,
+                        forceReanalyze: false
+                    });
+                });
+            }
+
             showNotice(`✓ Added ${uniqueProcessedTracks.length} unique tracks similar to "${songLabel}" directly into playlist!`, 5000);
 
             // Scroll to the first newly added track and briefly highlight it

@@ -2,7 +2,7 @@
 
 > **Hunt down songs you didn't know you needed.**
 
-**SoundHunt** lets you dig through musical history using natural, conversational language. Type what you're feeling, unearth buried gems and deep cuts, audition tracks on the fly, prune out whatever misses the mark, stash keepers, and search or download them instantly.
+**SoundHunt** Lets you explore and discover music using natural language. Type any vibe, era, or genre to uncover tracks, analyze BPM & harmonic keys on the fly, and download keepers instantly.
 
 ![SoundHunt Discovery Console](assets/screenshots/main_view.png)
 
@@ -24,7 +24,8 @@
 
 - **Vibe-Based Discovery**: Describe any era, subgenre, or mood in plain English. No rigid genre dropdowns or algorithmic echo chambers.
 - **Deep Cuts or Hit Anthems**: Flip between **Deep Cuts & Obscure** (for rare vinyl B-sides and forgotten treasures), **Balanced**, or **Mainstream Hits**.
-- **Instant 30s Audition**: Hit play to preview 30-second audio clips directly in your browser without leaving the page.
+- **Instant 30s Audition**: Hit play to preview 30s audio clips directly in your browser without leaving the page.
+- **In-Browser BPM & Camelot Key Detection**: Client-side Web Audio DSP analyzes iTunes 30s audio previews directly in your browser, detecting tempo (BPM) and harmonic key with official Serato Camelot color-coded badges, with zero server compute.
 - **Direct Search & Streaming Links**: Jump straight from any track to search and listen on **Spotify**, **YouTube**, or **Monochrome**.
 - **Ruthless Pruning**: Suggested tracks that miss the mark? Click `✕` to prune them out instantly with smooth animations and dynamic count updates.
 - **Multi-Track Selection & Bulk Pruning**: Click any track's numeration badge to activate multi-select mode, select multiple tracks at once with custom neon checkboxes, and bulk delete unwanted tracks in one go.
