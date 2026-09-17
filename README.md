@@ -1,8 +1,8 @@
-# SoundHunt
+# Sound$\color{#39ff14}\textbf{Hunt}$
 
 > **Hunt down songs you didn't know you needed.**
 
-**SoundHunt** Lets you explore and discover music using natural language. Type any vibe, era, or genre to uncover tracks, analyze BPM & harmonic keys on the fly, and download keepers instantly.
+**Sound**$\color{#39ff14}\textbf{Hunt}$ lets you explore and discover music using natural language. Type any vibe, era, or genre to uncover tracks, analyze BPM & harmonic keys on the fly, and download keepers instantly.
 
 ![SoundHunt Discovery Console](assets/screenshots/main_view.png)
 
