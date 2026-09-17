@@ -1,4 +1,4 @@
-# Sound$\color{#39ff14}\textbf{Hunt}$
+# SoundHunt
 
 > **Hunt down songs you didn't know you needed.**
 
