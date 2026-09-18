@@ -282,6 +282,18 @@ function updateSelectionUI(ts) {
     });
 }
 
+// ── External Link Confirmation Guard ──
+function confirmExternalLink(event, serviceName, trackName) {
+    if (event) event.stopPropagation();
+    const action = serviceName === 'Monochrome' ? 'download' : 'search';
+    const confirmed = window.confirm(`Open ${serviceName} to ${action} "${trackName}" in a new tab?`);
+    if (!confirmed) {
+        if (event) event.preventDefault();
+        return false;
+    }
+    return true;
+}
+
 // ── Build single track row HTML ──
 function buildTrackHTML(track, index, ts, allTracks = []) {
     const isObj = typeof track === 'object' && track !== null;
@@ -357,9 +369,9 @@ function buildTrackHTML(track, index, ts, allTracks = []) {
                 <button onclick="event.stopPropagation();previewTrack('${trackEscaped}',this)" title="Preview 30s" aria-label="Preview ${trackStr}" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#39ff14] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#39ff14] hover:bg-[#0a2a0a] hover:shadow-[0_0_5px_rgba(57,255,20,0.4)] transition-all cursor-pointer"><i class="fas fa-play" aria-hidden="true" style="font-size:9px"></i></button>
 
                 <!-- 2. Streaming & Download Links -->
-                <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener noreferrer" title="Search YouTube" aria-label="Search ${trackStr} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#ff4444] hover:bg-[#330000] hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all"><i class="fab fa-youtube" aria-hidden="true"></i></a>
-                <a href="https://open.spotify.com/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Search Spotify" aria-label="Search ${trackStr} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#1db954] hover:bg-[#003300] hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all"><i class="fab fa-spotify" aria-hidden="true"></i></a>
-                <a href="https://monochrome.tf/search/${searchQ}" target="_blank" rel="noopener noreferrer" title="Download on Monochrome" aria-label="Search ${trackStr} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-75 group-hover:opacity-100 hover:border-[#bb86fc] hover:bg-[#1a0033] hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
+                <a href="https://www.youtube.com/results?search_query=${q}" onclick="return confirmExternalLink(event, 'YouTube', '${trackEscaped}')" target="_blank" rel="noopener noreferrer" title="Search YouTube" aria-label="Search ${trackStr} on YouTube" class="flex items-center justify-center w-6 h-6 bg-[#1a0000] border border-[#550000] text-[#ff4444] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#ff4444] hover:bg-[#330000] hover:shadow-[0_0_5px_rgba(255,68,68,0.4)] transition-all cursor-pointer"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+                <a href="https://open.spotify.com/search/${searchQ}" onclick="return confirmExternalLink(event, 'Spotify', '${trackEscaped}')" target="_blank" rel="noopener noreferrer" title="Search Spotify" aria-label="Search ${trackStr} on Spotify" class="flex items-center justify-center w-6 h-6 bg-[#001a00] border border-[#005500] text-[#1db954] text-[13px] opacity-75 group-hover:opacity-100 hover:border-[#1db954] hover:bg-[#003300] hover:shadow-[0_0_5px_rgba(29,185,84,0.4)] transition-all cursor-pointer"><i class="fab fa-spotify" aria-hidden="true"></i></a>
+                <a href="https://monochrome.tf/search/${searchQ}" onclick="return confirmExternalLink(event, 'Monochrome', '${trackEscaped}')" target="_blank" rel="noopener noreferrer" title="Download on Monochrome" aria-label="Search ${trackStr} on Monochrome" class="flex items-center justify-center w-6 h-6 bg-[#0d001a] border border-[#2a0055] text-[#bb86fc] opacity-75 group-hover:opacity-100 hover:border-[#bb86fc] hover:bg-[#1a0033] hover:shadow-[0_0_5px_rgba(187,134,252,0.4)] transition-all cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="14.75 14.75 70.5 70.5" aria-hidden="true"><g fill="currentColor"><path d="M38.25 14.75H85.25V61.75H61.75V38.25H38.25ZM14.75 38.25H38.25V61.75H61.75V85.25H14.75Z"/></g></svg></a>
 
                 <!-- Spacing divider -->
                 <span class="w-[1px] h-3.5 bg-[#222] mx-1 shrink-0"></span>
