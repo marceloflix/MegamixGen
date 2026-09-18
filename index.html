@@ -193,6 +193,20 @@
                             </button>
                         </div>
                     </div>
+                    <div class="border-t border-[#222] pt-2.5 mt-1">
+                        <label class="block text-[#888] text-[10px] uppercase font-bold mb-1">Local Storage & Cache Management</label>
+                        <div class="flex items-center justify-between bg-[#0a0a0a] border border-[#222] px-3 py-2">
+                            <div class="min-w-0 flex-1 mr-2">
+                                <span class="text-white text-[11px] font-bold block">Purge Cached Data</span>
+                                <span class="text-white text-[9.5px] block leading-snug">Clears playlists, search history, analyzed BPM & keys, and stash. Keeps your API key safe.</span>
+                            </div>
+                            <button type="button" id="clear-app-data-btn" onclick="clearApplicationData(this)"
+                                class="bg-[#220000] hover:bg-[#330000] text-[#ff4444] hover:text-white border border-[#550000] hover:border-[#ff4444] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0">
+                                <i class="fas fa-trash-alt mr-1"></i> Clear Data
+                            </button>
+                        </div>
+                        <div id="clear-data-status" class="hidden text-[10px] mt-1.5 font-bold uppercase tracking-wider text-[#39ff14]"></div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="settings-save-btn" onclick="saveSettings()"

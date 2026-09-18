@@ -264,6 +264,8 @@ button:hover:not(:disabled) {
     overflow-y: auto;
     flex: 1;
     min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #1a7b1a #0a0a0a;
 }
 
 .modal-footer {
@@ -273,6 +275,9 @@ button:hover:not(:disabled) {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.65);
+    position: relative;
+    z-index: 10;
 }
 
 /* Custom dark scrollbar for modal and lists */
@@ -287,6 +292,7 @@ button:hover:not(:disabled) {
 .custom-scrollbar::-webkit-scrollbar-thumb,
 .modal-body-scrollable::-webkit-scrollbar-thumb {
     background: #1a4a1a;
+    border: 1px solid #1a7b1a;
     border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover,
@@ -667,6 +673,17 @@ button.hidden {
 }
 
 @media (max-width: 639px) {
+    /* Modal Card Peek (Option A) — Intentional cutoff so bottom cards peek visibly above the footer */
+    .modal-overlay {
+        padding: 12px 8px;
+    }
+    .modal-box {
+        max-height: min(78dvh, 78vh, 525px) !important;
+    }
+    .modal-body-scrollable {
+        padding: 12px 10px;
+    }
+
     .discovery-focus-wrapper {
         gap: 5px !important;
         padding: 5px 0 !important;

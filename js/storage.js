@@ -254,3 +254,32 @@ function clearHistory(btn) {
     updateHistoryControls();
 }
 
+// ── Global Visual Toast Feedback ──
+function showAppToast(msg, type = 'success', duration = 3500) {
+    let toast = document.getElementById('soundhunt-global-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'soundhunt-global-toast';
+        toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[10000] px-4 py-2 bg-[#051505] border border-[#1a7b1a] text-[#39ff14] text-[11px] font-bold uppercase tracking-wider rounded shadow-[0_0_15px_rgba(0,0,0,0.8)] flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px] select-none';
+        document.body.appendChild(toast);
+    }
+    const icon = type === 'success' ? 'fa-check' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
+    const borderCol = type === 'error' ? '#ff3333' : '#1a7b1a';
+    const textCol = type === 'error' ? '#ff4444' : '#39ff14';
+    const bgCol = type === 'error' ? '#1f0505' : '#051505';
+
+    toast.style.borderColor = borderCol;
+    toast.style.color = textCol;
+    toast.style.backgroundColor = bgCol;
+    toast.innerHTML = `<i class="fas ${icon} text-[11px]"></i><span>${msg}</span>`;
+
+    toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+    toast.classList.add('opacity-100', 'translate-y-0');
+
+    if (toast._timer) clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+    }, duration);
+}
+

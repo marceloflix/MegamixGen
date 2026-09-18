@@ -5,6 +5,9 @@ function openSettings() {
     const statusEl = document.getElementById('api-key-status');
     if (statusEl) statusEl.classList.add('hidden');
 
+    const clearStatusEl = document.getElementById('clear-data-status');
+    if (clearStatusEl) clearStatusEl.classList.add('hidden');
+
     const firstTimeNotice = document.getElementById('first-time-api-notice');
     if (firstTimeNotice && key) {
         firstTimeNotice.classList.add('hidden');
@@ -149,4 +152,82 @@ async function saveSettings() {
             saveBtn.style.cursor = 'pointer';
         }
     }, 600);
+}
+
+// ── Clear Application Data & Cache (Preserves Gemini API Key) ──
+function clearApplicationData(btn) {
+    if (btn) {
+        const badge = '<span class="text-[9px] font-extrabold uppercase text-[#ff3333] bg-[#220000] border border-[#ff3333] px-1.5 py-[2px] rounded shadow-[0_0_6px_rgba(255,51,51,0.6)] cursor-pointer select-none pointer-events-none">Clear?</span>';
+        if (typeof armConfirmButton === 'function') {
+            if (armConfirmButton(btn, badge, 'Click again to confirm clearing cached data', typeof DEFAULT_CONFIRM_TIMEOUT_MS !== 'undefined' ? DEFAULT_CONFIRM_TIMEOUT_MS : 8000)) {
+                return;
+            }
+        }
+    }
+
+    // CRITICAL EXCEPTION: Save and protect the API key
+    const currentApiKey = typeof getApiKey === 'function' ? getApiKey() : localStorage.getItem(STORAGE_KEYS.apiKey);
+
+    try {
+        // 1. Purge cached items from localStorage
+        localStorage.removeItem(STORAGE_KEYS.history);
+        localStorage.removeItem(STORAGE_KEYS.prompts);
+        localStorage.removeItem('soundhunt_bpm_key_cache');
+        localStorage.removeItem('soundhunt_download_stash');
+        localStorage.removeItem('soundhunt_stash');
+        localStorage.removeItem('soundhunt_discovery_chip');
+
+        // Strictly ensure API key is never overwritten or lost
+        if (currentApiKey) {
+            localStorage.setItem(STORAGE_KEYS.apiKey, currentApiKey);
+        }
+    } catch (e) {
+        console.warn('SoundHunt: Error clearing storage caches', e);
+    }
+
+    // 2. Clear in-memory DSP cache
+    if (typeof inMemoryDspCache !== 'undefined' && inMemoryDspCache.clear) {
+        inMemoryDspCache.clear();
+    }
+
+    // 3. Clear Stash drawer
+    if (typeof saveStash === 'function') {
+        saveStash([]);
+    }
+    if (typeof renderStash === 'function') {
+        renderStash();
+    }
+
+    // 4. Close active audio preview if playing
+    if (typeof closeAudioPlayer === 'function') {
+        closeAudioPlayer();
+    }
+
+    // 5. Reset UI feed to empty state
+    const container = document.getElementById('mixes-container');
+    if (container) {
+        container.innerHTML = '<div class="text-center text-[#555] text-[11px] py-8 uppercase tracking-widest"><i class="fas fa-compact-disc mr-2"></i>No playlists yet — enter a prompt above to hunt tracks.</div>';
+    }
+    if (typeof updateHistoryControls === 'function') {
+        updateHistoryControls();
+    }
+
+    // 6. Reset Prompt History dropdown
+    const promptDropdown = document.getElementById('prompt-history-dropdown');
+    if (promptDropdown) promptDropdown.innerHTML = '';
+
+    // 7. Immediate visual feedback (Inline status + Toast notification)
+    const statusEl = document.getElementById('clear-data-status');
+    if (statusEl) {
+        statusEl.className = 'text-[10px] mt-1.5 font-bold uppercase tracking-wider text-[#39ff14]';
+        statusEl.innerHTML = '<i class="fas fa-check mr-1"></i> Cached data cleared. API key preserved!';
+        statusEl.classList.remove('hidden');
+        setTimeout(() => {
+            if (statusEl) statusEl.classList.add('hidden');
+        }, 5000);
+    }
+
+    if (typeof showAppToast === 'function') {
+        showAppToast('Cached data cleared. API key preserved.', 'success');
+    }
 }
