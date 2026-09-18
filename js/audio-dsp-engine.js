@@ -604,7 +604,7 @@ const dspQueue = new SequentialDspQueue();
 // ── UI Rendering Helpers ──
 function getBadgeHTML(analysis) {
     if (!analysis) {
-        return `<span class="track-badge-loading inline-flex items-center gap-1.5 h-6 px-2 rounded-[4px] border border-[#1a4a1a] bg-[#051505] text-[#39ff14] text-[10.5px] font-mono font-bold select-none cursor-default"><i class="fas fa-spinner fa-spin text-[9px]"></i>DSP...</span>`;
+        return `<span class="track-badge-loading inline-flex items-center gap-1 h-6 px-1.5 rounded-[4px] border border-[#1a4a1a] bg-[#051505] text-[#39ff14] text-[10px] font-mono font-bold select-none cursor-default"><i class="fas fa-spinner fa-spin text-[8.5px]"></i>DSP...</span>`;
     }
 
     if (analysis.unavailable || !analysis.bpm || !analysis.camelot) {
@@ -615,9 +615,10 @@ function getBadgeHTML(analysis) {
     const safeColor = color || CAMELOT_COLORS[camelot] || '#39ff14';
 
     return `
-        <span class="track-badge-pill inline-flex items-center justify-center h-6 px-2.5 rounded-[4px] font-mono font-bold text-[11px] select-none whitespace-nowrap cursor-default transition-all"
-              style="color: ${safeColor}; border: 1px solid ${safeColor}; background-color: ${safeColor}14; box-shadow: 0 0 6px ${safeColor}33;">
-            ${bpm} BPM &bull; ${camelot}
+        <span class="track-badge-pill inline-flex items-center justify-center h-6 px-2 rounded-[4px] font-mono font-bold text-[11px] select-none whitespace-nowrap cursor-default transition-all"
+              style="color: ${safeColor}; border: 1px solid ${safeColor}; background-color: ${safeColor}14; box-shadow: 0 0 6px ${safeColor}33;"
+              title="${bpm} BPM &bull; Key ${camelot}">
+            ${bpm} &bull; ${camelot}
         </span>
     `;
 }
@@ -625,7 +626,7 @@ function getBadgeHTML(analysis) {
 function renderTrackBadgeLoading(rowEl) {
     const badgeContainer = rowEl.querySelector('.track-badges');
     if (!badgeContainer) return;
-    badgeContainer.innerHTML = `<span class="track-badge-loading inline-flex items-center gap-1.5 h-6 px-2 rounded-[4px] border border-[#1a4a1a] bg-[#051505] text-[#39ff14] text-[10.5px] font-mono font-bold select-none cursor-default"><i class="fas fa-spinner fa-spin text-[9px]"></i>DSP...</span>`;
+    badgeContainer.innerHTML = `<span class="track-badge-loading inline-flex items-center gap-1 h-6 px-1.5 rounded-[4px] border border-[#1a4a1a] bg-[#051505] text-[#39ff14] text-[10px] font-mono font-bold select-none cursor-default"><i class="fas fa-spinner fa-spin text-[8.5px]"></i>DSP...</span>`;
 }
 
 function renderTrackBadgeResult(rowEl, analysis) {

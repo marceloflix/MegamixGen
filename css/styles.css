@@ -335,6 +335,41 @@ body:has(#audio-player-bar.active) { padding-bottom: 50px; }
     transition: width 0.2s;
 }
 
+/* ── Mobile Audio Player Marquee ── */
+#audio-track-title-wrapper {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    max-width: 280px;
+    flex-shrink: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+#audio-track-title {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+}
+
+#audio-track-title.marquee-anim {
+    animation: player-marquee var(--marquee-duration, 8s) ease-in-out infinite alternate;
+}
+
+#audio-player-bar:hover #audio-track-title.marquee-anim,
+#audio-player-bar:active #audio-track-title.marquee-anim {
+    animation-play-state: paused;
+}
+
+@keyframes player-marquee {
+    0%, 18% {
+        transform: translateX(0);
+    }
+    82%, 100% {
+        transform: translateX(var(--marquee-distance, -40px));
+    }
+}
+
 /* ── Responsive: Desktop (wide screens) ── */
 #mixes-container {
     display: flex;
@@ -485,12 +520,26 @@ body:has(#audio-player-bar.active) { padding-bottom: 50px; }
     }
     .flex.flex-wrap.justify-end.gap-2 button { font-size: 9px; padding: 4px 8px; }
     #audio-player-bar { padding: 6px 8px; gap: 6px; }
-    #audio-track-title { font-size: 10px; max-width: 120px; }
+    #audio-track-title-wrapper {
+        max-width: 130px;
+        mask-image: linear-gradient(to right, black calc(100% - 10px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, black calc(100% - 10px), transparent 100%);
+    }
+    #audio-track-title { font-size: 10.5px; }
+    .track-row .track-right {
+        padding-left: 16px !important;
+        gap: 4px !important;
+    }
 }
 
 @media (max-width: 480px) {
+    .track-row .track-right,
     .track-row.track-row-two-row .track-right {
-        padding-left: 28px !important;
+        padding-left: 12px !important;
+        gap: 3.5px !important;
+    }
+    #audio-track-title-wrapper {
+        max-width: 115px;
     }
     .btn-analyze-playlist span {
         font-size: 9.5px !important;

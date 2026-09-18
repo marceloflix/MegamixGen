@@ -65,9 +65,30 @@ function setTrackBtnState(btn, state) {
     }
 }
 
+function setAudioPlayerTitle(text) {
+    const titleEl = document.getElementById('audio-track-title');
+    const wrapper = document.getElementById('audio-track-title-wrapper');
+    if (!titleEl) return;
+    titleEl.textContent = text;
+    titleEl.classList.remove('marquee-anim');
+    titleEl.style.removeProperty('--marquee-distance');
+    titleEl.style.removeProperty('--marquee-duration');
+
+    requestAnimationFrame(() => {
+        if (!wrapper || !titleEl) return;
+        const overflow = titleEl.scrollWidth - wrapper.clientWidth;
+        if (overflow > 4 && window.innerWidth <= 768) {
+            const distance = overflow + 10;
+            const duration = Math.max(5, Math.min(12, distance / 15 + 3));
+            titleEl.style.setProperty('--marquee-distance', `-${distance}px`);
+            titleEl.style.setProperty('--marquee-duration', `${duration}s`);
+            titleEl.classList.add('marquee-anim');
+        }
+    });
+}
+
 async function previewTrack(trackName, btn) {
     const bar         = document.getElementById('audio-player-bar');
-    const titleEl     = document.getElementById('audio-track-title');
     const playPauseEl = document.getElementById('audio-play-pause');
 
     // Toggle same track
@@ -93,7 +114,7 @@ async function previewTrack(trackName, btn) {
     // Search iTunes
     currentPreviewBtn      = btn;
     setTrackBtnState(btn, 'loading');
-    titleEl.textContent    = 'Searching...';
+    setAudioPlayerTitle('Searching...');
     bar.classList.add('active');
     playPauseEl.innerHTML  = '<i class="fas fa-spinner fa-spin"></i>';
 
@@ -108,17 +129,21 @@ async function previewTrack(trackName, btn) {
         }
 
         if (!data || !data.results || data.results.length === 0 || !data.results[0].previewUrl) {
-            titleEl.textContent   = 'No preview available';
+            setAudioPlayerTitle('No preview available');
             playPauseEl.innerHTML = '<i class="fas fa-times"></i>';
             setTrackBtnState(btn, 'idle');
             currentPreviewBtn = null;
-            setTimeout(() => { if (titleEl.textContent === 'No preview available') closeAudioPlayer(); }, 2000);
+            setTimeout(() => {
+                const cur = document.getElementById('audio-track-title');
+                if (cur && cur.textContent === 'No preview available') closeAudioPlayer();
+            }, 2000);
             return;
         }
 
         const preview         = data.results[0];
         currentAudio          = new Audio(preview.previewUrl);
-        titleEl.textContent   = `${preview.artistName} - ${preview.trackName}`;
+        const fullTitle       = `${preview.artistName} - ${preview.trackName}`;
+        setAudioPlayerTitle(fullTitle);
 
         const badgesContainer = document.getElementById('audio-track-badges');
         const updatePlayerBadges = (analysis) => {
@@ -126,9 +151,10 @@ async function previewTrack(trackName, btn) {
             if (analysis && analysis.bpm && analysis.camelot) {
                 const safeColor = analysis.color || (typeof CAMELOT_COLORS !== 'undefined' ? CAMELOT_COLORS[analysis.camelot] : '#39ff14');
                 badgesContainer.innerHTML = `
-                    <span class="inline-flex items-center justify-center h-6 px-2.5 rounded-[4px] font-mono font-bold text-[11px] select-none whitespace-nowrap cursor-default shadow-[0_0_6px_rgba(0,0,0,0.8)] transition-all"
-                          style="color: ${safeColor}; border: 1px solid ${safeColor}; background-color: ${safeColor}14; box-shadow: 0 0 6px ${safeColor}33;">
-                        ${analysis.bpm} BPM &bull; ${analysis.camelot}
+                    <span class="inline-flex items-center justify-center h-6 px-2 rounded-[4px] font-mono font-bold text-[11px] select-none whitespace-nowrap cursor-default shadow-[0_0_6px_rgba(0,0,0,0.8)] transition-all"
+                          style="color: ${safeColor}; border: 1px solid ${safeColor}; background-color: ${safeColor}14; box-shadow: 0 0 6px ${safeColor}33;"
+                          title="${analysis.bpm} BPM &bull; Key ${analysis.camelot}">
+                        ${analysis.bpm} &bull; ${analysis.camelot}
                     </span>
                 `;
             } else {
@@ -140,10 +166,11 @@ async function previewTrack(trackName, btn) {
         if (cachedAnalysis && cachedAnalysis.bpm && cachedAnalysis.camelot) {
             updatePlayerBadges(cachedAnalysis);
         } else {
-            badgesContainer.innerHTML = '<span class="inline-flex items-center gap-1.5 h-6 px-2 rounded-[4px] border border-[#1a4a1a] bg-[#051505] text-[#39ff14] text-[10.5px] font-mono font-bold"><i class="fas fa-spinner fa-spin text-[9px]"></i>DSP...</span>';
+            badgesContainer.innerHTML = '<span class="inline-flex items-center gap-1 h-6 px-1.5 rounded-[4px] border border-[#1a4a1a] bg-[#051505] text-[#39ff14] text-[10px] font-mono font-bold"><i class="fas fa-spinner fa-spin text-[8.5px]"></i>DSP...</span>';
             if (typeof analyzeTrackAudio === 'function' && preview.previewUrl) {
                 analyzeTrackAudio(trackName, preview.previewUrl).then(res => {
-                    if (currentAudio && titleEl.textContent === `${preview.artistName} - ${preview.trackName}`) {
+                    const cur = document.getElementById('audio-track-title');
+                    if (currentAudio && cur && cur.textContent === fullTitle) {
                         updatePlayerBadges(res);
                     }
                     if (btn) {
@@ -182,7 +209,7 @@ async function previewTrack(trackName, btn) {
         });
         currentAudio.addEventListener('error', () => {
             setTrackBtnState(currentPreviewBtn, 'idle');
-            titleEl.textContent   = 'Playback error';
+            setAudioPlayerTitle('Playback error');
             playPauseEl.innerHTML = '<i class="fas fa-times"></i>';
             setTimeout(() => closeAudioPlayer(), 2000);
         });
@@ -194,7 +221,7 @@ async function previewTrack(trackName, btn) {
         console.error('Audio preview failed:', e);
         setTrackBtnState(btn, 'idle');
         currentPreviewBtn = null;
-        titleEl.textContent   = 'Preview failed';
+        setAudioPlayerTitle('Preview failed');
         playPauseEl.innerHTML = '<i class="fas fa-times"></i>';
         setTimeout(() => closeAudioPlayer(), 2000);
     }
@@ -224,7 +251,22 @@ function closeAudioPlayer() {
     document.getElementById('audio-progress-fill').style.width = '0%';
     const badgesContainer = document.getElementById('audio-track-badges');
     if (badgesContainer) badgesContainer.innerHTML = '';
+    const titleEl = document.getElementById('audio-track-title');
+    if (titleEl) {
+        titleEl.textContent = '—';
+        titleEl.classList.remove('marquee-anim');
+    }
 }
+
+window.addEventListener('resize', () => {
+    const bar = document.getElementById('audio-player-bar');
+    if (bar && bar.classList.contains('active')) {
+        const titleEl = document.getElementById('audio-track-title');
+        if (titleEl && titleEl.textContent && titleEl.textContent !== '—') {
+            setAudioPlayerTitle(titleEl.textContent);
+        }
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     const progressContainer = document.getElementById('audio-progress');
