@@ -216,6 +216,7 @@ Output specifications:
     try {
         const mixData = await executeGeminiGenerate(apiKey, prompt);
         mixData._prompt = vibe;
+        mixData._focus = chip;
         renderNewMix(mixData, true);
         savePrompt(vibe);
         vibeInput.value = '';

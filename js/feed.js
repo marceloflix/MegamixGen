@@ -457,11 +457,23 @@ function renderNewMix(data, persist = false) {
             </div>
         </div>`;
 
+    // Discovery Focus Header Icon strictly matching selector buttons:
+    // Balanced: Green Vinyl (fa-compact-disc text-[#39ff14])
+    // Deep Cuts & Obscure: Lightning Bolt (fa-bolt text-[#ffcc00])
+    // Mainstream Hits: Fire (fa-fire text-[#ff4444])
+    let focusIconHTML = '<i class="fas fa-compact-disc text-[#39ff14] shrink-0" title="Balanced Discovery"></i>';
+    const focusMode = data._focus || data.focus || 'balanced';
+    if (focusMode === 'deep-cuts') {
+        focusIconHTML = '<i class="fas fa-bolt text-[#ffcc00] shrink-0" title="Deep Cuts & Obscure"></i>';
+    } else if (focusMode === 'mainstream') {
+        focusIconHTML = '<i class="fas fa-fire text-[#ff4444] shrink-0" title="Mainstream Hits"></i>';
+    }
+
     const mixHTML = `
         <div class="panel group/card border border-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)] transition-all duration-300 animate-fade-in-down${isCompact ? ' mix-card-compact' : ''}" data-ts="${ts}" onclick="if(typeof mergeMode !== 'undefined' && mergeMode){event.stopPropagation();toggleMergeSelect('${ts}')}">
             <div class="panel-header bg-gradient-to-b from-[#1a4a1a] to-[#0a2a0a] border-[#1a7b1a] flex items-center justify-between${isCompact ? ' cursor-pointer' : ''}" ${isCompact && (typeof mergeMode === 'undefined' || !mergeMode) ? `onclick="expandAndScrollTo('${ts}')" title="Click to expand"` : ''}>
                 <div class="text-sm flex items-center gap-2 min-w-0">
-                    <i class="fas fa-compact-disc text-[#39ff14] shrink-0"></i>
+                    ${focusIconHTML}
                     <span class="truncate font-bold">${data.title}</span>
                     ${isCompact ? `<span class="text-white text-[10px] shrink-0">${data.tracks.length} tracks &bull; ${currentDate}</span>` : ''}
                 </div>
