@@ -78,8 +78,8 @@ function setAudioPlayerTitle(text) {
         if (!wrapper || !titleEl) return;
         const overflow = titleEl.scrollWidth - wrapper.clientWidth;
         if (overflow > 4 && window.innerWidth <= 768) {
-            const distance = overflow + 10;
-            const duration = Math.max(5, Math.min(12, distance / 15 + 3));
+            const distance = overflow + 12;
+            const duration = Math.max(7, Math.min(14, distance / 12 + 4));
             titleEl.style.setProperty('--marquee-distance', `-${distance}px`);
             titleEl.style.setProperty('--marquee-duration', `${duration}s`);
             titleEl.classList.add('marquee-anim');
