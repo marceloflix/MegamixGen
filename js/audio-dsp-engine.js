@@ -562,7 +562,7 @@ class SequentialDspQueue {
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[#39ff14]"></i><span>ANALYZING (${prog.done}/${prog.total})...</span>`;
                 btn.classList.add('analyzing-active');
             } else {
-                btn.innerHTML = `<i class="fas fa-redo text-[#39ff14]"></i><span>RE-ANALYZE BPM & KEY</span>`;
+                btn.innerHTML = `<i class="fas fa-redo text-[#39ff14]"></i><span>BPM & KEY</span>`;
                 btn.classList.remove('analyzing-active');
                 this.playlistProgress.delete(ts);
             }

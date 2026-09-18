@@ -435,9 +435,9 @@ function renderNewMix(data, persist = false) {
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
                         <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px] truncate max-w-[120px] sm:max-w-none inline-block align-bottom" title="${data.genre || 'Music Discovery'}">${data.genre || 'Music Discovery'}</span></span>
                     </span>
-                    <button id="btn-analyze-${ts}" onclick="event.stopPropagation();triggerPlaylistAnalysis('${ts}', this, this.classList.contains('has-analyzed'))" class="btn-analyze-playlist shrink-0" title="Re-analyze BPM tempo and Serato Camelot keys">
+                    <button id="btn-analyze-${ts}" onclick="event.stopPropagation();triggerPlaylistAnalysis('${ts}', this, this.classList.contains('has-analyzed'))" class="btn-analyze-playlist shrink-0" title="Analyze or re-analyze BPM tempo and Serato Camelot keys">
                         <i class="fas fa-redo text-[#39ff14]"></i>
-                        <span>RE-ANALYZE BPM & KEY</span>
+                        <span>BPM & KEY</span>
                     </button>
                 </div>
             </div>
