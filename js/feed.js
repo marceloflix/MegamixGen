@@ -430,10 +430,10 @@ function renderNewMix(data, persist = false) {
         <div class="mix-body panel-content flex flex-col gap-4">
             <div class="details-box">
                 <div class="details-box-row flex items-center justify-between flex-wrap gap-x-3 gap-y-2">
-                    <span class="details-stats flex items-center gap-2 sm:gap-3 flex-nowrap py-0.5 whitespace-nowrap min-w-0">
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px] diag-track-count">${data.tracks.length}</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
-                        <span><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Genre</span><span class="text-white text-[11px] truncate max-w-[90px] sm:max-w-none inline-block align-middle" title="${data.genre || 'Music Discovery'}">${data.genre || 'Music Discovery'}</span></span>
+                    <span class="details-stats flex items-center gap-2 sm:gap-3 flex-nowrap py-0.5 whitespace-nowrap min-w-0 flex-1">
+                        <span class="shrink-0"><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Tracks</span><span class="text-white font-bold text-[11px] diag-track-count">${data.tracks.length}</span></span>
+                        <span class="shrink-0"><span class="text-[#39ff14] text-[10px] font-semibold mr-1">Energy</span><span>${energyDots}</span></span>
+                        <span class="flex items-center min-w-0 overflow-hidden"><span class="text-[#39ff14] text-[10px] font-semibold mr-1 shrink-0">Genre</span><span class="text-white text-[11px] truncate inline-block align-middle" title="${data.genre || 'Music Discovery'}">${data.genre || 'Music Discovery'}</span></span>
                     </span>
                     <button id="btn-analyze-${ts}" onclick="event.stopPropagation();triggerPlaylistAnalysis('${ts}', this, this.classList.contains('has-analyzed'))" class="btn-analyze-playlist shrink-0" title="Analyze or re-analyze BPM tempo and Serato Camelot keys">
                         <i class="fas fa-redo text-[#39ff14]"></i>
