@@ -12,7 +12,7 @@ function toggleMergeMode() {
         document.getElementById('merge-go').classList.remove('hidden');
         document.body.classList.add('merge-active');
     } else {
-        mergeBtn.className = 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]';
+        mergeBtn.className = 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white';
         mergeBtn.innerHTML = '<i class="fas fa-layer-group mr-1"></i>Merge';
         document.getElementById('merge-go').classList.add('hidden');
         document.body.classList.remove('merge-active');

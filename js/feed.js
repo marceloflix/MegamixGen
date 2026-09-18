@@ -16,10 +16,10 @@ function setFilter(mode) {
     currentFilter = mode;
     document.getElementById('btn-filter-all').className = mode === 'all'
         ? 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a2a0a] border-[#1a7b1a] text-[#39ff14]'
-        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]';
+        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white';
     document.getElementById('btn-filter-fav').className = mode === 'favorites'
-        ? 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#2a2000] border-[#ffcc00] text-[#ffcc00]'
-        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]';
+        ? 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#2a2000] border-[#ffcc00] text-white'
+        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white';
     rebuildFeed();
 }
 
@@ -28,10 +28,10 @@ function setView(mode) {
     currentView = mode;
     document.getElementById('btn-view-normal').className = mode === 'normal'
         ? 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a1a2a] border-[#3399ff] text-[#3399ff]'
-        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]';
+        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white';
     document.getElementById('btn-view-compact').className = mode === 'compact'
         ? 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a1a2a] border-[#3399ff] text-[#3399ff]'
-        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-[#888]';
+        : 'px-4 py-2 text-[12px] uppercase font-bold tracking-wider border transition-all bg-[#0a0a0a] border-[#333] text-white';
     rebuildFeed();
 }
 
@@ -459,12 +459,12 @@ function renderNewMix(data, persist = false) {
 
     // Discovery Focus Header Icon strictly matching selector buttons:
     // Balanced: Green Vinyl (fa-compact-disc text-[#39ff14])
-    // Deep Cuts & Obscure: Lightning Bolt (fa-bolt text-[#ffcc00])
+    // Underground: Lightning Bolt (fa-bolt text-[#ffcc00])
     // Mainstream Hits: Fire (fa-fire text-[#ff4444])
     let focusIconHTML = '<i class="fas fa-compact-disc text-[#39ff14] shrink-0" title="Balanced Discovery"></i>';
     const focusMode = data._focus || data.focus || 'balanced';
     if (focusMode === 'deep-cuts') {
-        focusIconHTML = '<i class="fas fa-bolt text-[#ffcc00] shrink-0" title="Deep Cuts & Obscure"></i>';
+        focusIconHTML = '<i class="fas fa-bolt text-[#ffcc00] shrink-0" title="Underground"></i>';
     } else if (focusMode === 'mainstream') {
         focusIconHTML = '<i class="fas fa-fire text-[#ff4444] shrink-0" title="Mainstream Hits"></i>';
     }

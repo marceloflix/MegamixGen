@@ -22,15 +22,17 @@
 
 ## What Can SoundHunt Do?
 
-- **Vibe-Based Discovery**: Describe any era, subgenre, or mood in plain English. No rigid genre dropdowns or algorithmic echo chambers.
-- **Deep Cuts or Hit Anthems**: Flip between **Deep Cuts & Obscure** (for rare vinyl B-sides and forgotten treasures), **Balanced**, or **Mainstream Hits**.
-- **Instant 30s Audition**: Hit play to preview 30s audio clips directly in your browser without leaving the page.
-- **In-Browser BPM & Camelot Key Detection**: Client-side Web Audio DSP analyzes iTunes 30s audio previews directly in your browser, detecting tempo (BPM) and harmonic key with official Serato Camelot color-coded badges, with zero server compute.
-- **Direct Search & Streaming Links**: Jump straight from any track to search and listen on **Spotify**, **YouTube**, or **Monochrome**.
-- **Ruthless Pruning**: Suggested tracks that miss the mark? Click `✕` to prune them out instantly with smooth animations and dynamic count updates.
-- **Multi-Track Selection & Bulk Pruning**: Click any track's numeration badge to activate multi-select mode, select multiple tracks at once with custom neon checkboxes, and bulk delete unwanted tracks in one go.
-- **Dig Deeper**: Found a track you love? Click the magnifying glass (`🔍`) and choose how many similar tracks (+3, +5, +10, or custom) to hunt down sharing that exact sonic groove and DNA.
-- **One-Click Download via Monochrome**: Star tracks (`★`) to your **Download Stash** drawer and jump straight to [Monochrome](https://monochrome.tf) to download them in high quality.
+- **Natural Language Discovery**: Describe any era, subgenre, or mood in any language (e.g., *"90s underground progressive house"*, *"Wedding Dance Floor Classics"*). No rigid genre dropdowns or algorithmic echo chambers.
+- **Discovery Focus (Underground, Balanced, or Hits)**: Flip between **Underground** (for rare vinyl B-sides), **Balanced**, or **Mainstream Hits**.
+- **30s Preview Player**: Preview 30-second audio clips directly in your browser with a persistent bottom player bar.
+- **In-Browser BPM & Camelot Key Detection**: Detect tempo (BPM) and harmonic key with official Serato Camelot color-coded badges (`1A`–`12B`) directly in your browser.
+- **Dig Deeper**: Found a track you love? Click the magnifying glass (`🔍`) to find similar tracks that share that exact groove, era, and energy.
+- **Download Stash Drawer**: Star tracks (`★`) into a persistent drawer to save them for later and quickly search them on [Monochrome](https://monochrome.tf).
+- **Multi-Track Selection**: Click any track number badge to select multiple tracks at once and bulk delete unwanted ones.
+- **Remove Tracks**: Click `✕` to quickly remove single tracks.
+- **Merge**: Combine multiple generated playlists into a single unified playlist with intelligent duplicate filtering.
+- **Direct Streaming Links**: Jump straight from any track to search and listen on **Spotify**, **YouTube**, or **Monochrome**.
+- **PWA Standalone App**: 1-click install as a standalone desktop app on **Windows, macOS, Linux**, or mobile home screens with offline support.
 
 ---
 
@@ -38,12 +40,11 @@
 
 ### Option A: Launch Instantly in Browser or Desktop (Zero Install)
 1. Open the live app: **[SoundHunt on Vercel](https://sound-hunt.vercel.app)**.
-2. Click **Install App** in the top bar (or the ⊕ icon in your browser's address bar) to install SoundHunt as a standalone desktop app on **Windows 10/11, macOS, or Linux**.
-3. No terminal, no Python, no downloads required!
+2. Click **Install App** in the top bar (or the ⊕ icon in your browser's address bar) to install SoundHunt as a standalone desktop app on **Windows, macOS, or Linux**.
 
 ---
 
-### Option B: Run Locally with Python (Offline / Developers)
+### Option B: Run Locally with Python
 If you prefer running SoundHunt completely offline or modifying the source locally:
 ```bash
 git clone https://github.com/marceloflix/SoundHunt.git soundhunt
@@ -54,7 +55,7 @@ Open **`http://localhost:8080`** in your browser.
 
 ---
 
-### 2. Grab Your Free Gemini Key (1 Minute)
+### Setup: Grab Your Free Gemini Key
 SoundHunt uses Google's Gemini API (`gemini-3.5-flash-lite`) to understand your musical prompts:
 1. Head over to [Google AI Studio](https://aistudio.google.com/apikey).
 2. Sign in and click **Create API Key**.
@@ -68,4 +69,4 @@ SoundHunt uses Google's Gemini API (`gemini-3.5-flash-lite`) to understand your 
 
 ## License
 
-Distributed under the **MIT License** — Made for music lovers, crate diggers, and track hunters everywhere.
+Distributed under the **MIT License** — Made for music lovers.
