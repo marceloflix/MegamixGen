@@ -23,22 +23,32 @@
 ## What Can SoundHunt Do?
 
 - **Natural Language Discovery**: Describe any era, subgenre, or mood in any language (e.g., *"90s underground progressive house"*, *"Wedding Dance Floor Classics"*). No rigid genre dropdowns or algorithmic echo chambers.
+
 - **Discovery Focus (Underground, Balanced, or Hits)**: Flip between **Underground** (for rare vinyl B-sides), **Balanced**, or **Mainstream Hits**.
-- **30s Preview Player**: Preview 30-second audio clips directly in your browser with a persistent bottom player bar.
-- **In-Browser BPM & Camelot Key Detection**: Detect tempo (BPM) and harmonic key with official Serato Camelot color-coded badges (`1A`–`12B`) directly in your browser.
-- **Dig Deeper**: Found a track you love? Click the magnifying glass (`🔍`) to find similar tracks that share that exact groove, era, and energy.
-- **Download Stash Drawer**: Star tracks (`★`) into a persistent drawer to save them for later and quickly search them on [Monochrome](https://monochrome.tf).
-- **Multi-Track Selection**: Click any track number badge to select multiple tracks at once and bulk delete unwanted ones.
-- **Remove Tracks**: Click `✕` to quickly remove single tracks.
+
 - **Merge**: Combine multiple generated playlists into a single unified playlist with intelligent duplicate filtering.
+
+- **In-Browser BPM & Camelot Key Detection**: Detect tempo (BPM) and harmonic key with official Serato Camelot color-coded badges (`1A`–`12B`) directly in your browser.
+
+- **Multi-Track Selection**: Click any track number badge to select multiple tracks at once and bulk delete unwanted ones.
+
+- **Remove Tracks**: Click `✕` to quickly remove single tracks.
+
+- **Dig Deeper**: Found a track you love? Click the magnifying glass (`🔍`) to find similar tracks that share that exact groove, era, and energy.
+
 - **Direct Streaming Links**: Jump straight from any track to search and listen on **Spotify**, **YouTube**, or **Monochrome**.
+
+- **Download Stash Drawer**: Star tracks (`★`) into a persistent drawer to save them for later and quickly search them on [Monochrome](https://monochrome.tf).
+
+- **30s Preview Player**: Preview 30-second audio clips directly in your browser with a persistent bottom player bar.
+
 - **PWA Standalone App**: 1-click install as a standalone desktop app on **Windows, macOS, Linux**, or mobile home screens with offline support.
 
 ---
 
 ## Quick Start
 
-### Option A: Launch Instantly in Browser or Desktop (Zero Install)
+### Option A: Launch Instantly in Browser or Desktop
 1. Open the live app: **[SoundHunt on Vercel](https://sound-hunt.vercel.app)**.
 2. Click **Install App** in the top bar (or the ⊕ icon in your browser's address bar) to install SoundHunt as a standalone desktop app on **Windows, macOS, or Linux**.
 
